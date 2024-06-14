@@ -12,10 +12,11 @@ import (
 )
 
 const (
-	Red    = "\033[31m"
-	Green  = "\033[32m"
-	Yellow = "\033[33m"
-	Reset  = "\033[0m"
+	Red     = "\033[31m"
+	Green   = "\033[32m"
+	Yellow  = "\033[33m"
+	Reset   = "\033[0m"
+	Version = "1.0.0"
 )
 
 func main() {
@@ -28,9 +29,10 @@ func main() {
 	write := flag.Bool("w", false, "Write card data")
 	verify := flag.Bool("v", false, "Verify written card data")
 	simulate := flag.Bool("s", false, "Card simulation (only for PIV and MIFARE)")
+	showVersion := flag.Bool("version", false, "Show program version")
 
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, Yellow+"Usage: %s -bl <bit length> -fc <facility code> -cn <card number> -t <card type> [-uid <UID>] [-hex <Hex Data>] [-w] [-v] [-s]\n"+Reset, os.Args[0])
+		fmt.Fprintf(os.Stderr, Yellow+"Usage: %s -bl <bit length> -fc <facility code> -cn <card number> -t <card type> [-uid <UID>] [-hex <Hex Data>] [-w] [-v] [-s] [-version]\n"+Reset, os.Args[0])
 		fmt.Fprintf(os.Stderr, "\n")
 		flag.PrintDefaults()
 		fmt.Fprintf(os.Stderr, "\n")
@@ -58,6 +60,11 @@ func main() {
 	}
 
 	flag.Parse()
+
+	if *showVersion {
+		fmt.Println("Version:", Version)
+		return
+	}
 
 	if *cardType == "piv" || *cardType == "mifare" {
 		if *uid == "" {
