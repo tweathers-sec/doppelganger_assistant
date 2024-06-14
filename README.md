@@ -1,4 +1,4 @@
-# doppelganger_assistant
+# Doppelgänger Assistant
 Card calculator and Proxmark3 Plugin for writing and/or simulating every card type that Doppelgagner Pro, Stealth, and MFAS support. This project is designed to streamline the card-writing process, because in physical penetration testing, every second counts. Why waste time digging through your disheveled notes to relearn how to write an iCLASS 2k card or fumbling with the syntax for a 37-bit HID card?  If you use doppelganger, let doppelgagner_assistant do the work for you. That way, you can spend more time creating a viable replica access control card.
 
 ## Officially Supported Card Types:
