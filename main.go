@@ -1,7 +1,7 @@
 // iCLASS Card Writing Assistant (Doppelgagner/Stealth Reader/MFAS Reader)
 // Author: @tweathers-sec (@tweathers_sec on X.com)
-// Version: 1.0
-// Last Edit: June 13, 2024
+// Version: 1.0.0
+// Last Edit: June 14, 2024
 
 package main
 
@@ -30,11 +30,11 @@ func main() {
 	simulate := flag.Bool("s", false, "Card simulation (only for PIV and MIFARE)")
 
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage: %s -bl <bit length> -fc <facility code> -cn <card number> -t <card type> [-uid <UID>] [-hex <Hex Data>] [-w] [-v] [-s]\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, Yellow+"Usage: %s -bl <bit length> -fc <facility code> -cn <card number> -t <card type> [-uid <UID>] [-hex <Hex Data>] [-w] [-v] [-s]\n"+Reset, os.Args[0])
 		fmt.Fprintf(os.Stderr, "\n")
 		flag.PrintDefaults()
 		fmt.Fprintf(os.Stderr, "\n")
-		fmt.Fprintf(os.Stderr, "Supported card types and bit lengths:\n")
+		fmt.Fprintf(os.Stderr, Green+"Supported card types and bit lengths:\n"+Reset)
 		fmt.Fprintf(os.Stderr, "\n")
 		fmt.Fprintf(os.Stderr, "  iclass: 26, 35\n")
 		fmt.Fprintf(os.Stderr, "  prox: 26, 30, 31, 33, 34, 35, 36, 37, 48\n")
@@ -43,6 +43,18 @@ func main() {
 		fmt.Fprintf(os.Stderr, "  em: 32\n")
 		fmt.Fprintf(os.Stderr, "  piv: N/A\n")
 		fmt.Fprintf(os.Stderr, "  mifare: N/A\n")
+		fmt.Fprintf(os.Stderr, "\n")
+		fmt.Fprintf(os.Stderr, Green+"Example #1: Generate encoded card values for manual writing with a Proxmark3\n"+Reset)
+		fmt.Fprintf(os.Stderr, "\n")
+		fmt.Fprintf(os.Stderr, "  %s -bl 26 -fc 123 -cn 1234 -t iclass\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "\n")
+		fmt.Fprintf(os.Stderr, Green+"Example #2: Generate encoded card values, then write and verify with a Proxmark3\n"+Reset)
+		fmt.Fprintf(os.Stderr, "\n")
+		fmt.Fprintf(os.Stderr, "  %s -bl 26 -fc 123 -cn 1234 -t iclass -w -v\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "\n")
+		fmt.Fprintf(os.Stderr, Green+"Example #3: Simulate a PIVKey (C190) using the UID provide by Doppelganger with a Proxmark3\n"+Reset)
+		fmt.Fprintf(os.Stderr, "\n")
+		fmt.Fprintf(os.Stderr, "  %s -uid 5AF70D9D -s -t piv\n", os.Args[0])
 	}
 
 	flag.Parse()
