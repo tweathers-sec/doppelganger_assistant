@@ -41,6 +41,7 @@ This command will generate the commands needed to write captured iCLASS (Legacy/
  hf iclass wrbl --blk 8 -d 0000000000000000 --ki 0 
  hf iclass wrbl --blk 9 -d 0000000000000000 --ki 0 
 ```
+### Generating commands, writing card data, and verification of data
 
 By adding the —w (write) and —v (verify) flags, the application will use your PM3 installation to write and verify the card data.
 
@@ -231,4 +232,23 @@ Verifying that the card data was successfully written. Set your card flat on the
  
 Verification successful: Facility Code and Card Number match.
 ```
+### Simulating PIV/MF Cards
 
+Using the UID provided by doppelgagner (v1.2.0 Doppelgagner Pro, Stealth, and MFAS), you can simulate the exact wiegand signal with a Proxmark3. 
+
+```
+./doppelganger_assistant_darwin_arm64 -uid 5AF70D9D -s -t piv
+ 
+Handling PIV card... 
+ 
+Simulating the PIV card on your Proxmark3: 
+ 
+Executing command: hf 14a sim -t 3 --uid 5AF70D9D 
+  
+[=] Session log /Users/tweathers/.proxmark3/logs/log_20240614152754.txt
+[+] loaded `/Users/tweathers/.proxmark3/preferences.json`
+[+] execute command from commandline: hf 14a sim -t 3 --uid 5AF70D9D
+
+[+] Using UART port /dev/tty.usbmodem2134301
+
+```
