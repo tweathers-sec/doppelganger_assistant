@@ -1,0 +1,58 @@
+name: Build on Tag
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Git repository
+        uses: actions/checkout@v2
+
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: '1.22.3'  # Specify the Go version
+
+      - name: Create directories and build binaries
+        run: |
+          chmod +x ./build.sh
+          ./build.sh
+
+      - name: Create Release
+        id: create-release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Assets
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create-release.outputs.upload_url }}
+          asset_path: ${{ github.workspace }}/build/${{ matrix.os }}_${{ matrix.arch }}
+          asset_name: doppelganger_assistant_${{ matrix.os }}_${{ matrix.arch }}
+          asset_content_type: application/octet-stream
+        if: success()
+
+      - name: List all files in build directory
+        run: ls build/
+
+      - name: Upload each file
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: build/${{ matrix.os }}_${{ matrix.arch }}
+          asset_name: doppelganger_assistant_${{ matrix.os }}_${{ matrix.arch }}
+          tag: ${{ github.ref }}
+          overwrite: true
+        if: success()
