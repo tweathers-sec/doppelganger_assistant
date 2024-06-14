@@ -21,7 +21,7 @@ Card calculator and Proxmark3 Plugin for writing and/or simulating every card ty
 
 ## Installation
 
-1) Grab your desired package from the releases page.
+1) Grab your desired package from the [release page](https://github.com/tweathers-sec/doppelganger_assistant/releases).
 2) Ensure that you have the [Iceman fork of the Proxmark3](https://github.com/RfidResearchGroup/proxmark3?tab=readme-ov-file#proxmark3-installation-and-overview) software installed.
 3) Run the application...
 
