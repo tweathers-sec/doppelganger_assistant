@@ -1,5 +1,5 @@
 # Doppelgänger Assistant
-Card calculator and Proxmark3 Plugin for writing and/or simulating every card type that Doppelgagner Pro, Stealth, and MFAS support. This project is designed to streamline the card-writing process, because in physical penetration testing, every second counts. Why waste time digging through your disheveled notes to relearn how to write an iCLASS 2k card or fumbling with the syntax for a 37-bit HID card?  If you use doppelganger, let doppelgagner_assistant do the work for you. That way, you can spend more time creating a viable replica access control card.
+Card calculator and Proxmark3 Plugin for writing and/or simulating every card type that Doppelgänger Pro, Stealth, and MFAS support. This project is designed to streamline the card-writing process, because in physical penetration testing, every second counts. Why waste time digging through your disheveled notes to relearn how to write an iCLASS 2k card or fumbling with the syntax for a 37-bit HID card?  If you use doppelganger, let doppelgagner_assistant do the work for you. That way, you can spend more time creating a viable replica access control card.
 
 ## Officially Supported Card Types:
 * HID H10301 26-bit
@@ -234,7 +234,7 @@ Verification successful: Facility Code and Card Number match.
 ```
 ### Simulating PIV/MF Cards
 
-Using the UID provided by doppelgagner (v1.2.0 Doppelgagner Pro, Stealth, and MFAS), you can simulate the exact wiegand signal with a Proxmark3. 
+Using the UID provided by Doppelgänger (v1.2.0 Doppelgänger Pro, Stealth, and MFAS), you can simulate the exact wiegand signal with a Proxmark3. 
 
 ```
 ./doppelganger_assistant_darwin_arm64 -uid 5AF70D9D -s -t piv
