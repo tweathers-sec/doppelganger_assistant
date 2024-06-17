@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func verifyCardData(cardType string, facilityCode, cardNumber int, hexData string) {
+func verifyCardData(cardType string, facilityCode, cardNumber int, hexData string, uid string) {
 	var cmd *exec.Cmd
 	fmt.Println(Green, "\nVerifying that the card data was successfully written. Set your card flat on the reader...\n", Reset)
 	time.Sleep(3 * time.Second)
@@ -22,6 +22,8 @@ func verifyCardData(cardType string, facilityCode, cardNumber int, hexData strin
 		cmd = exec.Command("pm3", "-c", "lf indala reader")
 	case "em":
 		cmd = exec.Command("pm3", "-c", "lf em 410x reader")
+	case "piv", "mifare":
+		cmd = exec.Command("pm3", "-c", "hf mf info")
 	default:
 		fmt.Println(Red, "Unsupported card type for verification.", Reset)
 		return
@@ -99,6 +101,18 @@ func verifyCardData(cardType string, facilityCode, cardNumber int, hexData strin
 						}
 					}
 				}
+			} else if cardType == "piv" || cardType == "mifare" {
+				if strings.Contains(line, "[+]  UID:") {
+					// Extract the UID part from the line
+					uidStartIndex := strings.Index(line, "[+]  UID:") + len("[+]  UID:")
+					extractedUID := strings.TrimSpace(line[uidStartIndex:])
+					// Normalize the UID format
+					normalizedUID := strings.ToUpper(strings.ReplaceAll(extractedUID, " ", ""))
+					if normalizedUID == strings.ToUpper(uid) {
+						fmt.Println(Green, "\nVerification successful: UID matches.\n", Reset)
+						return
+					}
+				}
 			} else {
 				if strings.Contains(line, fmt.Sprintf("FC: %d", facilityCode)) && strings.Contains(line, fmt.Sprintf("CN: %d", cardNumber)) {
 					fmt.Println(Green, "\nVerification successful: Facility Code and Card Number match.\n", Reset)
@@ -108,5 +122,12 @@ func verifyCardData(cardType string, facilityCode, cardNumber int, hexData strin
 		}
 	}
 
-	fmt.Println(Red, "\nVerification failed: Facility Code and Card Number do not match or the Proxmark3 failed to read the card.\n", Reset)
+	fmt.Println(Red, "\nVerification failed: ",
+		func() string {
+			if cardType == "piv" || cardType == "mifare" {
+				return "The UID does not match or the Proxmark3 failed to read the card."
+			}
+			return "Facility Code and Card Number do not match or the Proxmark3 failed to read the card."
+		}(),
+		Reset)
 }

@@ -10,14 +10,16 @@ func writeProxmark3Command(command string) (string, error) {
 	cmd := exec.Command("pm3", "-c", command)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return "", fmt.Errorf("error writing to card: %w", err)
+		return string(output), fmt.Errorf("error writing to card: %w. Output: %s", err, output)
 	}
 	return string(output), nil
 }
 
-func writeCardData(cardType string, cardData uint64, bitLength int, facilityCode int, cardNumber int, hexData string, verify bool) {
+func writeCardData(cardType string, cardData uint64, bitLength int, facilityCode int, cardNumber int, hexData string, verify bool, uid string) {
 	if cardType == "iclass" {
 		fmt.Println(Green, "\nConnect your Proxmark3 and place an iCLASS 2k card flat on the antenna. Press Enter to continue...", Reset)
+	} else if cardType == "piv" || cardType == "mifare" {
+		fmt.Println(Green, "\nConnect your Proxmark3 and place a UID rewritable (S50) card flat on the antenna. Press Enter to continue...", Reset)
 	} else {
 		fmt.Println(Green, "\nConnect your Proxmark3 and a T5577 card flat on the antenna. The card write command will run five (5) times.\n\nIMPORTANT: Move the card slowly across the Proxmark3 after each write and flip the card over and continue.\nPress Enter to continue...", Reset)
 	}
@@ -152,6 +154,16 @@ func writeCardData(cardType string, cardData uint64, bitLength int, facilityCode
 					fmt.Println(Green, "\nFinal write attempt complete. Please verify the card data.\n", Reset)
 				}
 			}
+		}
+	case "piv", "mifare":
+		fmt.Println(Green, "\nWriting the provided UID...\n", Reset)
+		command := fmt.Sprintf("hf mf csetuid -u %s", uid)
+		output, err := writeProxmark3Command(command)
+		if err != nil {
+			fmt.Println(Red, "Error writing to card:", err, Reset)
+			fmt.Println("Command output:", output)
+		} else {
+			fmt.Println(output)
 		}
 	}
 }

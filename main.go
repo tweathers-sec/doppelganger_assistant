@@ -1,7 +1,7 @@
 // iCLASS Card Writing Assistant (Doppelgagner/Stealth Reader/MFAS Reader)
 // Author: @tweathers-sec (@tweathers_sec on X.com)
-// Version: 1.0.0
-// Last Edit: June 14, 2024
+// Version: 1.0.1
+// Last Edit: June 17, 2024
 
 package main
 
@@ -16,7 +16,7 @@ const (
 	Green   = "\033[32m"
 	Yellow  = "\033[33m"
 	Reset   = "\033[0m"
-	Version = "1.0.0"
+	Version = "1.0.1"
 )
 
 func main() {
@@ -28,7 +28,7 @@ func main() {
 	hexData := flag.String("hex", "", "Hex data for EM cards")
 	write := flag.Bool("w", false, "Write card data")
 	verify := flag.Bool("v", false, "Verify written card data")
-	simulate := flag.Bool("s", false, "Card simulation (only for PIV and MIFARE)")
+	simulate := flag.Bool("s", false, "Card simulation")
 	showVersion := flag.Bool("version", false, "Show program version")
 
 	flag.Usage = func() {
@@ -66,22 +66,29 @@ func main() {
 		return
 	}
 
+	if *simulate && (*write || *verify) {
+		fmt.Println(Red, "Cannot use -s (simulate) with -w (write) or -v (verify).", Reset)
+		return
+	}
+
+	if *verify && !*write {
+		fmt.Println(Red, "Cannot use -v (verify) without -w (write).", Reset)
+		return
+	}
+
+	if (*write || *simulate) && !checkProxmark3Version() {
+		fmt.Println(Red, "Proxmark3 software is not installed or not running the Iceman fork.", Reset)
+		return
+	}
+
 	if *cardType == "piv" || *cardType == "mifare" {
 		if *uid == "" {
 			fmt.Println(Red, "UID is required for PIV and MIFARE card types.", Reset)
 			return
 		}
-		if *write || *verify {
-			fmt.Println(Red, "Write and Verify modes are not applicable for PIV and MIFARE card types.", Reset)
-			return
-		}
 	} else {
 		if *bitLength == 0 || (*cardType != "em" && (*facilityCode == 0 || *cardNumber == 0)) {
 			flag.Usage()
-			return
-		}
-		if *simulate {
-			fmt.Println(Red, "Simulate mode is only applicable for PIV and MIFARE card types.", Reset)
 			return
 		}
 		switch *cardType {
@@ -118,10 +125,6 @@ func main() {
 			fmt.Println(Red, "Unsupported card type.", Reset)
 			return
 		}
-	}
-
-	if !checkProxmark3Version() {
-		return
 	}
 
 	handleCardType(*cardType, *facilityCode, *cardNumber, *bitLength, *write, *verify, *uid, *hexData, *simulate)
