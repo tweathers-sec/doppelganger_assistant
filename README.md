@@ -1,6 +1,9 @@
 # Doppelgänger Assistant
 Card calculator and Proxmark3 Plugin for writing and/or simulating every card type that Doppelgänger Pro, Stealth, and MFAS support. This project is designed to streamline the card-writing process, because in physical penetration testing, every second counts. Why waste time digging through your disheveled notes to relearn how to write an iCLASS 2k card or fumbling with the syntax for a 37-bit HID card?  If you use doppelganger, let doppelgagner_assistant do the work for you. That way, you can spend more time creating a viable replica access control card.
 
+## Doppelgänger Purchase
+You can support the author by purchasing your Doppelgänger device here from the [Physical Exploit Store](https://store.physicalexploit.com/)
+
 ## Officially Supported Card Types:
 * HID H10301 26-bit
 * Indala 26-bit (requires Indala module/reader)
@@ -26,6 +29,15 @@ Card calculator and Proxmark3 Plugin for writing and/or simulating every card ty
 3) Run the application...
 
 ## Examples
+
+### Doppelgänger Assistant GUI
+
+Don't want to bumble through the commandline? Just run the GUI version of the tool with `-g`.
+
+```
+./doppelganger_assistant_darwin_arm64 -g
+```
+![Doppelgänger Assistant GUI](https://github.com/tweathers-sec/doppelganger_assistant/blob/main/img/assistant_gui.png)
 
 ### Generating commands for writing iCLASS cards
 
@@ -105,8 +117,6 @@ Connect your Proxmark3 and place an iCLASS 2k card flat on the antenna. Press En
 [+] Using key[0] AE A6 84 A6 DA B2 32 78 
 [+] Wrote block 9 / 0x09 ( ok )
 
-
- 
 Verifying that the card data was successfully written. Set your card flat on the reader...
  
 [=] Session log /Users/tweathers/.proxmark3/logs/log_20240614013825.txt
@@ -250,14 +260,5 @@ Executing command: hf 14a sim -t 3 --uid 5AF70D9D
 [+] execute command from commandline: hf 14a sim -t 3 --uid 5AF70D9D
 
 [+] Using UART port /dev/tty.usbmodem2134301
-
-```
-
-### Doppelgänger Assistant GUI
-
-Don't want to bumble through the commandline? Just run the GUI version of the tool with `-g`.
-
-```
-./doppelganger_assistant_darwin_arm64 -g
 
 ```
