@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-func generate35bitHex(facilityCode, cardCode int, preamble uint64, write bool) uint64 {
+func generate35bitHex(facilityCode, cardCode int, preamble uint64, write bool, simulate bool) uint64 {
 	cardData := (uint64(facilityCode) << 21) + (uint64(cardCode) << 1)
 	parity1 := bitCount(cardData&0x1B6DB6DB6) & 1
 	cardData += uint64(parity1) << 33
@@ -19,6 +19,8 @@ func generate35bitHex(facilityCode, cardCode int, preamble uint64, write bool) u
 	fmt.Println("")
 	if write {
 		fmt.Println(Green, "The following will be written to an iCLASS 2k card:", Reset)
+	} else if simulate {
+		fmt.Println(Green, "The following will values will be simulated on the Proxmark3:", Reset)
 	} else {
 		fmt.Println(Green, "Write the following values to an iCLASS 2k card:", Reset)
 	}
@@ -32,7 +34,7 @@ func generate35bitHex(facilityCode, cardCode int, preamble uint64, write bool) u
 	return cardData
 }
 
-func generate26bitHex(facilityCode, cardCode int, preamble uint64, write bool) uint64 {
+func generate26bitHex(facilityCode, cardCode int, preamble uint64, write bool, simulate bool) uint64 {
 	cardData := (uint64(facilityCode) << 17) + (uint64(cardCode) << 1)
 	parity1 := bitCount(cardData&0x1FFE000) & 1
 	parity2 := bitCount(cardData&0x0001FFE)&1 ^ 1
@@ -44,6 +46,8 @@ func generate26bitHex(facilityCode, cardCode int, preamble uint64, write bool) u
 	fmt.Println("")
 	if write {
 		fmt.Println(Green, "The following will be written to an iCLASS 2k card:", Reset)
+	} else if simulate {
+		fmt.Println(Green, "The following will values will be simulated on the Proxmark3:", Reset)
 	} else {
 		fmt.Println(Green, "Write the following values to an iCLASS 2k card:", Reset)
 	}

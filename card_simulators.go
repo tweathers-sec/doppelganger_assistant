@@ -19,27 +19,18 @@ func simulateProxmark3Command(command string) (string, error) {
 		return "", fmt.Errorf("error starting command: %w", err)
 	}
 
-	if err := cmd.Wait(); err != nil {
-		return "", fmt.Errorf("command finished with error: %w", err)
-	}
+	// Print the simulation in progress message after starting the command
+	fmt.Println(Green, "\nSimulation is in progress... If your Proxmark3 has a battery, you can remove the device and the simulation will continue.", Reset)
+	fmt.Println(Green, "\nTo end the simulation, press the `pm3 button`.\n", Reset)
 
-	return "Command executed successfully", nil
-}
-
-type outputWriter struct {
-	output *string
-}
-
-func (w *outputWriter) Write(p []byte) (n int, err error) {
-	*w.output += string(p)
-	return len(p), nil
+	// Return immediately after starting the command
+	return "Command started successfully", nil
 }
 
 func simulateCardData(cardType string, cardData uint64, bitLength, facilityCode, cardNumber int, hexData, uid string) {
 	var command string // Initialize command variable
 	switch cardType {
 	case "iclass":
-		fmt.Println(Green, "\n%d", cardData, Reset)
 
 		type Card struct {
 			CSN           string `json:"CSN"`
@@ -137,8 +128,6 @@ func simulateCardData(cardType string, cardData uint64, bitLength, facilityCode,
 		if err != nil {
 			fmt.Println(Red, err, Reset)
 			fmt.Println(output)
-		} else {
-			fmt.Println(Green, "\nSimulation complete.", Reset)
 		}
 
 	case "prox":
@@ -167,8 +156,6 @@ func simulateCardData(cardType string, cardData uint64, bitLength, facilityCode,
 		if err != nil {
 			fmt.Println(Red, err, Reset)
 			fmt.Println(output)
-		} else {
-			fmt.Println(Green, "\nSimulation complete.", Reset)
 		}
 	case "awid":
 		fmt.Println(Green, "\nSimulating the AWID card on your Proxmark3:", Reset)
@@ -177,8 +164,6 @@ func simulateCardData(cardType string, cardData uint64, bitLength, facilityCode,
 		if err != nil {
 			fmt.Println(Red, err, Reset)
 			fmt.Println(output)
-		} else {
-			fmt.Println(Green, "\nSimulation complete.", Reset)
 		}
 
 	case "indala":
@@ -195,8 +180,6 @@ func simulateCardData(cardType string, cardData uint64, bitLength, facilityCode,
 		if err != nil {
 			fmt.Println(Red, err, Reset)
 			fmt.Println(output)
-		} else {
-			fmt.Println(Green, "\nSimulation complete.", Reset)
 		}
 
 	case "em":
@@ -206,8 +189,6 @@ func simulateCardData(cardType string, cardData uint64, bitLength, facilityCode,
 		if err != nil {
 			fmt.Println(Red, err, Reset)
 			fmt.Println(output)
-		} else {
-			fmt.Println(Green, "\nSimulation complete.", Reset)
 		}
 
 	case "piv":
@@ -217,9 +198,8 @@ func simulateCardData(cardType string, cardData uint64, bitLength, facilityCode,
 		if err != nil {
 			fmt.Println(Red, err, Reset)
 			fmt.Println(output)
-		} else {
-			fmt.Println(Green, "\nSimulation complete.", Reset)
 		}
+
 	case "mifare":
 		fmt.Println(Green, "\nSimulating the MIFARE card on your Proxmark3:", Reset)
 		command = fmt.Sprintf("hf 14a sim -t 1 --uid %s", uid)
@@ -227,8 +207,6 @@ func simulateCardData(cardType string, cardData uint64, bitLength, facilityCode,
 		if err != nil {
 			fmt.Println(Red, err, Reset)
 			fmt.Println(output)
-		} else {
-			fmt.Println(Green, "\nSimulation complete.", Reset)
 		}
 	}
 }

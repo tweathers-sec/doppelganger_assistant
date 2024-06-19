@@ -1,35 +1,81 @@
 #!/bin/bash
 
-# List of GOOS and GOARCH combinations
-declare -a GOOS_LIST=("linux" "darwin")
-declare -a GOARCH_LIST=("amd64" "arm64")
+# Function to print messages in color
+print_color() {
+    local color=$1
+    local message=$2
+    case $color in
+        "red") echo -e "\033[31m$message\033[0m" ;;
+        "green") echo -e "\033[32m$message\033[0m" ;;
+        "yellow") echo -e "\033[33m$message\033[0m" ;;
+        "blue") echo -e "\033[34m$message\033[0m" ;;
+        *) echo "$message" ;;
+    esac
+}
 
-# Output directory for binaries
-OUTPUT_DIR="build"
+print_color "blue" "Cleaning up old packages..."
+rm -rf build/
+print_color "green" "Old packages have been removed."
 
-# Create the output directory if it doesn't exist
-mkdir -p $OUTPUT_DIR
-
-# Iterate over each combination of GOOS and GOARCH
-for GOOS in "${GOOS_LIST[@]}"; do
-  for GOARCH in "${GOARCH_LIST[@]}"; do
-    # Set the output file name
-    OUTPUT_FILE="$OUTPUT_DIR/doppelganger_assistant_${GOOS}_${GOARCH}"
-    if [ "$GOOS" == "windows" ]; then
-      OUTPUT_FILE+=".exe"
-    fi
-
-    # Build the application
-    echo "Building for $GOOS/$GOARCH..."
-    env GOOS=$GOOS GOARCH=$GOARCH go build -o $OUTPUT_FILE *.go
-
-    # Check if the build was successful
-    if [ $? -ne 0 ]; then
-      echo "Failed to build for $GOOS/$GOARCH"
+print_color "blue" "Checking if Docker is running..."
+# Check if Docker is running
+if ! docker info &> /dev/null
+then
+    print_color "yellow" "Docker is not running. Starting Docker..."
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        # macOS
+        open --background -a Docker
+        while ! docker info &> /dev/null; do
+            sleep 1
+        done
+    elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        # Linux
+        sudo systemctl start docker
+        while ! docker info &> /dev/null; do
+            sleep 1
+        done
     else
-      echo "Successfully built for $GOOS/$GOARCH"
+        print_color "red" "Unsupported OS. Please start Docker manually."
+        exit 1
     fi
-  done
-done
+else
+    print_color "green" "Docker is already running."
+fi
 
-echo "Build process completed."
+print_color "blue" "Checking if fyne-cross is installed..."
+# Ensure that fyne-cross is installed
+if ! command -v fyne-cross &> /dev/null
+then
+    print_color "yellow" "fyne-cross not found. Installing..."
+    go install github.com/fyne-io/fyne-cross@latest
+else
+    print_color "green" "fyne-cross is already installed."
+fi
+
+print_color "blue" "Initializing Go module..."
+# Initialize Go module
+go mod init doppelganger_assistant
+go mod tidy
+
+print_color "blue" "Building for Linux (arm64 and amd64)..."
+# Build for Linux (arm64 and amd64)
+fyne-cross linux -arch=arm64,amd64 -app-id=com.example.doppelganger_assistant
+
+print_color "blue" "Building for macOS (arm64 and amd64)..."
+# Build for macOS (arm64 and amd64)
+fyne-cross darwin -arch=arm64,amd64 -app-id=com.example.doppelganger_assistant
+
+print_color "blue" "Moving and relabeling binaries..."
+# move and relabel binaries
+mkdir build/
+mv fyne-cross/bin/darwin-arm64/doppelganger_assistant build/doppelganger_assistant_darwin_arm64
+mv fyne-cross/bin/darwin-amd64/doppelganger_assistant build/doppelganger_assistant_darwin_amd64
+mv fyne-cross/bin/linux-arm64/doppelganger_assistant build/doppelganger_assistant_linux_arm64
+mv fyne-cross/bin/linux-amd64/doppelganger_assistant build/doppelganger_assistant_linux_amd64
+
+print_color "blue" "Cleaning up..."
+# clean up
+rm -rf fyne-cross/
+rm Icon.png
+
+print_color "green" "Build process completed successfully."

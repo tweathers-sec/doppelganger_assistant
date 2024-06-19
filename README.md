@@ -252,3 +252,12 @@ Executing command: hf 14a sim -t 3 --uid 5AF70D9D
 [+] Using UART port /dev/tty.usbmodem2134301
 
 ```
+
+### Doppelgänger Assistant GUI
+
+Don't want to bumble through the commandline? Just run the GUI version of the tool with `-g`.
+
+```
+./doppelganger_assistant_darwin_arm64 -g
+
+```

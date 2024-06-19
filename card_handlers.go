@@ -36,10 +36,10 @@ func handleICLASS(facilityCode, cardNumber, bitLength int, simulate, write, veri
 
 	if bitLength == 26 {
 		preamble = 0x2004000000
-		cardData = generate26bitHex(facilityCode, cardNumber, preamble, write)
+		cardData = generate26bitHex(facilityCode, cardNumber, preamble, write, simulate)
 	} else if bitLength == 35 {
 		preamble = 0x2800000000
-		cardData = generate35bitHex(facilityCode, cardNumber, preamble, write)
+		cardData = generate35bitHex(facilityCode, cardNumber, preamble, write, simulate)
 	}
 
 	if simulate {
@@ -58,14 +58,10 @@ func handleProx(facilityCode, cardNumber, bitLength int, simulate, write, verify
 		simulateCardData("prox", 0, bitLength, facilityCode, cardNumber, "", "")
 	} else {
 		fmt.Println(Green, "\nHandling Prox card...", Reset)
-		if bitLength == 48 {
-			fmt.Println(Green, "\nAt the this time 48-bit (C1k48s) HID cards cannot be written reliably on the Proxmark3. However, you can simulate the card:", Reset)
+		if write {
+			fmt.Println(Green, "\nThe following will be written to a T5577 card:", Reset)
 		} else {
-			if write {
-				fmt.Println(Green, "\nThe following will be written to a T5577 card:", Reset)
-			} else {
-				fmt.Println(Green, "\nWrite the following values to a T5577 card:", Reset)
-			}
+			fmt.Println(Green, "\nWrite the following values to a T5577 card:", Reset)
 		}
 
 		fmt.Println(Green, "", Reset)
@@ -89,7 +85,6 @@ func handleProx(facilityCode, cardNumber, bitLength int, simulate, write, verify
 			fmt.Println(Yellow, fmt.Sprintf("lf hid clone -w H10304 --fc %d --cn %d", facilityCode, cardNumber), Reset)
 		case 48:
 			fmt.Println(Yellow, fmt.Sprintf("lf hid sim -w C1k48s --fc %d --cn %d", facilityCode, cardNumber), Reset)
-			return
 		default:
 			fmt.Println(Red, "Unsupported bit length for Prox card.", Reset)
 			return

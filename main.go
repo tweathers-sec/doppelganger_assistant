@@ -1,8 +1,3 @@
-// iCLASS Card Writing Assistant (Doppelgagner/Stealth Reader/MFAS Reader)
-// Author: @tweathers-sec (@tweathers_sec on X.com)
-// Version: 1.0.1
-// Last Edit: June 17, 2024
-
 package main
 
 import (
@@ -16,10 +11,20 @@ const (
 	Green   = "\033[32m"
 	Yellow  = "\033[33m"
 	Reset   = "\033[0m"
-	Version = "1.0.1"
+	Version = "1.0.2"
 )
 
+type Card struct {
+	DataType     string
+	BitLength    string
+	HexValue     string
+	FacilityCode string
+	CardNumber   string
+	Bin          string
+}
+
 func main() {
+	// Define flags
 	bitLength := flag.Int("bl", 0, "Bit length")
 	facilityCode := flag.Int("fc", 0, "Facility code")
 	cardNumber := flag.Int("cn", 0, "Card number")
@@ -30,9 +35,14 @@ func main() {
 	verify := flag.Bool("v", false, "Verify written card data")
 	simulate := flag.Bool("s", false, "Card simulation")
 	showVersion := flag.Bool("version", false, "Show program version")
+	gui := flag.Bool("g", false, "Launch GUI")
 
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, Yellow+"Usage: %s -bl <bit length> -fc <facility code> -cn <card number> -t <card type> [-uid <UID>] [-hex <Hex Data>] [-w] [-v] [-s] [-version]\n"+Reset, os.Args[0])
+		fmt.Fprintf(os.Stderr, Green+"\n--- About Doppelgänger Assistant ---\n"+Reset)
+		fmt.Fprintf(os.Stderr, "Author: @tweathers-sec\n")
+		fmt.Fprintf(os.Stderr, "Version: %s\n", Version)
+		fmt.Fprintf(os.Stderr, "\n")
+		fmt.Fprintf(os.Stderr, Yellow+"Usage: %s -bl <bit length> -fc <facility code> -cn <card number> -t <card type> [-uid <UID>] [-hex <Hex Data>] [-w] [-v] [-s] [-version] [-g] [-c <csv file>]\n"+Reset, os.Args[0])
 		fmt.Fprintf(os.Stderr, "\n")
 		flag.PrintDefaults()
 		fmt.Fprintf(os.Stderr, "\n")
@@ -57,6 +67,10 @@ func main() {
 		fmt.Fprintf(os.Stderr, Green+"Example #3: Simulate a PIVKey (C190) using the UID provide by Doppelganger with a Proxmark3\n"+Reset)
 		fmt.Fprintf(os.Stderr, "\n")
 		fmt.Fprintf(os.Stderr, "  %s -uid 5AF70D9D -s -t piv\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "\n")
+		fmt.Fprintf(os.Stderr, Green+"Example #3: Launch the application in GUI mode\n"+Reset)
+		fmt.Fprintf(os.Stderr, "\n")
+		fmt.Fprintf(os.Stderr, "  %s -g\n", os.Args[0])
 	}
 
 	flag.Parse()
@@ -66,6 +80,11 @@ func main() {
 		return
 	}
 
+	if *gui {
+		runGUI()
+	}
+
+	// Original command-line functionality
 	if *simulate && (*write || *verify) {
 		fmt.Println(Red, "Cannot use -s (simulate) with -w (write) or -v (verify).", Reset)
 		return
