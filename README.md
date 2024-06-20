@@ -22,29 +22,136 @@ You can purchase Doppelgänger Pro, Stealth, and MFAS from the [Physical Exploit
 * C910 PIVKey (Depends on Reader Capabilities)
 * MIFARE (Various - Depends on Reader Capabilities)
 
-## Installation
+# Installation
 
 1) Grab your desired package from the [release page](https://github.com/tweathers-sec/doppelganger_assistant/releases).
 2) Ensure that you have the [Iceman fork of the Proxmark3](https://github.com/RfidResearchGroup/proxmark3?tab=readme-ov-file#proxmark3-installation-and-overview) software installed.
-3) Run the application...
+3) Install depenendcies, if required (WSL).
 
-## Examples
+## Installation MacOS
+Download the application (.app) from the [release page](https://github.com/tweathers-sec/doppelganger_assistant/releases) and place it in the `/Applications` directory. If you want to be able to run the application from the terminal, you can create a symbolic link.
+```
+sudo ln -s /Applications/doppelganger_assistant.app/Contents/MacOS/doppelganger_assistant /usr/local/bin/doppelganger_assistant
+```
 
-### Doppelgänger Assistant GUI
+## Installation Linux
 
-Don't want to bumble through the commandline? Just run the GUI version of the tool with `-g`.
+Install Doppelganger Assistant Dependencies. This should only be required if you encounter errors that prevent the deployment of doppelganger_assistant.
+```
+sudo apt update 
+sudo apt upgrade
+sudo apt install libgl1 xterm git
+```
+
+Grab the Doppelganger Assistant and install it:
+```
+sudo apt install make
+wget https://github.com/tweathers-sec/doppelganger_assistant/releases/tag/latest/doppelganger_assistant_linux_{amd64/arm64}.tar.xz
+tar xvf doppelganger_assistant_*
+sudo make install
+
+# Cleanup the directory, if desired
+rm -rf usr/
+rm doppelganger_assistant*
+rm Makefile
+```
+
+To launch the Doppelganger Assistant GUI:
+```
+doppelganger_assistant
+```
+
+## Installation Windows (WSL)
+
+If needed, create an Ubuntu WSL environment. From cmd.exe run:
+```
+wsl --install -d Ubuntu
+```
+Reboot Windows. When Windows starts up WSL will finish setup. When prompted, enter and Username and Password for your Ubuntu system.
+
+Install Doppelganger Assistant Dependencies:
+```
+sudo apt update 
+sudo apt upgrade
+sudo apt install libgl1 xterm make git
+```
+
+Grab the Doppelganger Assistant and install it:
+```
+wget https://github.com/tweathers-sec/doppelganger_assistant/releases/tag/latest/doppelganger_assistant_linux_{amd64/arm64}.tar.xz
+tar xvf doppelganger_assistant_*
+sudo make install
+
+# Cleanup the directory, if desired
+rm -rf usr/
+rm doppelganger_assistant*
+rm Makefile
+```
+
+To launch the Doppelganger Assistant GUI:
+```
+doppelganger_assistant
+```
+
+Install Proxmark3 Dependencies:
+```
+sudo apt install --no-install-recommends git ca-certificates build-essential pkg-config \
+libreadline-dev gcc-arm-none-eabi libnewlib-dev qtbase5-dev \
+libbz2-dev liblz4-dev libbluetooth-dev libpython3-dev libssl-dev libgd-dev
+```
+
+Clone the Proxmark3 Repo:
+```
+git clone https://github.com/RfidResearchGroup/proxmark3.git
+cd proxmark3
+```
+
+If desired, modify the Makefile to support the Blueshark Device
+```
+cp Makefile.platform.sample Makefile.platform
+
+#uncomment #PLATFORM_EXTRAS=BTADDON
+nano Makefile.platform
+```
+
+Compile and Install Proxmark3 software
+```
+make clean && make -j
+make install
+```
+
+Install USBipd to passthrough the Proxmark3 device to WSL. From cmd.exe run:
+```
+winget install --interactive --exact dorssel.usbipd-win
+```
+
+To Connect the Proxmark3 device to WSL. Open cmd.exe as an **Administrator** and run:
+```
+usbipd list // This will list the usb devices attach to your computer
+usbipd bind --busid 9-1 // {9-1 Should be your Proxmark3's ID}
+usbipd attach --wsl --busid 9-1 // {9-1 Should be your Proxmark3's ID}
+```
+
+# Example Usage
+
+## Doppelgänger Assistant GUI
+
+Don't want to bumble through the commandline? Just run the GUI version by double clicking the launcher or via the commandline.
 
 ```
-./doppelganger_assistant_darwin_arm64 -g
+doppelganger_assistant -g
 ```
 ![Doppelgänger Assistant GUI](https://github.com/tweathers-sec/doppelganger_assistant/blob/main/img/assistant_gui.png)
+
+
+## Commandline Usage Examples
 
 ### Generating commands for writing iCLASS cards
 
 This command will generate the commands needed to write captured iCLASS (Legacy/SE/Seos) card data to an iCLASS 2k card:
 
 ```
- ./doppelganger_assistant_darwin_arm64 -t iclass -bl 26 -fc 123 -cn 4567    
+ doppelganger_assistant -t iclass -bl 26 -fc 123 -cn 4567    
 
  Write the following values to an iCLASS 2k card: 
   
@@ -58,7 +165,7 @@ This command will generate the commands needed to write captured iCLASS (Legacy/
 By adding the —w (write) and —v (verify) flags, the application will use your PM3 installation to write and verify the card data.
 
 ```
- ./doppelganger_assistant_darwin_arm64 -t iclass -bl 26 -fc 123 -cn 4567 -w -v   
+doppelganger_assistant -t iclass -bl 26 -fc 123 -cn 4567 -w -v   
 
  The following will be written to an iCLASS 2k card: 
   
@@ -247,7 +354,7 @@ Verification successful: Facility Code and Card Number match.
 Using the UID provided by Doppelgänger (v1.2.0 Doppelgänger Pro, Stealth, and MFAS), you can simulate the exact wiegand signal with a Proxmark3. 
 
 ```
-./doppelganger_assistant_darwin_arm64 -uid 5AF70D9D -s -t piv
+doppelganger_assistant_darwin_arm64 -uid 5AF70D9D -s -t piv
  
 Handling PIV card... 
  
