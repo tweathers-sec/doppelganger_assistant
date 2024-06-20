@@ -59,11 +59,15 @@ go mod tidy
 
 print_color "blue" "Building for Linux (arm64 and amd64)..."
 # Build for Linux (arm64 and amd64)
-fyne-cross linux -arch=arm64,amd64 -app-id=com.example.doppelganger_assistant
+fyne-cross linux -arch=arm64,amd64 -icon=img/Icon.png -app-id=com.example.doppelganger_assistant
 
 print_color "blue" "Building for macOS (arm64 and amd64)..."
 # Build for macOS (arm64 and amd64)
-fyne-cross darwin -arch=arm64,amd64 -app-id=com.example.doppelganger_assistant
+fyne-cross darwin -arch=arm64,amd64 -icon=img/Icon.png -app-id=com.example.doppelganger_assistant
+
+# print_color "blue" "Building for Windows (arm64 and amd64)..."
+# # Build for Windows (arm64 and amd64)
+# fyne-cross windows -arch=arm64,amd64 -icon=img/Icon.png -app-id=com.example.doppelganger_assistant
 
 print_color "blue" "Moving and relabeling binaries..."
 # move and relabel binaries
@@ -72,10 +76,12 @@ mv fyne-cross/bin/darwin-arm64/doppelganger_assistant build/doppelganger_assista
 mv fyne-cross/bin/darwin-amd64/doppelganger_assistant build/doppelganger_assistant_darwin_amd64
 mv fyne-cross/bin/linux-arm64/doppelganger_assistant build/doppelganger_assistant_linux_arm64
 mv fyne-cross/bin/linux-amd64/doppelganger_assistant build/doppelganger_assistant_linux_amd64
+# mv fyne-cross/bin/windows-arm64/doppelganger_assistant* build/doppelganger_assistant_windows_arm64.exe
+# mv fyne-cross/bin/windows-amd64/doppelganger_assistant* build/doppelganger_assistant_windows_amd64.exe
 
 print_color "blue" "Cleaning up..."
 # clean up
-rm -rf fyne-cross/
-rm Icon.png
+# rm -rf fyne-cross/
+#rm Icon.png
 
 print_color "green" "Build process completed successfully."

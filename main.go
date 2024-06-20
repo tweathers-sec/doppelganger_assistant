@@ -75,6 +75,10 @@ func main() {
 
 	flag.Parse()
 
+	if flag.NFlag() == 0 {
+		*gui = true
+	}
+
 	if *showVersion {
 		fmt.Println("Version:", Version)
 		return
@@ -82,6 +86,7 @@ func main() {
 
 	if *gui {
 		runGUI()
+		return
 	}
 
 	// Original command-line functionality

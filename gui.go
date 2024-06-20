@@ -16,7 +16,7 @@ func runGUI() {
 	a := app.New()
 	w := a.NewWindow("Doppelgänger Assistant")
 
-	w.Resize(fyne.NewSize(300, 475))
+	w.Resize(fyne.NewSize(320, 475))
 
 	cardTypes := []string{"prox", "indala", "awid", "em", "iclass", "mifare", "piv"}
 	bitLengths := map[string][]string{
@@ -147,10 +147,17 @@ func runGUI() {
 		switch runtime.GOOS {
 		case "darwin":
 			cmd = exec.Command("osascript", "-e", fmt.Sprintf("tell application \"Terminal\" to do script \"cd '%s' && clear && %s\"", cwd, command))
-		case "windows":
-			cmd = exec.Command("cmd", "/C", fmt.Sprintf("start cmd /K \"cd /D %s && cls && %s\"", cwd, command))
 		case "linux":
-			cmd = exec.Command("x-terminal-emulator", "-e", fmt.Sprintf("sh -c 'cd \"%s\" && clear && %s; exec bash'", cwd, command))
+			if _, err := exec.LookPath("gnome-terminal"); err == nil {
+				cmd = exec.Command("gnome-terminal", "--", "sh", "-c", fmt.Sprintf("cd \"%s\" && clear && %s; exec bash", cwd, command))
+			} else if _, err := exec.LookPath("xterm"); err == nil {
+				cmd = exec.Command("xterm", "-bg", "black", "-fg", "white", "-e", fmt.Sprintf("sh -c 'cd \"%s\" && clear && %s; exec bash'", cwd, command))
+			} else if _, err := exec.LookPath("x-terminal-emulator"); err == nil {
+				cmd = exec.Command("x-terminal-emulator", "-e", fmt.Sprintf("sh -c 'cd \"%s\" && clear && %s; exec bash'", cwd, command))
+			} else {
+				fmt.Println("No supported terminal emulator found. If you're using WSL run: `sudo apt install xterm`")
+				return
+			}
 		default:
 			fmt.Println("Unsupported OS")
 			return
