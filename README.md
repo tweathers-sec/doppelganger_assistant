@@ -136,7 +136,7 @@ usbipd attach --wsl --busid 9-1 // {9-1 Should be your Proxmark3's ID}
 
 ## Doppelgänger Assistant GUI
 
-Don't want to bumble through the commandline? Run the GUI version by double-clicking the launcher or the commandline:
+Don't want to bumble through the commandline? Run the GUI version by double-clicking the launcher or through the commandline:
 
 ```
 doppelganger_assistant -g
