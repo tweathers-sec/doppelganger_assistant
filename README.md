@@ -26,7 +26,7 @@ You can purchase Doppelgänger Pro, Stealth, and MFAS from the [Physical Exploit
 
 1) Grab your desired package from the [release page](https://github.com/tweathers-sec/doppelganger_assistant/releases).
 2) Ensure that you have the [Iceman fork of the Proxmark3](https://github.com/RfidResearchGroup/proxmark3?tab=readme-ov-file#proxmark3-installation-and-overview) software installed.
-3) Install depenendcies, if required (WSL).
+3) Install dependencies, if required (WSL).
 
 ## Installation MacOS
 Download the application (.app) from the [release page](https://github.com/tweathers-sec/doppelganger_assistant/releases) and place it in the `/Applications` directory. If you want to be able to run the application from the terminal, you can create a symbolic link.
@@ -36,7 +36,7 @@ sudo ln -s /Applications/doppelganger_assistant.app/Contents/MacOS/doppelganger_
 
 ## Installation Linux
 
-Install Doppelganger Assistant Dependencies. This should only be required if you encounter errors that prevent the deployment of doppelganger_assistant.
+Install Doppelganger Assistant Dependencies. *Note that this step should only be required if you encounter errors that prevent the deployment of doppelganger_assistant.*
 ```
 sudo apt update 
 sudo apt upgrade
@@ -67,7 +67,7 @@ If needed, create an Ubuntu WSL environment. From cmd.exe run:
 ```
 wsl --install -d Ubuntu
 ```
-Reboot Windows. When Windows starts up WSL will finish setup. When prompted, enter and Username and Password for your Ubuntu system.
+Reboot Windows. When Windows starts up, WSL will finish setting up. When prompted, enter the Username and Password for your Ubuntu system.
 
 Install Doppelganger Assistant Dependencies:
 ```
@@ -136,7 +136,7 @@ usbipd attach --wsl --busid 9-1 // {9-1 Should be your Proxmark3's ID}
 
 ## Doppelgänger Assistant GUI
 
-Don't want to bumble through the commandline? Just run the GUI version by double clicking the launcher or via the commandline.
+Don't want to bumble through the commandline? Run the GUI version by double-clicking the launcher or the commandline:
 
 ```
 doppelganger_assistant -g
