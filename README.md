@@ -1,8 +1,8 @@
 # Doppelgänger Assistant
-Card calculator and Proxmark3 Plugin for writing and/or simulating every card type that Doppelgänger Pro, Stealth, and MFAS support. This project is designed to streamline the card-writing process, because in physical penetration testing, every second counts. Why waste time digging through your disheveled notes to relearn how to write an iCLASS 2k card or fumbling with the syntax for a 37-bit HID card?  If you use doppelganger, let doppelgagner_assistant do the work for you. That way, you can spend more time creating a viable replica access control card.
+Card calculator and Proxmark3 Plugin for writing and/or simulating every card type that Doppelgänger Pro, Stealth, and MFAS support. This project is designed to streamline the card-writing process because every second counts in physical penetration testing. Why waste time digging through your disheveled notes to relearn how to write an iCLASS 2k card or fumble with the syntax for a 37-bit HID card?  If you use doppelganger, let doppelgagner_assistant do the work for you. That way, you can spend more time creating a viable replica access control card.
 
 ## Doppelgänger Purchase
-You can support the author by purchasing your Doppelgänger device here from the [Physical Exploit Store](https://store.physicalexploit.com/)
+You can purchase Doppelgänger Pro, Stealth, and MFAS from the [Physical Exploit Store](https://store.physicalexploit.com/). Alternatively, you can build the [community edition](https://github.com/tweathers-sec/doppelganger)(less card reading support).
 
 ## Officially Supported Card Types:
 * HID H10301 26-bit
