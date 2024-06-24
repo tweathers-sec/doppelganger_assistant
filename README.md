@@ -29,9 +29,13 @@ You can purchase Doppelgänger Pro, Stealth, and MFAS from the [Physical Exploit
 3) Install dependencies, if required (WSL).
 
 ## Installation MacOS
-Download the application (.app) from the [release page](https://github.com/tweathers-sec/doppelganger_assistant/releases) and place it in the `/Applications` directory. If you want to be able to run the application from the terminal, you can create a symbolic link.
+Download the application (.app) from the [release page](https://github.com/tweathers-sec/doppelganger_assistant/releases) and place it in the `/Applications` directory. You can create a symbolic link to run the application from the terminal.
 ```
 sudo ln -s /Applications/doppelganger_assistant.app/Contents/MacOS/doppelganger_assistant /usr/local/bin/doppelganger_assistant
+```
+If you encounter a stating that the **"doppelganger_assistant.app" is damaged and can't be opened. You should move it to the Trash.** Run the following command in the directory where the doppelganger assistant resides.
+```
+xattr—cr /Applications/doppelganger_assistant.app
 ```
 
 ## Installation Linux
