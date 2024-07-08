@@ -35,7 +35,7 @@ sudo ln -s /Applications/doppelganger_assistant.app/Contents/MacOS/doppelganger_
 ```
 If you encounter a stating that the **"doppelganger_assistant.app" is damaged and can't be opened. You should move it to the Trash.** Run the following command in the directory where the doppelganger assistant resides.
 ```
-xattr —cr /Applications/doppelganger_assistant.app
+xattr -cr /Applications/doppelganger_assistant.app
 ```
 
 ## Installation Linux
