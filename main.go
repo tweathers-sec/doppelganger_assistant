@@ -11,7 +11,7 @@ const (
 	Green   = "\033[32m"
 	Yellow  = "\033[33m"
 	Reset   = "\033[0m"
-	Version = "1.0.2"
+	Version = "1.0.3"
 )
 
 type Card struct {
