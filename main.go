@@ -11,7 +11,7 @@ const (
 	Green   = "\033[32m"
 	Yellow  = "\033[33m"
 	Reset   = "\033[0m"
-	Version = "1.0.3"
+	Version = "1.0.4"
 )
 
 type Card struct {
@@ -89,7 +89,6 @@ func main() {
 		return
 	}
 
-	// Original command-line functionality
 	if *simulate && (*write || *verify) {
 		fmt.Println(Red, "Cannot use -s (simulate) with -w (write) or -v (verify).", Reset)
 		return
@@ -111,32 +110,10 @@ func main() {
 			return
 		}
 	} else {
-		if *bitLength == 0 || (*cardType != "em" && (*facilityCode == 0 || *cardNumber == 0)) {
-			flag.Usage()
-			return
-		}
-		switch *cardType {
-		case "iclass":
-			if *bitLength != 26 && *bitLength != 35 {
-				fmt.Println(Red, "Invalid bit length for iCLASS. Supported bit lengths are 26 and 35.", Reset)
-				return
+		if *cardType == "em" {
+			if *bitLength == 0 {
+				*bitLength = 32
 			}
-		case "indala":
-			if *bitLength != 26 && *bitLength != 27 && *bitLength != 28 && *bitLength != 29 {
-				fmt.Println(Red, "Invalid bit length for Indala. Supported bit lengths are 26, 27, 28, and 29.", Reset)
-				return
-			}
-		case "prox":
-			if *bitLength != 26 && *bitLength != 30 && *bitLength != 31 && *bitLength != 33 && *bitLength != 34 && *bitLength != 35 && *bitLength != 36 && *bitLength != 37 && *bitLength != 48 {
-				fmt.Println(Red, "Invalid bit length for Prox. Supported bit lengths are 26, 30, 31, 33, 34, 35, 36, 37, and 48.", Reset)
-				return
-			}
-		case "awid":
-			if *bitLength != 26 {
-				fmt.Println(Red, "Invalid bit length for AWID. Supported bit length is 26.", Reset)
-				return
-			}
-		case "em":
 			if *bitLength != 32 {
 				fmt.Println(Red, "Invalid bit length for EM. Supported bit length is 32.", Reset)
 				return
@@ -145,9 +122,36 @@ func main() {
 				fmt.Println(Red, "Hex data is required for EM card type.", Reset)
 				return
 			}
-		default:
-			fmt.Println(Red, "Unsupported card type.", Reset)
-			return
+		} else {
+			if *bitLength == 0 || (*facilityCode == 0 || *cardNumber == 0) {
+				flag.Usage()
+				return
+			}
+			switch *cardType {
+			case "iclass":
+				if *bitLength != 26 && *bitLength != 35 {
+					fmt.Println(Red, "Invalid bit length for iCLASS. Supported bit lengths are 26 and 35.", Reset)
+					return
+				}
+			case "indala":
+				if *bitLength != 26 && *bitLength != 27 && *bitLength != 28 && *bitLength != 29 {
+					fmt.Println(Red, "Invalid bit length for Indala. Supported bit lengths are 26, 27, 28, and 29.", Reset)
+					return
+				}
+			case "prox":
+				if *bitLength != 26 && *bitLength != 30 && *bitLength != 31 && *bitLength != 33 && *bitLength != 34 && *bitLength != 35 && *bitLength != 36 && *bitLength != 37 && *bitLength != 48 {
+					fmt.Println(Red, "Invalid bit length for Prox. Supported bit lengths are 26, 30, 31, 33, 34, 35, 36, 37, and 48.", Reset)
+					return
+				}
+			case "awid":
+				if *bitLength != 26 {
+					fmt.Println(Red, "Invalid bit length for AWID. Supported bit length is 26.", Reset)
+					return
+				}
+			default:
+				fmt.Println(Red, "Unsupported card type.", Reset)
+				return
+			}
 		}
 	}
 
