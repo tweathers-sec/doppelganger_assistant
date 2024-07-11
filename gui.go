@@ -20,7 +20,7 @@ func runGUI() {
 
 	cardTypes := []string{"prox", "indala", "awid", "em", "iclass", "mifare", "piv"}
 	bitLengths := map[string][]string{
-		"prox":   {"26", "30", "31", "32", "33", "34", "35", "36", "37", "48"},
+		"prox":   {"26", "30", "31", "33", "34", "35", "36", "37", "48"},
 		"indala": {"26", "27", "29"},
 		"awid":   {"26"},
 		"em":     {"32"},
