@@ -8,22 +8,37 @@ You can purchase Doppelgänger Pro, Stealth, and MFAS from the [Physical Exploit
 
 ## Officially Supported Card Types
 
-* HID H10301 26-bit
-* Indala 26-bit (requires Indala module/reader)
-* Indala 27-bit (requires Indala module/reader)
-* 2804 WIEGAND 28-bit
-* Indala 29-bit (requires Indala module/reader)
-* ATS Wiegand 30-bit
-* HID ADT 31-Bit
-* EM4102 / Wiegand 32-bit
-* HID D10202 33-bit
-* HID H10306 34-bit
-* HID Corporate 1000 35-bit
-* HID Simplex 36-bit (S12906)
-* HID H10304 37-bit
-* HID Corporate 1000 48-bit
-* C910 PIVKey (Depends on Reader Capabilities)
-* MIFARE (Various - Depends on Reader Capabilities)
+Below are the officially supported card types based on Doppelgänger version:
+
+| Card Types                  | Community Edition | Pro | Stealth | MFAS | Notes                         |
+| --------------------------- | ----------------- | --- | ------- | ---- | ----------------------------- |
+| Keypad PIN Codes            |                   |     |         | X    |                               |
+| HID H10301 26-bit           | X                 | X   | X       | X    |                               |
+| Indala 26-bit               | X                 | X   | X       | X    | Requires Indala reader/module |
+| Indala 27-bit               | X                 | X   | X       | X    | Requires Indala reader/module |
+| 2804 WIEGAND 28-bit         |                   | X   | X       | X    |                               |
+| Indala 29-bit               | X                 | X   | X       | X    | Requires Indala reader/module |
+| ATS Wiegand 30-bit          |                   | X   | X       | X    |                               |
+| HID ADT 31-Bit              |                   | X   | X       | X    |                               |
+| EM4102 / Wiegand 32-bit     |                   |     | X       | X    |                               |
+| HID D10202 33-bit           | X                 | X   | X       | X    |                               |
+| HID H10306 34-bit           | X                 | X   | X       | X    |                               |
+| HID Corporate 1000 35-bit   | X                 | X   | X       | X    |                               |
+| HID Simplex 36-bit (S12906) |                   | X   | X       | X    |                               |
+| HID H10304 37-bit           | X                 | X   | X       | X    |                               |
+| HID Corporate 1000 48-bit   |                   | X   | X       | X    |                               |
+| C910 PIVKey                 |                   |     | X       | X    |                               |
+| MIFARE (Various Types)      |                   |     | X       | X    |                               |
+
+Supported technologies include:
+
+* iCLASS(Legacy/SE/Seos) *Note: Captured SE and Seos cards can only be written to iCLASS 2k cards*
+* PROX
+* Indala
+* AWID
+* EM4102
+* PIV
+* MIFARE
 
 ## Installation
 
