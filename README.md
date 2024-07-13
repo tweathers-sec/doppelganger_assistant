@@ -1,10 +1,13 @@
 # Doppelgänger Assistant
+
 Card calculator and Proxmark3 Plugin for writing and/or simulating every card type that Doppelgänger Pro, Stealth, and MFAS support. This project is designed to streamline the card-writing process because every second counts in physical penetration testing. Why waste time digging through your disheveled notes to relearn how to write an iCLASS 2k card or fumble with the syntax for a 37-bit HID card?  If you use doppelganger, let doppelgagner_assistant do the work for you. That way, you can spend more time creating a viable replica access control card.
 
-## Doppelgänger Purchase
+## Doppelgänger Devices
+
 You can purchase Doppelgänger Pro, Stealth, and MFAS from the [Physical Exploit Store](https://store.physicalexploit.com/). Alternatively, you can build the [community edition](https://github.com/tweathers-sec/doppelganger) (less card reading support).
 
-## Officially Supported Card Types:
+## Officially Supported Card Types
+
 * HID H10301 26-bit
 * Indala 26-bit (requires Indala module/reader)
 * Indala 27-bit (requires Indala module/reader)
@@ -22,25 +25,30 @@ You can purchase Doppelgänger Pro, Stealth, and MFAS from the [Physical Exploit
 * C910 PIVKey (Depends on Reader Capabilities)
 * MIFARE (Various - Depends on Reader Capabilities)
 
-# Installation
+## Installation
 
 1) Grab your desired package from the [release page](https://github.com/tweathers-sec/doppelganger_assistant/releases).
 2) Ensure that you have the [Iceman fork of the Proxmark3](https://github.com/RfidResearchGroup/proxmark3?tab=readme-ov-file#proxmark3-installation-and-overview) software installed.
 3) Install dependencies, if required (WSL).
 
-## Installation MacOS
+### Installation MacOS
+
 Download the application (.app) from the [release page](https://github.com/tweathers-sec/doppelganger_assistant/releases) and place it in the `/Applications` directory. You can create a symbolic link to run the application from the terminal.
+
 ```
 sudo ln -s /Applications/doppelganger_assistant.app/Contents/MacOS/doppelganger_assistant /usr/local/bin/doppelganger_assistant
 ```
+
 If you encounter a stating that the **"doppelganger_assistant.app" is damaged and can't be opened. You should move it to the Trash.** Run the following command in the directory where the doppelganger assistant resides.
+
 ```
 xattr -cr /Applications/doppelganger_assistant.app
 ```
 
-## Installation Linux
+### Installation Linux
 
 Install Doppelganger Assistant Dependencies. *Note that this step should only be required if you encounter errors that prevent the deployment of doppelganger_assistant.*
+
 ```
 sudo apt update 
 sudo apt upgrade
@@ -48,6 +56,7 @@ sudo apt install libgl1 xterm git
 ```
 
 Grab the Doppelganger Assistant and install it:
+
 ```
 sudo apt install make
 wget https://github.com/tweathers-sec/doppelganger_assistant/releases/tag/latest/doppelganger_assistant_linux_{amd64/arm64}.tar.xz
@@ -61,19 +70,23 @@ rm Makefile
 ```
 
 To launch the Doppelganger Assistant GUI:
+
 ```
 doppelganger_assistant
 ```
 
-## Installation Windows (WSL)
+### Installation Windows (WSL)
 
 If needed, create an Ubuntu WSL environment. From cmd.exe run:
+
 ```
 wsl --install -d Ubuntu
 ```
+
 Reboot Windows. When Windows starts up, WSL will finish setting up. When prompted, enter the Username and Password for your Ubuntu system.
 
 Install Doppelganger Assistant Dependencies:
+
 ```
 sudo apt update 
 sudo apt upgrade
@@ -81,6 +94,7 @@ sudo apt install libgl1 xterm make git
 ```
 
 Grab the Doppelganger Assistant and install it:
+
 ```
 wget https://github.com/tweathers-sec/doppelganger_assistant/releases/tag/latest/doppelganger_assistant_linux_{amd64/arm64}.tar.xz
 tar xvf doppelganger_assistant_*
@@ -93,11 +107,13 @@ rm Makefile
 ```
 
 To launch the Doppelganger Assistant GUI:
+
 ```
 doppelganger_assistant
 ```
 
 Install Proxmark3 Dependencies:
+
 ```
 sudo apt install --no-install-recommends git ca-certificates build-essential pkg-config \
 libreadline-dev gcc-arm-none-eabi libnewlib-dev qtbase5-dev \
@@ -105,12 +121,14 @@ libbz2-dev liblz4-dev libbluetooth-dev libpython3-dev libssl-dev libgd-dev
 ```
 
 Clone the Proxmark3 Repo:
+
 ```
 git clone https://github.com/RfidResearchGroup/proxmark3.git
 cd proxmark3
 ```
 
 If desired, modify the Makefile to support the Blueshark Device
+
 ```
 cp Makefile.platform.sample Makefile.platform
 
@@ -119,38 +137,45 @@ nano Makefile.platform
 ```
 
 Compile and Install Proxmark3 software
+
 ```
 make clean && make -j
 make install
 ```
 
 Install USBipd to passthrough the Proxmark3 device to WSL. From cmd.exe run:
+
 ```
 winget install --interactive --exact dorssel.usbipd-win
 ```
 
 To Connect the Proxmark3 device to WSL. Open cmd.exe as an **Administrator** and run:
+
 ```
 usbipd list // This will list the usb devices attach to your computer
 usbipd bind --busid 9-1 // {9-1 Should be your Proxmark3's ID}
 usbipd attach --wsl --busid 9-1 // {9-1 Should be your Proxmark3's ID}
 ```
 
-# Example Usage
+## Example Usage
 
-## Doppelgänger Assistant GUI
+### Doppelgänger Assistant GUI
 
 Don't want to bumble through the commandline? Run the GUI version by double-clicking the launcher or through the commandline:
 
 ```
 doppelganger_assistant -g
 ```
+
 ![Doppelgänger Assistant GUI](https://github.com/tweathers-sec/doppelganger_assistant/blob/main/img/assistant_gui.png)
 
+Below is a quick video demo of the usage:
 
-## Commandline Usage Examples
+[![Doppelgänger Assistant Demo](https://github.com/tweathers-sec/doppelganger_assistant/blob/main/img/assistant_gui.png)](https://youtu.be/RfWKgS-U8ws)
 
-### Generating commands for writing iCLASS cards
+### Commandline Usage Examples
+
+#### Generating commands for writing iCLASS cards
 
 This command will generate the commands needed to write captured iCLASS (Legacy/SE/Seos) card data to an iCLASS 2k card:
 
@@ -164,7 +189,8 @@ This command will generate the commands needed to write captured iCLASS (Legacy/
  hf iclass wrbl --blk 8 -d 0000000000000000 --ki 0 
  hf iclass wrbl --blk 9 -d 0000000000000000 --ki 0 
 ```
-### Generating commands, writing card data, and verification of data
+
+#### Generating commands, writing card data, and verification of data
 
 By adding the —w (write) and —v (verify) flags, the application will use your PM3 installation to write and verify the card data.
 
@@ -245,25 +271,25 @@ Verifying that the card data was successfully written. Set your card flat on the
 
 [=]  block#  | data                    | ascii    |lck| info
 [=] ---------+-------------------------+----------+---+----------------
-[=]   0/0x00 | 28 66 8B 15 FE FF 12 E0 | (f..��.� |   | CSN 
-[=]   1/0x01 | 12 FF FF FF 7F 1F FF 3C | .���..�< |   | Config
-[=]   2/0x02 | FF FF FF FF D9 FF FF FF | �������� |   | E-purse
-[=]   3/0x03 | 84 3F 76 67 55 B8 DB CE | .?vgU��� |   | Debit
-[=]   4/0x04 | FF FF FF FF FF FF FF FF | �������� |   | Credit
-[=]   5/0x05 | FF FF FF FF FF FF FF FF | �������� |   | AIA
-[=]   6/0x06 | 03 03 03 03 00 03 E0 14 | ......�. |   | User / HID CFG 
-[=]   7/0x07 | 00 00 00 00 06 F6 23 AE | .....�#� |   | User / Cred 
+[=]   0/0x00 | 28 66 8B 15 FE FF 12 E0 | (f... |   | CSN 
+[=]   1/0x01 | 12 FF FF FF 7F 1F FF 3C | ...< |   | Config
+[=]   2/0x02 | FF FF FF FF D9 FF FF FF |  |   | E-purse
+[=]   3/0x03 | 84 3F 76 67 55 B8 DB CE | .?vgU |   | Debit
+[=]   4/0x04 | FF FF FF FF FF FF FF FF |  |   | Credit
+[=]   5/0x05 | FF FF FF FF FF FF FF FF |  |   | AIA
+[=]   6/0x06 | 03 03 03 03 00 03 E0 14 | ....... |   | User / HID CFG 
+[=]   7/0x07 | 00 00 00 00 06 F6 23 AE | .....# |   | User / Cred 
 [=]   8/0x08 | 00 00 00 00 00 00 00 00 | ........ |   | User / Cred 
 [=]   9/0x09 | 00 00 00 00 00 00 00 00 | ........ |   | User / Cred 
-[=]  10/0x0A | FF FF FF FF FF FF FF FF | �������� |   | User
-[=]  11/0x0B | FF FF FF FF FF FF FF FF | �������� |   | User
-[=]  12/0x0C | FF FF FF FF FF FF FF FF | �������� |   | User
-[=]  13/0x0D | FF FF FF FF FF FF FF FF | �������� |   | User
-[=]  14/0x0E | FF FF FF FF FF FF FF FF | �������� |   | User
-[=]  15/0x0F | FF FF FF FF FF FF FF FF | �������� |   | User
-[=]  16/0x10 | FF FF FF FF FF FF FF FF | �������� |   | User
-[=]  17/0x11 | FF FF FF FF FF FF FF FF | �������� |   | User
-[=]  18/0x12 | FF FF FF FF FF FF FF FF | �������� |   | User
+[=]  10/0x0A | FF FF FF FF FF FF FF FF |  |   | User
+[=]  11/0x0B | FF FF FF FF FF FF FF FF |  |   | User
+[=]  12/0x0C | FF FF FF FF FF FF FF FF |  |   | User
+[=]  13/0x0D | FF FF FF FF FF FF FF FF |  |   | User
+[=]  14/0x0E | FF FF FF FF FF FF FF FF |  |   | User
+[=]  15/0x0F | FF FF FF FF FF FF FF FF |  |   | User
+[=]  16/0x10 | FF FF FF FF FF FF FF FF |  |   | User
+[=]  17/0x11 | FF FF FF FF FF FF FF FF |  |   | User
+[=]  18/0x12 | FF FF FF FF FF FF FF FF |  |   | User
 [=] ---------+-------------------------+----------+---+----------------
 [?] yellow = legacy credential
 
@@ -325,21 +351,21 @@ Verifying that the card data was successfully written. Set your card flat on the
 
 [=]  block#  | data                    | ascii    |lck| info
 [=] ---------+-------------------------+----------+---+----------------
-[=]   0/0x00 | 28 66 8B 15 FE FF 12 E0 | (f..��.� |   | CSN 
+[=]   0/0x00 | 28 66 8B 15 FE FF 12 E0 | (f... |   | CSN 
 [=]   ......
-[=]   6/0x06 | 03 03 03 03 00 03 E0 14 | ......�. |   | User / HID CFG 
-[=]   7/0x07 | 00 00 00 00 06 F6 23 AE | .....�#� |   | User / Cred 
+[=]   6/0x06 | 03 03 03 03 00 03 E0 14 | ....... |   | User / HID CFG 
+[=]   7/0x07 | 00 00 00 00 06 F6 23 AE | .....# |   | User / Cred 
 [=]   8/0x08 | 00 00 00 00 00 00 00 00 | ........ |   | User / Cred 
 [=]   9/0x09 | 00 00 00 00 00 00 00 00 | ........ |   | User / Cred 
-[=]  10/0x0A | FF FF FF FF FF FF FF FF | �������� |   | User
-[=]  11/0x0B | FF FF FF FF FF FF FF FF | �������� |   | User
-[=]  12/0x0C | FF FF FF FF FF FF FF FF | �������� |   | User
-[=]  13/0x0D | FF FF FF FF FF FF FF FF | �������� |   | User
-[=]  14/0x0E | FF FF FF FF FF FF FF FF | �������� |   | User
-[=]  15/0x0F | FF FF FF FF FF FF FF FF | �������� |   | User
-[=]  16/0x10 | FF FF FF FF FF FF FF FF | �������� |   | User
-[=]  17/0x11 | FF FF FF FF FF FF FF FF | �������� |   | User
-[=]  18/0x12 | FF FF FF FF FF FF FF FF | �������� |   | User
+[=]  10/0x0A | FF FF FF FF FF FF FF FF |  |   | User
+[=]  11/0x0B | FF FF FF FF FF FF FF FF |  |   | User
+[=]  12/0x0C | FF FF FF FF FF FF FF FF |  |   | User
+[=]  13/0x0D | FF FF FF FF FF FF FF FF |  |   | User
+[=]  14/0x0E | FF FF FF FF FF FF FF FF |  |   | User
+[=]  15/0x0F | FF FF FF FF FF FF FF FF |  |   | User
+[=]  16/0x10 | FF FF FF FF FF FF FF FF |  |   | User
+[=]  17/0x11 | FF FF FF FF FF FF FF FF |  |   | User
+[=]  18/0x12 | FF FF FF FF FF FF FF FF |  |   | User
 [=] ---------+-------------------------+----------+---+----------------
 [?] yellow = legacy credential
 
@@ -353,9 +379,10 @@ Verifying that the card data was successfully written. Set your card flat on the
  
 Verification successful: Facility Code and Card Number match.
 ```
-### Simulating PIV/MF Cards
 
-Using the UID provided by Doppelgänger (v1.2.0 Doppelgänger Pro, Stealth, and MFAS), you can simulate the exact wiegand signal with a Proxmark3. 
+#### Simulating PIV/MF Cards
+
+Using the UID provided by Doppelgänger (v1.2.0 Doppelgänger Pro, Stealth, and MFAS), you can simulate the exact wiegand signal with a Proxmark3.
 
 ```
 doppelganger_assistant_darwin_arm64 -uid 5AF70D9D -s -t piv
