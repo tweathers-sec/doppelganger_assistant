@@ -65,22 +65,6 @@ print_color "blue" "Building for macOS (arm64 and amd64)..."
 # Build for macOS (arm64 and amd64)
 fyne-cross darwin -arch=arm64,amd64 -icon=img/Icon.png -app-id=io.mwgroup.doppelganger_assistant
 
-print_color "blue" "Signing macOS applications..."
-# Sign the macOS applications
-codesign --deep --force --verify --verbose --options runtime --timestamp --sign "Developer ID Application: Travis Weathers (UX77XQ948X)" fyne-cross/dist/darwin-amd64/doppelganger_assistant.app
-codesign --deep --force --verify --verbose --options runtime --timestamp --sign "Developer ID Application: Travis Weathers (UX77XQ948X)" fyne-cross/dist/darwin-arm64/doppelganger_assistant.app
-
-print_color "blue" "Verifying macOS application signatures..."
-# Verify the macOS application signatures
-codesign --verify --deep --strict --verbose=2 fyne-cross/dist/darwin-amd64/doppelganger_assistant.app
-codesign --verify --deep --strict --verbose=2 fyne-cross/dist/darwin-arm64/doppelganger_assistant.app
-
-print_color "blue" "Assigning macOS package attributes..."
-# Remove quarantine attribute if present
-xattr -cr fyne-cross/dist/darwin-amd64/doppelganger_assistant.app
-xattr -cr fyne-cross/dist/darwin-arm64/doppelganger_assistant.app
-
-print_color "blue" "Creating DMG for macOS applications..."
 # Create DMG for macOS applications
 hdiutil create -volname doppelganger_assistant_darwin_amd64 -srcfolder fyne-cross/dist/darwin-amd64/doppelganger_assistant.app -ov -format UDZO fyne-cross/dist/darwin-amd64/doppelganger_assistant_darwin_amd64.dmg
 hdiutil create -volname doppelganger_assistant_darwin_arm64 -srcfolder fyne-cross/dist/darwin-arm64/doppelganger_assistant.app -ov -format UDZO fyne-cross/dist/darwin-arm64/doppelganger_assistant_darwin_arm64.dmg
@@ -88,10 +72,15 @@ hdiutil create -volname doppelganger_assistant_darwin_arm64 -srcfolder fyne-cros
 print_color "blue" "Moving and relabeling binaries..."
 # Move and relabel binaries
 mkdir build/
-mv fyne-cross/bin/darwin-arm64/doppelganger_assistant build/doppelganger_assistant_darwin_arm64
-mv fyne-cross/bin/darwin-amd64/doppelganger_assistant build/doppelganger_assistant_darwin_amd64
-mv fyne-cross/bin/linux-arm64/doppelganger_assistant build/doppelganger_assistant_linux_arm64
-mv fyne-cross/bin/linux-amd64/doppelganger_assistant build/doppelganger_assistant_linux_amd64
+tar -cJf fyne-cross/bin/darwin-arm64/doppelganger_assistant_darwin_arm64.tar.xz fyne-cross/bin/darwin-arm64/doppelganger_assistant
+tar -cJf fyne-cross/bin/darwin-amd64/doppelganger_assistant_darwin_amd64.tar.xz fyne-cross/bin/darwin-amd64/doppelganger_assistant
+mv fyne-cross/dist/linux-arm64/doppelganger_assistant.tar.xz build/doppelganger_assistant_linux_arm64.tar.xz
+mv fyne-cross/dist/linux-amd64/doppelganger_assistant.tar.xz build/doppelganger_assistant_linux_amd64.tar.xz
+mv fyne-cross/bin/darwin-arm64/doppelganger_assistant_darwin_arm64.tar.xz build/
+mv fyne-cross/bin/darwin-amd64/doppelganger_assistant_darwin_amd64.tar.xz build/
+mv fyne-cross/dist/darwin-arm64/doppelganger_assistant_darwin_arm64.dmg build/
+mv fyne-cross/dist/darwin-amd64/doppelganger_assistant_darwin_amd64.dmg build/
+
 # mv fyne-cross/bin/windows-arm64/doppelganger_assistant* build/doppelganger_assistant_windows_arm64.exe
 # mv fyne-cross/bin/windows-amd64/doppelganger_assistant* build/doppelganger_assistant_windows_amd64.exe
 
