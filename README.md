@@ -171,7 +171,7 @@ doppelganger_assistant -g
 
 Below is a quick video demo of the usage:
 
-[![Doppelgänger Assistant Demo](https://github.com/tweathers-sec/doppelganger_assistant/blob/main/img/assistant_gui.png)](https://youtu.be/RfWKgS-U8ws)
+[![Doppelgänger Assistant Demo](https://img.youtube.com/vi/RfWKgS-U8ws/0.jpg)](https://youtu.be/RfWKgS-U8ws)
 
 ### Commandline Usage Examples
 
