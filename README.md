@@ -28,7 +28,7 @@ Below are the officially supported card types based on Doppelgänger version:
 | HID H10304 37-bit           | X                 | X   | X       | X    |                               |
 | HID Corporate 1000 48-bit   |                   | X   | X       | X    |                               |
 | C910 PIVKey                 |                   |     | X       | X    |                               |
-| MIFARE (Various Types)      |                   |     | X       | X    |                               |
+| MIFARE (Various Types)      |                   |     | X       | X    | UID Only                      |
 
 Supported technologies include:
 
