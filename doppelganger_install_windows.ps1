@@ -44,3 +44,5 @@ $Shortcut.IconLocation = $imagePath
 $Shortcut.Save()
 
 Write-Output "Setup complete. Shortcut created on the desktop."
+
+# powershell -Command "Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/doppelganger_install_windows.ps1' -OutFile 'C:\doppelganger_assistant_install.ps1'; & 'C:\doppelganger_assistant_install.ps1'"
