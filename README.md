@@ -51,6 +51,8 @@ Supported technologies include:
 Download the application (.app) from the [release page](https://github.com/tweathers-sec/doppelganger_assistant/releases) and place it in the `/Applications` directory. You can create a symbolic link to run the application from the terminal or you create an alias in your shell profile.
 
 ```sh
+Only chose one of the following options...
+
 # Symbolic Link
 sudo ln -s /Applications/doppelganger_assistant.app/Contents/MacOS/doppelganger_assistant /usr/local/bin/doppelganger_assistant
 
@@ -96,7 +98,7 @@ doppelganger_assistant
 
 ### Installation Windows (WSL)
 
-## Automated Installation of Doppelganger Assistant in WSL
+#### Automated Installation of Doppelganger Assistant (RECOMMENDED)
 
 This process will install WSL, Doppelganger Assistant, Proxmark3 software, and create a desktop shortcut.
 
@@ -110,7 +112,7 @@ Alternatively, you can download the files and run them in this order:
 2. Reboot the system
 3. doppelganger_install_windows.ps1
 
-## Manual Installation
+#### Manual Installation
 
 If needed, create an Ubuntu WSL environment. From cmd.exe run:
 
