@@ -82,29 +82,6 @@ function AttachUSBDeviceToWSL {
         Log "Device successfully attached to WSL."
     }
 }
-
-# Function to monitor firmware update output and trigger reconnection
-function MonitorFirmwareUpdate {
-    param (
-        [string]$busId
-    )
-    $isReconnected = $false
-    $process = Start-Process -FilePath wsl -ArgumentList "-e bash -c 'pm3-flash-all'" -NoNewWindow -PassThru -RedirectStandardOutput "output.txt"
-
-    while (-not $process.HasExited) {
-        Start-Sleep -Seconds 1
-        $output = Get-Content -Path "output.txt" -Raw
-        if ($output -match "Waiting for Proxmark3 to appear on /dev/ttyACM0" -and -not $isReconnected) {
-            Log "Detected reboot message. Reconnecting device..."
-            DetachUSBDevice -busId $busId
-            AttachUSBDeviceToWSL -busId $busId
-            $isReconnected = $true
-        }
-    }
-    $output | Out-File -FilePath "output.txt"
-    Log "Firmware update process completed."
-}
-
 # Clear the log file
 Clear-Content -Path $logFile -ErrorAction SilentlyContinue
 
@@ -148,11 +125,6 @@ if ($proxmark3Device) {
     } else {
         # Attach the Proxmark3 device to WSL
         AttachUSBDeviceToWSL -busId $busId
-
-        # Check if firmware update is needed and perform update
-        if ($true) { # Replace this condition with the actual check for firmware update necessity
-            MonitorFirmwareUpdate -busId $busId
-        }
 
         # Run doppelganger_assistant in WSL
         Log "Launching Doppelganger Assistant in WSL..."

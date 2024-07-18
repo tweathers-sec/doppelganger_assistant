@@ -28,9 +28,6 @@ rm -rf usr/
 rm doppelganger_assistant*
 rm Makefile
 
-# Launch the Doppelganger Assistant GUI
-doppelganger_assistant &
-
 # Install dependencies for Proxmark3
 sudo apt install --no-install-recommends -y git ca-certificates build-essential pkg-config \
 libreadline-dev gcc-arm-none-eabi libnewlib-dev qtbase5-dev \
