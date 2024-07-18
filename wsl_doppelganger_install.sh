@@ -50,7 +50,3 @@ sed -i 's/#PLATFORM_EXTRAS=BTADDON/PLATFORM_EXTRAS=BTADDON/' Makefile.platform
 # Compile and install Proxmark3 software
 make clean && make -j$(nproc)
 sudo make install
-
-# Instructions to install USBipd from cmd.exe
-echo "To install USBipd to passthrough the Proxmark3 device to WSL, run the following command from cmd.exe:"
-echo "winget install --interactive --exact dorssel.usbipd-win"

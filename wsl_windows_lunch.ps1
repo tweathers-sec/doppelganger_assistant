@@ -1,7 +1,5 @@
-# PowerShell script to install usbipd, bind the Proxmark3 device to WSL, and run doppelganger_assistant in WSL
-
 # Log file path
-$logFile = "C:\Scripts\setup_proxmark3_wsl.log"
+$logFile = "C:\doppelganger_assistant\launch_proxmark3_wsl.log"
 
 # Function to check if a command exists
 function CommandExists {
@@ -26,7 +24,7 @@ function Log {
 # Function to check if WSL is running
 function IsWSLRunning {
     $wslOutput = wsl -l -q
-    return $wslOutput -match "Ubuntu"
+    return $wslOutput -match "Ubuntu-doppelganger_assistant"
 }
 
 # Function to start WSL if not running
@@ -70,6 +68,43 @@ function DetachUSBDevice {
     Log "Device $busId did not detach within the expected time."
 }
 
+# Function to attach a USB device to WSL
+function AttachUSBDeviceToWSL {
+    param (
+        [string]$busId
+    )
+    Log "Attaching device with busid $busId to WSL..."
+    $attachOutput = & usbipd attach --wsl --busid $busId 2>&1 | Tee-Object -Variable attachOutputResult
+    if ($LASTEXITCODE -ne 0) {
+        Log "Error attaching device to WSL. Exit code: $LASTEXITCODE"
+        Log "Attach output: $attachOutputResult"
+    } else {
+        Log "Device successfully attached to WSL."
+    }
+}
+
+# Function to monitor firmware update output and trigger reconnection
+function MonitorFirmwareUpdate {
+    param (
+        [string]$busId
+    )
+    $isReconnected = $false
+    $process = Start-Process -FilePath wsl -ArgumentList "-e bash -c 'pm3-flash-all'" -NoNewWindow -PassThru -RedirectStandardOutput "output.txt"
+
+    while (-not $process.HasExited) {
+        Start-Sleep -Seconds 1
+        $output = Get-Content -Path "output.txt" -Raw
+        if ($output -match "Waiting for Proxmark3 to appear on /dev/ttyACM0" -and -not $isReconnected) {
+            Log "Detected reboot message. Reconnecting device..."
+            DetachUSBDevice -busId $busId
+            AttachUSBDeviceToWSL -busId $busId
+            $isReconnected = $true
+        }
+    }
+    $output | Out-File -FilePath "output.txt"
+    Log "Firmware update process completed."
+}
+
 # Clear the log file
 Clear-Content -Path $logFile -ErrorAction SilentlyContinue
 
@@ -99,7 +134,7 @@ Log $usbDevicesOutput
 $proxmark3Device = $usbDevices | Select-String -Pattern "9ac4"
 if ($proxmark3Device) {
     $busId = ($proxmark3Device -split "\s+")[0] # Assuming busid is the first column in the list output
-    Log "Found Proxmark3 device with busid $busId"
+    Log "Found device with busid $busId"
 
     # Detach the device if it is already attached
     DetachUSBDevice -busId $busId
@@ -110,31 +145,20 @@ if ($proxmark3Device) {
     if ($LASTEXITCODE -ne 0) {
         Log "Error binding Proxmark3 device. Exit code: $LASTEXITCODE"
         Log "Bind output: $bindOutputResult"
-        exit 1
+    } else {
+        # Attach the Proxmark3 device to WSL
+        AttachUSBDeviceToWSL -busId $busId
+
+        # Check if firmware update is needed and perform update
+        if ($true) { # Replace this condition with the actual check for firmware update necessity
+            MonitorFirmwareUpdate -busId $busId
+        }
+
+        # Run doppelganger_assistant in WSL
+        Log "Launching Doppelganger Assistant in WSL..."
+        $wslOutput = & wsl -e bash -c "nohup doppelganger_assistant > /dev/null 2>&1"
+        Log "Doppelganger Assistant launched in WSL."
     }
-
-    # Attach the Proxmark3 device to WSL
-    Log "Attaching Proxmark3 device to WSL..."
-    $attachOutput = & usbipd attach --wsl --busid $busId 2>&1 | Tee-Object -Variable attachOutputResult
-    if ($LASTEXITCODE -ne 0) {
-        Log "Error attaching Proxmark3 device to WSL. Exit code: $LASTEXITCODE"
-        Log "Attach output: $attachOutputResult"
-        exit 1
-    }
-
-    Log "Proxmark3 device successfully attached to WSL."
-
-    # Run doppelganger_assistant in WSL
-    Log "Launching Doppelganger Assistant in WSL..."
-    $wslOutput = & wsl -e bash -c "nohup doppelganger_assistant > /dev/null 2>&1 &"
-    Log "Doppelganger Assistant launched in WSL."
 } else {
-    Log "Proxmark3 device not found. Ensure it is connected and try again."
-    exit 1
+    Log "Proxmark3 device not found. Continuing without attaching the device."
 }
-
-# Instructions to run this script with execution policy bypass
-Log "To run this script, use the following command in PowerShell with administrative privileges:"
-Log "powershell -ExecutionPolicy Bypass -File .\setup_proxmark3_wsl.ps1"
-
-åLog "Setup script completed."
