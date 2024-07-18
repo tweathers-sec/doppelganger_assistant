@@ -3,11 +3,11 @@ $basePath = "C:\doppelganger_assistant"
 $setupScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/wsl_setup.ps1"
 $launchScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/wsl_windows_lunch.ps1"
 $installScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/wsl_doppelganger_install.sh"
-$imageUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/img/doppelganger_assistant.png"
+$imageUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/img/doppelganger_assistant.ico"
 $setupScriptPath = "$basePath\wsl_setup.ps1"
 $launchScriptPath = "$basePath\wsl_windows_lunch.ps1"
 $installScriptPath = "$basePath\wsl_doppelganger_install.sh"
-$imagePath = "$basePath\doppelganger_assistant.png"
+$imagePath = "$basePath\doppelganger_assistant.ico"
 $shortcutPath = [System.IO.Path]::Combine([System.Environment]::GetFolderPath("Desktop"), "Launch Doppelganger Assistant.lnk")
 
 # Create base directory if it doesn't exist
