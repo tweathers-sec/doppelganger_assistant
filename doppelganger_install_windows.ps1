@@ -32,7 +32,7 @@ Invoke-WebRequest -Uri $imageUrl -OutFile $imagePath
 Write-Output "Running WSL setup script..."
 & $setupScriptPath
 
-# Create a shortcut on the desktop to run the launch script
+# Create a shortcut on the desktop to run the launch script as an administrator
 Write-Output "Creating desktop shortcut..."
 $WScriptShell = New-Object -ComObject WScript.Shell
 $Shortcut = $WScriptShell.CreateShortcut($shortcutPath)
@@ -41,6 +41,22 @@ $Shortcut.Arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$launchScriptP
 $Shortcut.WorkingDirectory = $basePath
 $Shortcut.WindowStyle = 1
 $Shortcut.IconLocation = $imagePath
+$Shortcut.Save()
+
+# Set the shortcut to run as administrator
+$Shortcut = $WScriptShell.CreateShortcut($shortcutPath)
+$Shortcut.Description = "Launch Doppelganger Assistant as Administrator"
+$Shortcut.TargetPath = "powershell.exe"
+$Shortcut.Arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$launchScriptPath`""
+$Shortcut.WorkingDirectory = $basePath
+$Shortcut.WindowStyle = 1
+$Shortcut.IconLocation = $imagePath
+$Shortcut.Save()
+$Shortcut.Verbs | ForEach-Object {
+    if ($_.ToLower() -eq "runas") {
+        $Shortcut.Verb = $_
+    }
+}
 $Shortcut.Save()
 
 Write-Output "Setup complete. Shortcut created on the desktop."
