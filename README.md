@@ -102,6 +102,8 @@ doppelganger_assistant
 
 This process will install WSL, Doppelganger Assistant, Proxmark3 software, and create a desktop shortcut.
 
+Open **PowerShell as Administrator** and run the following command.
+
 ```powershell
 powershell -ExecutionPolicy Bypass -Command "Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/doppelganger_install_windows.ps1' -OutFile 'C:\doppelganger_assistant_install.ps1'; & 'C:\doppelganger_assistant_install.ps1'"
 ```
