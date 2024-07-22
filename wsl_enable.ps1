@@ -1,5 +1,32 @@
 # This script installs Windows Subsystem for Linux (WSL) and Ubuntu
 
+# Function to check if a reboot is required
+function Get-PendingReboot {
+    $rebootRequired = $false
+
+    # Check the registry for pending file rename operations
+    $regPath = "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager"
+    $regValue = "PendingFileRenameOperations"
+    if (Get-ItemProperty -Path $regPath -Name $regValue -ErrorAction SilentlyContinue) {
+        $rebootRequired = $true
+    }
+
+    # Check the registry for pending computer rename
+    $regPath = "HKLM:\SYSTEM\CurrentControlSet\Control\ComputerName\ActiveComputerName"
+    $regValue = "ComputerName"
+    if (Get-ItemProperty -Path $regPath -Name $regValue -ErrorAction SilentlyContinue) {
+        $rebootRequired = $true
+    }
+
+    # Check the registry for pending Windows Update
+    $regPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\WindowsUpdate\Auto Update\RebootRequired"
+    if (Test-Path $regPath) {
+        $rebootRequired = $true
+    }
+
+    return $rebootRequired
+}
+
 # Enable the necessary features
 $rebootRequired = $false
 
@@ -33,8 +60,8 @@ Write-Output "Installing the latest WSL kernel..."
 Invoke-WebRequest -Uri https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi -OutFile wsl_update_x64.msi
 Start-Process -FilePath msiexec.exe -ArgumentList "/i wsl_update_x64.msi /quiet" -Wait
 
-# Prompt for reboot if required
-if ($rebootRequired) {
+# Check if a reboot is required
+if ($rebootRequired -or (Get-PendingReboot)) {
     Write-Output "A reboot is required to complete the WSL installation. Please reboot your system and run this script again."
     exit
 }
