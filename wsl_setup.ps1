@@ -60,6 +60,16 @@ function Download-File {
 # Ensure aria2 is installed
 Install-Aria2
 
+# Check if the WSL distribution already exists
+$wslList = wsl.exe -l -q
+if ($wslList -contains $wslName) {
+    $response = Read-Host "$wslName already exists. Do you want to redownload and reinstall it? (y/n)"
+    if ($response -ne 'y') {
+        Write-Output "Skipping reinstallation."
+        exit
+    }
+}
+
 # Create staging directory if it does not exist
 if (-Not (Test-Path -Path $stagingPath)) { mkdir $stagingPath }
 

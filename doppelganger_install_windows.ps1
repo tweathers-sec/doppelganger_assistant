@@ -1,13 +1,16 @@
 # Define paths
+# Define paths
 $basePath = "C:\doppelganger_assistant"
 $setupScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/wsl_setup.ps1"
 $launchScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/wsl_windows_launch.ps1"
 $installScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/wsl_doppelganger_install.sh"
 $imageUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/img/doppelganger_assistant.ico"
+$wslEnableScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/wsl_enable.ps1"
 $setupScriptPath = "$basePath\wsl_setup.ps1"
 $launchScriptPath = "$basePath\wsl_windows_launch.ps1"
 $installScriptPath = "$basePath\wsl_doppelganger_install.sh"
 $imagePath = "$basePath\doppelganger_assistant.ico"
+$wslEnableScriptPath = "$basePath\wsl_enable.ps1"
 $shortcutPath = [System.IO.Path]::Combine([System.Environment]::GetFolderPath("Desktop"), "Launch Doppelganger Assistant.lnk")
 
 # Create base directory if it doesn't exist
@@ -27,6 +30,20 @@ Invoke-WebRequest -Uri $installScriptUrl -OutFile $installScriptPath
 
 Write-Output "Downloading image..."
 Invoke-WebRequest -Uri $imageUrl -OutFile $imagePath
+
+Write-Output "Downloading WSL enable script..."
+Invoke-WebRequest -Uri $wslEnableScriptUrl -OutFile $wslEnableScriptPath
+
+# Run the WSL enable script
+Write-Output "Running WSL enable script..."
+& $wslEnableScriptPath
+
+# Check if a reboot is required
+$rebootRequired = Test-Path "$env:SystemRoot\System32\RebootPending.txt"
+if ($rebootRequired) {
+    Write-Output "A reboot is required to complete the WSL installation. Please reboot your system and run this script again."
+    exit
+}
 
 # Run the setup script
 Write-Output "Running WSL setup script..."
@@ -52,13 +69,16 @@ $Shortcut.WorkingDirectory = $basePath
 $Shortcut.WindowStyle = 1
 $Shortcut.IconLocation = $imagePath
 $Shortcut.Save()
-$Shortcut.Verbs | ForEach-Object {
-    if ($_.ToLower() -eq "runas") {
-        $Shortcut.Verb = $_
+
+if ($Shortcut.Verbs) {
+    $Shortcut.Verbs | ForEach-Object {
+        if ($_.ToLower() -eq "runas") {
+            $Shortcut.Verb = $_
+        }
     }
+    $Shortcut.Save()
+} else {
+    Write-Output "No verbs found for the shortcut."
 }
-$Shortcut.Save()
 
 Write-Output "Setup complete. Shortcut created on the desktop."
-
-##powershell -ExecutionPolicy Bypass -Command "Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/doppelganger_install_windows.ps1' -OutFile 'C:\doppelganger_assistant_install.ps1'; & 'C:\doppelganger_assistant_install.ps1'"

@@ -31,7 +31,7 @@ function IsWSLRunning {
 function StartWSLIfNotRunning {
     if (-not (IsWSLRunning)) {
         Log "WSL is not running. Starting WSL..."
-        & wsl --exec echo "WSL started"
+        & wsl -d "Ubuntu-doppelganger_assistant" --exec echo "WSL started"
         Log "WSL started."
     } else {
         Log "WSL is already running."
@@ -133,4 +133,8 @@ if ($proxmark3Device) {
     }
 } else {
     Log "Proxmark3 device not found. Continuing without attaching the device."
+    # Run doppelganger_assistant in WSL
+    Log "Launching Doppelganger Assistant in WSL..."
+    $wslOutput = & wsl -e bash -c "nohup doppelganger_assistant > /dev/null 2>&1"
+    Log "Doppelganger Assistant launched in WSL."
 }
