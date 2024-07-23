@@ -82,10 +82,10 @@ function InstallWinget {
 Install-Aria2
 
 # Install usbipd if it is not installed
-if (-not (CommandExists "usbipd")) {
-    InstallUsbipd
+if (-not (CommandExists "winget")) {
+    InstallWinget
 } else {
-    Log "usbipd is already installed."
+    Log "winget is already installed."
 }
 
 # Check if the WSL distribution already exists
