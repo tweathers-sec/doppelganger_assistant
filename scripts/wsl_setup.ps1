@@ -95,9 +95,24 @@ function InstallWinget {
 Install-Aria2
 
 # Install NuGet provider and set PSGallery to trusted
-Log "Installing NuGet provider and setting PSGallery to trusted..."
-Install-PackageProvider -Name "NuGet" -Force
-Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted
+Log "Checking if NuGet provider is installed and PSGallery is trusted..."
+
+$nugetProvider = Get-PackageProvider -Name "NuGet" -ErrorAction SilentlyContinue
+$psGallery = Get-PSRepository -Name "PSGallery" -ErrorAction SilentlyContinue
+
+if (-not $nugetProvider) {
+    Log "NuGet provider not found. Installing NuGet provider..."
+    Install-PackageProvider -Name "NuGet" -Force
+} else {
+    Log "NuGet provider is already installed."
+}
+
+if ($psGallery.InstallationPolicy -ne "Trusted") {
+    Log "PSGallery is not set to trusted. Setting PSGallery to trusted..."
+    Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted
+} else {
+    Log "PSGallery is already set to trusted."
+}
 
 # Install usbipd if it is not installed
 if (-not (CommandExists "winget")) {
