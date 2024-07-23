@@ -40,6 +40,12 @@ if (wsl.exe -l -q | Select-String -Pattern $wslName) {
     Log "WSL distribution $wslName not found."
 }
 
+# Ensure no processes are using the directory
+Log "Ensuring no processes are using the directory..."
+Stop-Process -Name "wsl" -Force -ErrorAction SilentlyContinue
+Stop-Process -Name "usbipd" -Force -ErrorAction SilentlyContinue
+Log "Processes stopped."
+
 # Remove the base directory
 if (Test-Path -Path $basePath) {
     Log "Removing base directory $basePath..."
