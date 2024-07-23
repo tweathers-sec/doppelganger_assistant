@@ -12,6 +12,11 @@ $imagePath = "$basePath\doppelganger_assistant.ico"
 $wslEnableScriptPath = "$basePath\wsl_enable.ps1"
 $shortcutPath = [System.IO.Path]::Combine([System.Environment]::GetFolderPath("Desktop"), "Launch Doppelganger Assistant.lnk")
 
+# Remove RebootPending.txt if it exists
+if (Test-Path "$env:SystemRoot\System32\RebootPending.txt") {
+    Remove-Item "$env:SystemRoot\System32\RebootPending.txt" -Force
+}
+
 # Create base directory if it doesn't exist
 if (-Not (Test-Path -Path $basePath)) {
     mkdir $basePath
