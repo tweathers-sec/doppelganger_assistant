@@ -10,11 +10,11 @@ if (-not $isAdmin) {
 
 # Define paths
 $basePath = "C:\doppelganger_assistant"
-$setupScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/wsl_setup.ps1"
-$launchScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/wsl_windows_launch.ps1"
-$installScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/wsl_doppelganger_install.sh"
+$setupScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/scripts/wsl_setup.ps1"
+$launchScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/scripts/wsl_windows_launch.ps1"
+$installScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/scripts/wsl_doppelganger_install.sh"
 $imageUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/img/doppelganger_assistant.ico"
-$wslEnableScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/wsl_enable.ps1"
+$wslEnableScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/scripts/wsl_enable.ps1"
 $setupScriptPath = "$basePath\wsl_setup.ps1"
 $launchScriptPath = "$basePath\wsl_windows_launch.ps1"
 $installScriptPath = "$basePath\wsl_doppelganger_install.sh"

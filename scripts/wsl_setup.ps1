@@ -225,4 +225,13 @@ chmod 0440 /etc/sudoers.d/\$username
 
     wsl -d $wslName -u $username bash -ic "bash $wslAllSoftwareScriptPath"
     Remove-Item $installAllSoftwareScriptPath
+
+    # Mount and run the custom installation script
+    $wslInstallScriptPath = $installScriptPath -replace "\\", "/"
+    $wslInstallScriptPath = $wslInstallScriptPath -replace "C:", "/mnt/c"
+
+    Log "Running custom installation script..."
+    wsl -d $wslName -u $username bash -ic "bash $wslInstallScriptPath"
 }
+
+Log "Doppelganger_assistant WSL and Ubuntu setup is complete."
