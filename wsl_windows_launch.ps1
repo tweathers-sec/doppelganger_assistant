@@ -90,18 +90,6 @@ Log "Starting setup script."
 # Ensure WSL is running
 StartWSLIfNotRunning
 
-# Install usbipd using winget
-if (-not (CommandExists "usbipd")) {
-    Log "Installing usbipd..."
-    $installOutput = Start-Process winget -ArgumentList "install --exact dorssel.usbipd-win" -Wait -PassThru
-    if ($installOutput.ExitCode -ne 0) {
-        Log "Error installing usbipd. Exit code: $($installOutput.ExitCode)"
-        exit 1
-    }
-} else {
-    Log "usbipd is already installed."
-}
-
 # List all USB devices and find the Proxmark3 device
 Log "Listing all USB devices..."
 $usbDevices = & usbipd list 2>&1 | Tee-Object -Variable usbDevicesOutput

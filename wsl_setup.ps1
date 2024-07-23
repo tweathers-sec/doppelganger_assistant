@@ -67,7 +67,7 @@ function Download-File {
 
 # Function to install winget
 function InstallWinget {
-    Log "winget is not available. Installing winget using Install-Script..."
+    Write-Output "Installing winget..."
     Install-Script -Name winget-install -Force
     winget-install
     if (-not (CommandExists "winget")) {
@@ -88,6 +88,18 @@ if (-not (CommandExists "winget")) {
     InstallWinget
 } else {
     Write-Output "winget is already installed."
+}
+
+# Install usbipd using winget
+if (-not (CommandExists "usbipd")) {
+    Log "Installing usbipd..."
+    $installOutput = Start-Process winget -ArgumentList "install --exact dorssel.usbipd-win" -Wait -PassThru
+    if ($installOutput.ExitCode -ne 0) {
+        Log "Error installing usbipd. Exit code: $($installOutput.ExitCode)"
+        exit 1
+    }
+} else {
+    Log "usbipd is already installed."
 }
 
 # Check if the WSL distribution already exists
