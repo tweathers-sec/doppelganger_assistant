@@ -26,6 +26,11 @@ function CommandExists {
     return $?
 }
 
+# Stop WSL
+Log "Stopping WSL..."
+wsl --shutdown
+Log "WSL stopped."
+
 # Uninstall WSL distribution
 if (wsl.exe -l -q | Select-String -Pattern $wslName) {
     Log "Unregistering WSL distribution $wslName..."
