@@ -63,6 +63,7 @@ Start-Process -FilePath msiexec.exe -ArgumentList "/i wsl_update_x64.msi /quiet"
 # Check if a reboot is required
 if ($rebootRequired -or (Get-PendingReboot)) {
     Write-Output "A reboot is required to complete the WSL installation. Please reboot your system and run this script again."
+    New-Item -Path "$env:SystemRoot\System32\RebootPending.txt" -ItemType File -Force
     exit
 }
 

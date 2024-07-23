@@ -1,5 +1,4 @@
 # Define paths
-# Define paths
 $basePath = "C:\doppelganger_assistant"
 $setupScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/wsl_setup.ps1"
 $launchScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/wsl_windows_launch.ps1"
@@ -39,8 +38,7 @@ Write-Output "Running WSL enable script..."
 & $wslEnableScriptPath
 
 # Check if a reboot is required
-$rebootRequired = Test-Path "$env:SystemRoot\System32\RebootPending.txt"
-if ($rebootRequired) {
+if (Test-Path "$env:SystemRoot\System32\RebootPending.txt") {
     Write-Output "A reboot is required to complete the WSL installation. Please reboot your system and run this script again."
     exit
 }
