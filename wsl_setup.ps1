@@ -57,8 +57,28 @@ function Download-File {
     }
 }
 
+# Function to install winget
+function InstallWinget {
+    Log "winget is not available. Downloading and installing winget..."
+    $wingetInstallerUrl = "https://github.com/microsoft/winget-cli/releases/latest/download/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle"
+    $wingetInstallerPath = "$basePath\wingetInstaller.msixbundle"
+    Download-File -Url $wingetInstallerUrl -Destination $wingetInstallerPath
+    Add-AppxPackage -Path $wingetInstallerPath
+    if (-not (CommandExists "winget")) {
+        Log "Failed to install winget. Please install it manually."
+        exit 1
+    }
+    Log "winget installed successfully."
+}
 # Ensure aria2 is installed
 Install-Aria2
+
+# Install usbipd if it is not installed
+if (-not (CommandExists "usbipd")) {
+    InstallUsbipd
+} else {
+    Log "usbipd is already installed."
+}
 
 # Check if the WSL distribution already exists
 $wslList = wsl.exe -l -q
