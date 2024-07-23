@@ -51,10 +51,6 @@ if ($wslVersion.State -ne "Enabled") {
     exit
 }
 
-# Set WSL 2 as the default version
-Write-Output "Setting WSL 2 as the default version..."
-wsl --set-default-version 2
-
 # Install the latest WSL kernel
 Write-Output "Installing the latest WSL kernel..."
 Invoke-WebRequest -Uri https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi -OutFile wsl_update_x64.msi
@@ -67,7 +63,13 @@ if ($rebootRequired -or (Get-PendingReboot)) {
     exit
 }
 
-Write-Output "Setting WSL 2 as the default version..."
-wsl --update
+# Skip setting WSL 2 as the default version and updating if a reboot is required
+if (-Not (Test-Path "$env:SystemRoot\System32\RebootPending.txt")) {
+    Write-Output "Setting WSL 2 as the default version..."
+    wsl --set-default-version 2
+
+    Write-Output "Setting WSL 2 as the default version..."
+    wsl --update
+}
 
 Write-Output "WSL installation and setup complete."
