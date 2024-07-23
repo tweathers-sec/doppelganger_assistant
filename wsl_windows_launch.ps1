@@ -93,7 +93,7 @@ StartWSLIfNotRunning
 # Install usbipd using winget
 if (-not (CommandExists "usbipd")) {
     Log "Installing usbipd..."
-    $installOutput = Start-Process winget -ArgumentList "install --interactive --exact dorssel.usbipd-win" -Wait -PassThru
+    $installOutput = Start-Process winget -ArgumentList "install --exact dorssel.usbipd-win" -Wait -PassThru
     if ($installOutput.ExitCode -ne 0) {
         Log "Error installing usbipd. Exit code: $($installOutput.ExitCode)"
         exit 1

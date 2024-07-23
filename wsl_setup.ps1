@@ -79,6 +79,11 @@ function InstallWinget {
 # Ensure aria2 is installed
 Install-Aria2
 
+# Install NuGet provider and set PSGallery to trusted
+Write-Output "Installing NuGet provider and setting PSGallery to trusted..."
+Install-PackageProvider -Name "NuGet" -Force
+Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted
+
 # Install usbipd if it is not installed
 if (-not (CommandExists "winget")) {
     InstallWinget
