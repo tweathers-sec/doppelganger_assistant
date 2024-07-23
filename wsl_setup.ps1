@@ -71,10 +71,9 @@ function InstallWinget {
     Install-Script -Name winget-install -Force
     winget-install
     if (-not (CommandExists "winget")) {
-        Log "Failed to install winget. Please install it manually."
+        Write-Output "Failed to install winget. Please install it manually."
         exit 1
     }
-    Log "winget installed successfully."
 }
 # Ensure aria2 is installed
 Install-Aria2
@@ -88,7 +87,7 @@ Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted
 if (-not (CommandExists "winget")) {
     InstallWinget
 } else {
-    Log "winget is already installed."
+    Write-Output "winget is already installed."
 }
 
 # Check if the WSL distribution already exists
