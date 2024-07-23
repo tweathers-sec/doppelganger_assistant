@@ -9,6 +9,20 @@ $stagingPath = "$basePath\staging"
 $rootfsPath = "$stagingPath\ubuntu-noble-wsl-amd64-wsl.rootfs.tar.gz"
 $installScriptPath = "$basePath\wsl_doppelganger_install.sh"  # Update this path as needed
 
+# Log file path
+$logFile = "C:\doppelganger_assistant\wsl_setup.log"
+
+# Function to log output to both file and screen
+function Log {
+    param (
+        [string]$message
+    )
+    $timestamp = (Get-Date).ToString('u')
+    $logMessage = "$timestamp - $message"
+    Write-Output $logMessage
+    Add-Content -Path $logFile -Value $logMessage
+}
+
 # Function to check if a command exists
 function CommandExists {
     param (
@@ -17,11 +31,12 @@ function CommandExists {
     $null = Get-Command $command -ErrorAction SilentlyContinue
     return $?
 }
+
 # Function to download and install aria2 manually if not already installed
 function Install-Aria2 {
     $aria2Path = "$basePath\aria2"
     if (-Not (Test-Path -Path "$aria2Path\aria2c.exe")) {
-        Write-Output "aria2 is not installed. Installing aria2..."
+        Log "aria2 is not installed. Installing aria2..."
 
         $aria2Url = "https://github.com/aria2/aria2/releases/download/release-1.36.0/aria2-1.36.0-win-64bit-build1.zip"
         $aria2ZipPath = "$aria2Path\aria2.zip"
@@ -44,7 +59,7 @@ function Install-Aria2 {
         Remove-Item $aria2ZipPath
         Remove-Item -Recurse -Force $aria2ExtractPath
 
-        Write-Output "aria2 has been installed."
+        Log "aria2 has been installed."
     }
 }
 
@@ -55,9 +70,9 @@ function Download-File {
         [string]$Destination
     )
 
-    Write-Output "Downloading $Url to $Destination..."
+    Log "Downloading $Url to $Destination..."
     $aria2Command = "& `$basePath\aria2\aria2c.exe -x 16 -s 16 -d `"$($Destination | Split-Path)`" -o `"$($Destination | Split-Path -Leaf)`" `"$Url`""
-    Write-Output "Executing: $aria2Command"
+    Log "Executing: $aria2Command"
     Invoke-Expression $aria2Command
 
     if (-not (Test-Path $Destination)) {
@@ -67,19 +82,20 @@ function Download-File {
 
 # Function to install winget
 function InstallWinget {
-    Write-Output "Installing winget..."
+    Log "Installing winget..."
     Install-Script -Name winget-install -Force
     winget-install
     if (-not (CommandExists "winget")) {
-        Write-Output "Failed to install winget. Please install it manually."
+        Log "Failed to install winget. Please install it manually."
         exit 1
     }
 }
+
 # Ensure aria2 is installed
 Install-Aria2
 
 # Install NuGet provider and set PSGallery to trusted
-Write-Output "Installing NuGet provider and setting PSGallery to trusted..."
+Log "Installing NuGet provider and setting PSGallery to trusted..."
 Install-PackageProvider -Name "NuGet" -Force
 Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted
 
@@ -87,19 +103,19 @@ Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted
 if (-not (CommandExists "winget")) {
     InstallWinget
 } else {
-    Write-Output "winget is already installed."
+    Log "winget is already installed."
 }
 
 # Install usbipd using winget
 if (-not (CommandExists "usbipd")) {
-    Write-Output "Installing usbipd..."
+    Log "Installing usbipd..."
     $installOutput = Start-Process winget -ArgumentList "install --exact dorssel.usbipd-win" -Wait -PassThru
     if ($installOutput.ExitCode -ne 0) {
         Log "Error installing usbipd. Exit code: $($installOutput.ExitCode)"
         exit 1
     }
 } else {
-    Write-Output "usbipd is already installed."
+    Log "usbipd is already installed."
 }
 
 # Check if the WSL distribution already exists
@@ -107,7 +123,7 @@ $wslList = wsl.exe -l -q
 if ($wslList -contains $wslName) {
     $response = Read-Host "$wslName already exists. Do you want to redownload and reinstall it? (y/n)"
     if ($response -ne 'y') {
-        Write-Output "Skipping reinstallation."
+        Log "Skipping reinstallation."
         exit
     }
 }
@@ -116,7 +132,7 @@ if ($wslList -contains $wslName) {
 if (-Not (Test-Path -Path $stagingPath)) { mkdir $stagingPath }
 
 # Download Ubuntu root filesystem
-Write-Output "Downloading Ubuntu root filesystem..."
+Log "Downloading Ubuntu root filesystem..."
 Download-File -Url $rootfsUrl -Destination $rootfsPath
 
 # Import the WSL distribution
@@ -129,7 +145,7 @@ wsl.exe --import $wslName $wslInstallationPath $rootfsPath
 Remove-Item $rootfsPath
 
 # Ensure WSL is initialized
-Write-Output "Initializing WSL and $wslName..."
+Log "Initializing WSL and $wslName..."
 wsl -d $wslName -e echo "WSL initialized"
 
 # Wait for WSL to initialize
@@ -164,7 +180,7 @@ $wslUbuntuUserScriptPath = $ubuntuUserScriptPath -replace "\\", "/"
 $wslUbuntuUserScriptPath = $wslUbuntuUserScriptPath -replace "C:", "/mnt/c"
 
 # Update the system and create the user
-Write-Output "Updating the system and creating user..."
+Log "Updating system and creating user..."
 wsl -d $wslName -u root bash -ic "apt update && apt upgrade -y && bash $wslUbuntuUserScriptPath"
 Remove-Item $ubuntuUserScriptPath
 
@@ -172,7 +188,7 @@ Remove-Item $ubuntuUserScriptPath
 wsl --terminate $wslName
 
 if ($installAllSoftware -eq $true) {
-    Write-Output "Installing additional software..."
+    Log "Installing additional software..."
     # Add sudo without password
     $sudoNoPasswdScript = @"
 #!/bin/bash
@@ -209,15 +225,4 @@ chmod 0440 /etc/sudoers.d/\$username
 
     wsl -d $wslName -u $username bash -ic "bash $wslAllSoftwareScriptPath"
     Remove-Item $installAllSoftwareScriptPath
-
-    # Mount and run the custom installation script
-    $wslInstallScriptPath = $installScriptPath -replace "\\", "/"
-    $wslInstallScriptPath = $wslInstallScriptPath -replace "C:", "/mnt/c"
-
-    Write-Output "Running custom installation script..."
-    wsl -d $wslName -u $username bash -ic "bash $wslInstallScriptPath"
 }
-
-wsl --update
-
-Write-Output "Doppelganger_assistant WSL and Ubuntu setup is complete."
