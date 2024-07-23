@@ -66,4 +66,7 @@ if (CommandExists "winget") {
     Log "winget not found. Please uninstall usbipd manually."
 }
 
+# One-liner to run this script by downloading from GitHub
+# powershell -ExecutionPolicy Bypass -Command "Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/scripts/uninstall.ps1' -OutFile 'C:\doppelganger_uninstall.ps1'; & 'C:\doppelganger_uninstall.ps1'"
+
 Log "Uninstallation complete."
