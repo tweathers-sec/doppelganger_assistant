@@ -106,6 +106,21 @@ if (-not (CommandExists "winget")) {
     Log "winget is already installed."
 }
 
+# Configure winget to accept agreements
+$wingetSettingsPath = "$env:LOCALAPPDATA\Packages\Microsoft.DesktopAppInstaller_8wekyb3d8bbwe\LocalState\settings.json"
+if (-Not (Test-Path -Path $wingetSettingsPath)) {
+    $wingetSettings = @{
+        "sourceAgreements" = @{
+            "msstore" = @{
+                "termsOfTransaction" = "https://aka.ms/microsoft-store-terms-of-transaction"
+                "geographicRegion" = "US"
+                "accepted" = $true
+            }
+        }
+    } | ConvertTo-Json -Compress
+    Set-Content -Path $wingetSettingsPath -Value $wingetSettings
+}
+
 # Install usbipd using winget
 if (-not (CommandExists "usbipd")) {
     Log "Installing usbipd..."

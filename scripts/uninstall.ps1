@@ -1,5 +1,5 @@
 # Log file path
-$logFile = "C:\doppelganger_assistant\uninstall.log"
+$logFile = "C:\doppelganger_uninstall.log"
 
 # Function to log output to both file and screen
 function Log {
