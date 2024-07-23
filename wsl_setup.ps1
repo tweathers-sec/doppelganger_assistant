@@ -92,14 +92,14 @@ if (-not (CommandExists "winget")) {
 
 # Install usbipd using winget
 if (-not (CommandExists "usbipd")) {
-    Log "Installing usbipd..."
+    Write-Output "Installing usbipd..."
     $installOutput = Start-Process winget -ArgumentList "install --exact dorssel.usbipd-win" -Wait -PassThru
     if ($installOutput.ExitCode -ne 0) {
         Log "Error installing usbipd. Exit code: $($installOutput.ExitCode)"
         exit 1
     }
 } else {
-    Log "usbipd is already installed."
+    Write-Output "usbipd is already installed."
 }
 
 # Check if the WSL distribution already exists
