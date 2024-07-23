@@ -15,11 +15,13 @@ $launchScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger
 $installScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/scripts/wsl_doppelganger_install.sh"
 $imageUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/img/doppelganger_assistant.ico"
 $wslEnableScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/scripts/wsl_enable.ps1"
+$usbReconnectScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/scripts/usb_reconnect.ps1"
 $setupScriptPath = "$basePath\wsl_setup.ps1"
 $launchScriptPath = "$basePath\wsl_windows_launch.ps1"
 $installScriptPath = "$basePath\wsl_doppelganger_install.sh"
 $imagePath = "$basePath\doppelganger_assistant.ico"
 $wslEnableScriptPath = "$basePath\wsl_enable.ps1"
+$usbReconnectScriptPath = "$basePath\usb_reconnect.ps1"
 $shortcutPath = [System.IO.Path]::Combine([System.Environment]::GetFolderPath("Desktop"), "Launch Doppelganger Assistant.lnk")
 
 # Remove RebootPending.txt if it exists
@@ -47,6 +49,9 @@ Invoke-WebRequest -Uri $imageUrl -OutFile $imagePath
 
 Write-Output "Downloading WSL enable script..."
 Invoke-WebRequest -Uri $wslEnableScriptUrl -OutFile $wslEnableScriptPath
+
+Write-Output "Downloading USB reconnect script..."
+Invoke-WebRequest -Uri $usbReconnectScriptUrl -OutFile $usbReconnectScriptPath
 
 # Run the WSL enable script
 Write-Output "Running WSL enable script..."
