@@ -27,6 +27,15 @@ function Get-PendingReboot {
     return $rebootRequired
 }
 
+# Function to check the installed WSL kernel version
+function Get-WSLKernelVersion {
+    $wslStatus = wsl.exe --status 2>&1
+    if ($wslStatus -match "Kernel version: ([\d\.]+)") {
+        return $matches[1]
+    }
+    return $null
+}
+
 # Enable the necessary features
 $rebootRequired = $false
 
@@ -51,10 +60,18 @@ if ($wslVersion.State -ne "Enabled") {
     exit
 }
 
-# Install the latest WSL kernel
-Write-Output "Installing the latest WSL kernel..."
-Invoke-WebRequest -Uri https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi -OutFile wsl_update_x64.msi
-Start-Process -FilePath msiexec.exe -ArgumentList "/i wsl_update_x64.msi /quiet" -Wait
+# Check the installed WSL kernel version
+$currentKernelVersion = Get-WSLKernelVersion
+$latestKernelVersion = "5.10.16"  # Replace with the latest known version
+
+if ($currentKernelVersion -ne $latestKernelVersion) {
+    Write-Output "Installing the latest WSL kernel..."
+    Invoke-WebRequest -Uri https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi -OutFile wsl_update_x64.msi
+    Start-Process -FilePath msiexec.exe -ArgumentList "/i wsl_update_x64.msi /quiet" -Wait
+    $rebootRequired = $true
+} else {
+    Write-Output "The latest WSL kernel is already installed."
+}
 
 # Check if a reboot is required
 if ($rebootRequired -or (Get-PendingReboot)) {
@@ -63,13 +80,10 @@ if ($rebootRequired -or (Get-PendingReboot)) {
     exit
 }
 
-# Skip setting WSL 2 as the default version and updating if a reboot is required
-if (-Not (Test-Path "$env:SystemRoot\System32\RebootPending.txt")) {
-    Write-Output "Setting WSL 2 as the default version..."
-    wsl --set-default-version 2
+Write-Output "Setting WSL 2 as the default version..."
+wsl --set-default-version 2
 
-    Write-Output "Setting WSL 2 as the default version..."
-    wsl --update
-}
+Write-Output "Updating WSL..."
+wsl --update
 
 Write-Output "WSL installation and setup complete."
