@@ -9,6 +9,14 @@ $stagingPath = "$basePath\staging"
 $rootfsPath = "$stagingPath\ubuntu-noble-wsl-amd64-wsl.rootfs.tar.gz"
 $installScriptPath = "$basePath\wsl_doppelganger_install.sh"  # Update this path as needed
 
+# Function to check if a command exists
+function CommandExists {
+    param (
+        [string]$command
+    )
+    $null = Get-Command $command -ErrorAction SilentlyContinue
+    return $?
+}
 # Function to download and install aria2 manually if not already installed
 function Install-Aria2 {
     $aria2Path = "$basePath\aria2"
