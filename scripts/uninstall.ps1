@@ -32,12 +32,13 @@ wsl --shutdown
 Log "WSL stopped."
 
 # Uninstall WSL distribution
-if (wsl.exe -l -q | Select-String -Pattern $wslName) {
+$wslDistributions = wsl.exe -l -q
+if ($wslDistributions -contains $wslName) {
     Log "Unregistering WSL distribution $wslName..."
     wsl.exe --unregister $wslName
     Log "WSL distribution $wslName unregistered."
 } else {
-    Log "WSL distribution $wslName not found."
+    Log "WSL distribution $wslName not found. Available distributions: $wslDistributions"
 }
 
 # Ensure no processes are using the directory
