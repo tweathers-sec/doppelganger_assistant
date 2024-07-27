@@ -8,6 +8,31 @@ if (-not $isAdmin) {
     exit
 }
 
+# Function to create a shortcut that runs as administrator
+function New-Shortcut {
+    param (
+        [string]$TargetPath,
+        [string]$ShortcutPath,
+        [string]$Arguments,
+        [string]$Description,
+        [string]$WorkingDirectory,
+        [string]$IconLocation
+    )
+    $WshShell = New-Object -ComObject WScript.Shell
+    $Shortcut = $WshShell.CreateShortcut($ShortcutPath)
+    $Shortcut.TargetPath = $TargetPath
+    $Shortcut.Arguments = $Arguments
+    $Shortcut.Description = $Description
+    $Shortcut.WorkingDirectory = $WorkingDirectory
+    $Shortcut.IconLocation = $IconLocation
+    $Shortcut.Save()
+
+    # Set the shortcut to run as administrator
+    $bytes = [System.IO.File]::ReadAllBytes($ShortcutPath)
+    $bytes[0x15] = $bytes[0x15] -bor 0x20 #set byte 21 (0x15) bit 6 (0x20) ON
+    [System.IO.File]::WriteAllBytes($ShortcutPath, $bytes)
+}
+
 # Define paths
 $basePath = "C:\doppelganger_assistant"
 $setupScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/scripts/wsl_setup.ps1"
@@ -69,34 +94,13 @@ Write-Output "Running WSL setup script..."
 
 # Create a shortcut on the desktop to run the launch script as an administrator
 Write-Output "Creating desktop shortcut..."
-$WScriptShell = New-Object -ComObject WScript.Shell
-$Shortcut = $WScriptShell.CreateShortcut($shortcutPath)
-$Shortcut.TargetPath = "powershell.exe"
-$Shortcut.Arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$launchScriptPath`""
-$Shortcut.WorkingDirectory = $basePath
-$Shortcut.WindowStyle = 1
-$Shortcut.IconLocation = $imagePath
-$Shortcut.Save()
+New-Shortcut -TargetPath "powershell.exe" `
+             -ShortcutPath $shortcutPath `
+             -Arguments "-NoProfile -ExecutionPolicy Bypass -File `"$launchScriptPath`"" `
+             -Description "Launch Doppelganger Assistant as Administrator" `
+             -WorkingDirectory $basePath `
+             -IconLocation $imagePath
 
-# Set the shortcut to run as administrator
-$Shortcut = $WScriptShell.CreateShortcut($shortcutPath)
-$Shortcut.Description = "Launch Doppelganger Assistant as Administrator"
-$Shortcut.TargetPath = "powershell.exe"
-$Shortcut.Arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$launchScriptPath`""
-$Shortcut.WorkingDirectory = $basePath
-$Shortcut.WindowStyle = 1
-$Shortcut.IconLocation = $imagePath
-$Shortcut.Save()
-
-if ($Shortcut.Verbs) {
-    $Shortcut.Verbs | ForEach-Object {
-        if ($_.ToLower() -eq "runas") {
-            $Shortcut.Verb = $_
-        }
-    }
-    $Shortcut.Save()
-} else {
-    Write-Output "No verbs found for the shortcut."
-}
+Write-Output "Shortcut created on the desktop with administrator privileges."
 
 Write-Output "Setup complete. Shortcut created on the desktop."
