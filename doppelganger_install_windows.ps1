@@ -18,7 +18,7 @@ if (-not $isAdmin) {
 
 Write-Host "`n*************************************************************" -ForegroundColor Green
 Write-Host "*                                                           *" -ForegroundColor Green
-Write-Host "*     RUNNING WITH ADMINISTRATOR PRIVILEGES. PROCEEDING     *" -ForegroundColor Green
+Write-Host "*           RUNNING WITH ADMINISTRATOR PRIVILEGES           *" -ForegroundColor Green
 Write-Host "*                                                           *" -ForegroundColor Green
 Write-Host "*************************************************************`n" -ForegroundColor Green
 
@@ -38,7 +38,7 @@ $wslEnableScriptPath = "$basePath\wsl_enable.ps1"
 $usbReconnectScriptPath = "$basePath\usb_reconnect.ps1"
 $shortcutPath = [System.IO.Path]::Combine([System.Environment]::GetFolderPath("Desktop"), "Launch Doppelganger Assistant.lnk")
 
-# Function to create a shortcut that runs as administrator
+# Function to create a shortcut that runs as an administrator
 function New-Shortcut {
     param (
         [string]$TargetPath,
@@ -100,9 +100,8 @@ Write-Output "Running WSL enable script..."
 if (Test-Path "$env:SystemRoot\System32\RebootPending.txt") {
     Write-Host "`n*************************************************************" -ForegroundColor Yellow
     Write-Host "*                                                           *" -ForegroundColor Yellow
-    Write-Host "*   A REBOOT IS REQUIRED TO COMPLETE THE WSL INSTALLATION   *" -ForegroundColor Yellow
-    Write-Host "*        PLEASE REBOOT YOUR SYSTEM AND RUN THIS SCRIPT      *" -ForegroundColor Yellow
-    Write-Host "*                         AGAIN                             *" -ForegroundColor Yellow
+    Write-Host "*   A REBOOT IS REQUIRED TO COMPLETE THE WSL INSTALLATION.  *" -ForegroundColor Yellow
+    Write-Host "*    PLEASE REBOOT YOUR SYSTEM AND RUN THIS SCRIPT AGAIN.   *" -ForegroundColor Yellow
     Write-Host "*                                                           *" -ForegroundColor Yellow
     Write-Host "*************************************************************`n" -ForegroundColor Yellow
     Write-Host "Press any key to exit..."
