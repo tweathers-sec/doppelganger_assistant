@@ -84,21 +84,20 @@ function AttachUSBDeviceToWSL {
 }
 
 # Function to launch Doppelganger Assistant in WSL and close the terminal
-# Function to launch Doppelganger Assistant in WSL and close the terminal
 function LaunchDoppelgangerAssistant {
     Log "Launching Doppelganger Assistant in WSL..."
-    $wslCommand = "wsl -d Ubuntu-doppelganger_assistant -e bash -c 'nohup doppelganger_assistant > /dev/null 2>&1 &'"
+    $wslCommand = "wsl -d Ubuntu-doppelganger_assistant -e bash -c 'doppelganger_assistant'"
     
-    # Create a vbs script to run the WSL command without showing a window
+    # Create a vbs script to run the WSL command without showing the intermediate PowerShell window
     $vbsScript = @"
     Set WshShell = CreateObject("WScript.Shell")
-    WshShell.Run "$wslCommand", 0, false
+    WshShell.Run "powershell.exe -WindowStyle Hidden -Command $wslCommand", 0, false
 "@
     
     $vbsPath = [System.IO.Path]::GetTempFileName() + ".vbs"
     Set-Content -Path $vbsPath -Value $vbsScript
     
-    # Run the vbs script in a new process
+    # Run the vbs script
     Start-Process -FilePath "wscript.exe" -ArgumentList $vbsPath -WindowStyle Hidden
     
     Log "Doppelganger Assistant launch initiated. This script will now close."
