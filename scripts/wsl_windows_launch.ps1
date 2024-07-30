@@ -120,9 +120,30 @@ if ($proxmark3Device) {
         Log "Doppelganger Assistant launched in WSL."
     }
 } else {
-    Log "Proxmark3 device not found. Continuing without attaching the device."
-    # Run doppelganger_assistant in WSL
-        Log "Launching Doppelganger Assistant in WSL..."
-        $wslOutput = & wsl -d "Ubuntu-doppelganger_assistant" -e bash -c "nohup doppelganger_assistant > /dev/null 2>&1"
-        Log "Doppelganger Assistant launched in WSL."
+    Log "Proxmark3 device not found."
+    $userChoice = Read-Host "Proxmark3 device not detected. Do you want to (A)ttach the device and retry, or (C)ontinue without the device? [A/C]"
+    
+    if ($userChoice -eq "A" -or $userChoice -eq "a") {
+        Log "User chose to attach the device. Please connect the Proxmark3 device and press Enter."
+        Read-Host "Press Enter when you have connected the Proxmark3 device"
+        
+        # Retry device detection
+        $usbDevices = & usbipd list
+        $proxmark3Device = $usbDevices | Select-String -Pattern "9ac4"
+        
+        if ($proxmark3Device) {
+            Log "Proxmark3 device found after user intervention. Restarting the script."
+            & $MyInvocation.MyCommand.Path  # Restart the script
+            exit
+        } else {
+            Log "Proxmark3 device still not found after user intervention. Continuing without the device."
+        }
+    } else {
+        Log "User chose to continue without the Proxmark3 device."
     }
+
+    # Run doppelganger_assistant in WSL without the Proxmark3 device
+    Log "Launching Doppelganger Assistant in WSL..."
+    $wslOutput = & wsl -d "Ubuntu-doppelganger_assistant" -e bash -c "nohup doppelganger_assistant > /dev/null 2>&1"
+    Log "Doppelganger Assistant launched in WSL."
+}
