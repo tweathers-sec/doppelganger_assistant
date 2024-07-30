@@ -8,7 +8,7 @@ function Log {
     )
     $timestamp = (Get-Date).ToString('u')
     $logMessage = "$timestamp - $message"
-    Write-Output $logMessage
+    Write-Output $message
     Add-Content -Path $logFile -Value $logMessage
 }
 

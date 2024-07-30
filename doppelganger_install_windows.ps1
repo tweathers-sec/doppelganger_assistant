@@ -30,12 +30,14 @@ $installScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelgange
 $imageUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/img/doppelganger_assistant.ico"
 $wslEnableScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/scripts/wsl_enable.ps1"
 $usbReconnectScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/scripts/usb_reconnect.ps1"
+$proxmarkFlashScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/scripts/proxmark_flash.ps1"
 $setupScriptPath = "$basePath\wsl_setup.ps1"
 $launchScriptPath = "$basePath\wsl_windows_launch.ps1"
 $installScriptPath = "$basePath\wsl_doppelganger_install.sh"
 $imagePath = "$basePath\doppelganger_assistant.ico"
 $wslEnableScriptPath = "$basePath\wsl_enable.ps1"
 $usbReconnectScriptPath = "$basePath\usb_reconnect.ps1"
+$proxmarkFlashScriptPath = "$basePath\proxmark_flash.ps1"
 $shortcutPath = [System.IO.Path]::Combine([System.Environment]::GetFolderPath("Desktop"), "Launch Doppelganger Assistant.lnk")
 
 # Log file path
@@ -105,6 +107,9 @@ Invoke-WebRequest -Uri $wslEnableScriptUrl -OutFile $wslEnableScriptPath
 
 Log "Downloading USB reconnect script..."
 Invoke-WebRequest -Uri $usbReconnectScriptUrl -OutFile $usbReconnectScriptPath
+
+Log "Downloading Proxmark3 flash script..."
+Invoke-WebRequest -Uri $proxmarkFlashScriptUrl -OutFile $proxmarkFlashScriptPath
 
 # Run the WSL enable script
 Log "Running WSL enable script..."
