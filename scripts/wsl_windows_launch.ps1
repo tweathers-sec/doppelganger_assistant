@@ -82,6 +82,31 @@ function AttachUSBDeviceToWSL {
         Log "Device successfully attached to WSL."
     }
 }
+
+# Function to launch Doppelganger Assistant in WSL and close the terminal
+function LaunchDoppelgangerAssistant {
+    Log "Launching Doppelganger Assistant in WSL..."
+    $wslCommand = "wsl -d Ubuntu-doppelganger_assistant -e bash -c 'nohup doppelganger_assistant > /dev/null 2>&1 &'"
+    
+    # Create a vbs script to run the WSL command without showing a window
+    $vbsScript = @"
+    Set WshShell = CreateObject("WScript.Shell")
+    WshShell.Run "$wslCommand", 0, false
+"@
+    
+    $vbsPath = [System.IO.Path]::GetTempFileName() + ".vbs"
+    Set-Content -Path $vbsPath -Value $vbsScript
+    
+    # Run the vbs script
+    Start-Process -FilePath "wscript.exe" -ArgumentList $vbsPath -WindowStyle Hidden
+    
+    # Clean up the temporary vbs script
+    Start-Sleep -Seconds 2  # Wait a bit to ensure the script has run
+    Remove-Item $vbsPath
+    
+    Log "Doppelganger Assistant launched in WSL. Terminal will close."
+}
+
 # Clear the log file
 Clear-Content -Path $logFile -ErrorAction SilentlyContinue
 
@@ -114,10 +139,8 @@ if ($proxmark3Device) {
         # Attach the Proxmark3 device to WSL
         AttachUSBDeviceToWSL -busId $busId
 
-        # Run doppelganger_assistant in WSL
-        Log "Launching Doppelganger Assistant in WSL..."
-        $wslOutput = & wsl -d "Ubuntu-doppelganger_assistant" -e bash -c "nohup doppelganger_assistant > /dev/null 2>&1"
-        Log "Doppelganger Assistant launched in WSL."
+        # Launch Doppelganger Assistant
+        LaunchDoppelgangerAssistant
     }
 } else {
     Log "Proxmark3 device not found."
@@ -142,8 +165,9 @@ if ($proxmark3Device) {
         Log "User chose to continue without the Proxmark3 device."
     }
 
-    # Run doppelganger_assistant in WSL without the Proxmark3 device
-    Log "Launching Doppelganger Assistant in WSL..."
-    $wslOutput = & wsl -d "Ubuntu-doppelganger_assistant" -e bash -c "nohup doppelganger_assistant > /dev/null 2>&1"
-    Log "Doppelganger Assistant launched in WSL."
+    # Launch Doppelganger Assistant without the Proxmark3 device
+    LaunchDoppelgangerAssistant
 }
+
+# Exit the script, which will close the PowerShell window
+exit
