@@ -107,8 +107,8 @@ if ($proxmark3Device) {
         Start-Process powershell -ArgumentList "-NoExit", "-Command", $command
 
         # Wait for 15 seconds
-        Log "Waiting for 15 seconds..."
-        Start-Sleep -Seconds 15
+        Log "Waiting for 5 seconds..."
+        Start-Sleep -Seconds 5
 
         # Reattach the device
         Log "Reattaching the Proxmark3 device..."
