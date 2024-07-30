@@ -138,3 +138,10 @@ New-Shortcut -TargetPath "powershell.exe" `
 Log "Shortcut created on the desktop with administrator privileges."
 
 Log "Setup complete. Shortcut created on the desktop."
+
+# Delete this script
+$scriptPath = $MyInvocation.MyCommand.Path
+Log "Deleting installation script..."
+Remove-Item -Path $scriptPath -Force
+
+Log "Installation script deleted. Process complete."
