@@ -83,9 +83,12 @@ Write-Output "Running WSL enable script..."
 & $wslEnableScriptPath
 
 # Check if a reboot is required
+# Check if a reboot is required
 if (Test-Path "$env:SystemRoot\System32\RebootPending.txt") {
-    Write-Host "`n`e[93m`e[1m𝗔 𝗿𝗲𝗯𝗼𝗼𝘁 𝗶𝘀 𝗿𝗲𝗾𝘂𝗶𝗿𝗲𝗱 𝘁𝗼 𝗰𝗼𝗺𝗽𝗹𝗲𝘁𝗲 𝘁𝗵𝗲 𝗪𝗦𝗟 𝗶𝗻𝘀𝘁𝗮𝗹𝗹𝗮𝘁𝗶𝗼𝗻.`e[0m" -NoNewline
-    Write-Host "`n`e[93m`e[1m𝗣𝗹𝗲𝗮𝘀𝗲 𝗿𝗲𝗯𝗼𝗼𝘁 𝘆𝗼𝘂𝗿 𝘀𝘆𝘀𝘁𝗲𝗺 𝗮𝗻𝗱 𝗿𝘂𝗻 𝘁𝗵𝗶𝘀 𝘀𝗰𝗿𝗶𝗽𝘁 𝗮𝗴𝗮𝗶𝗻.`e[0m`n"
+    Write-Host "`n" -NoNewline
+    Write-Host "A REBOOT IS REQUIRED TO COMPLETE THE WSL INSTALLATION." -ForegroundColor Yellow
+    Write-Host "PLEASE REBOOT YOUR SYSTEM AND RUN THIS SCRIPT AGAIN." -ForegroundColor Yellow
+    Write-Host "`n"
     exit
 }
 
