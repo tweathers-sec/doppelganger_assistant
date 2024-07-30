@@ -34,17 +34,23 @@ $usbReconnectScriptPath = "$basePath\usb_reconnect.ps1"
 $proxmarkFlashScriptPath = "$basePath\proxmark_flash.ps1"
 $shortcutPath = [System.IO.Path]::Combine([System.Environment]::GetFolderPath("Desktop"), "Launch Doppelganger Assistant.lnk")
 
-# Download Write-ASCII function
-$writeAsciiUrl = "https://raw.githubusercontent.com/rgel/PowerShell/master/MS-Module/MS-Module.psm1"
-$writeAsciiPath = "$basePath\MS-Module.psm1"
-Invoke-WebRequest -Uri $writeAsciiUrl -OutFile $writeAsciiPath
-
-# Import the Write-ASCII function
-Import-Module $writeAsciiPath -Force
+# ASCII Art function
+function Write-DoppelgangerAscii {
+    $color = 'Red'
+    Write-Host @"
+                                                                      
+    ____                            _                                 
+   |  _ \  ___  _ __  _ __   ___| | __ _  __ _ _ __   __ _  ___ _ __  
+   | | | |/ _ \| '_ \| '_ \ / _ \ |/ _` |/ _` | '_ \ / _` |/ _ \ '__| 
+   | |_| | (_) | |_) | |_) |  __/ | (_| | (_| | | | | (_| |  __/ |    
+   |____/ \___/| .__/| .__/ \___|_|\__, |\__,_|_| |_|\__, |\___|_|    
+               |_|   |_|           |___/             |___/            
+                                                                      
+"@ -ForegroundColor $color
+}
 
 # Display ASCII art
-Write-Host "DOPPELGANGER" -ForegroundColor Red
-Write-Host "ASSISTANT" -ForegroundColor Red
+Write-DoppelgangerAscii
 
 Write-Host "`n*************************************************************" -ForegroundColor Green
 Write-Host "*                                                           *" -ForegroundColor Green
