@@ -92,6 +92,20 @@ function InstallWinget {
     }
 }
 
+# Function to refresh PATH and check for usbipd
+function Refresh-UsbIpdCommand {
+    Log "Refreshing PATH and checking for usbipd command..."
+    $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+    
+    if (Get-Command usbipd -ErrorAction SilentlyContinue) {
+        Log "usbipd command is now available."
+        return $true
+    }
+    
+    Log "usbipd command is still not available after refreshing PATH."
+    return $false
+}
+
 # Ensure aria2 is installed
 Install-Aria2
 
@@ -144,6 +158,18 @@ if (-not (CommandExists "usbipd")) {
     if ($installOutput.ExitCode -ne 0) {
         Log "Error installing usbipd. Exit code: $($installOutput.ExitCode)"
         exit 1
+    }
+    
+    # Check if usbipd is available after installation
+    if (-not (Refresh-UsbIpdCommand)) {
+        $response = Read-Host "usbipd command is not available. Do you want to restart PowerShell to make it available? (y/n)"
+        if ($response -eq 'y') {
+            Log "Restarting PowerShell to make usbipd available..."
+            Start-Process powershell -ArgumentList "-File `"$($MyInvocation.MyCommand.Path)`"" -Wait
+            exit
+        } else {
+            Log "User chose not to restart PowerShell. usbipd may not be available for this session."
+        }
     }
 } else {
     Log "usbipd is already installed."
