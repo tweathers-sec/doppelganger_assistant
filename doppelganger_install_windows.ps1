@@ -16,24 +16,6 @@ if (-not $isAdmin) {
     exit
 }
 
-# Download Write-ASCII function
-$writeAsciiUrl = "https://raw.githubusercontent.com/rgel/PowerShell/master/MS-Module/MS-Module.psm1"
-$writeAsciiPath = "$basePath\MS-Module.psm1"
-Invoke-WebRequest -Uri $writeAsciiUrl -OutFile $writeAsciiPath
-
-# Import the Write-ASCII function
-. $writeAsciiPath
-
-# Display ASCII art
-Write-ASCII "DOPPELGANGER" -ForegroundColor Red
-Write-ASCII "ASSISTANT" -ForegroundColor Red
-
-Write-Host "`n*************************************************************" -ForegroundColor Green
-Write-Host "*                                                           *" -ForegroundColor Green
-Write-Host "*           RUNNING WITH ADMINISTRATOR PRIVILEGES           *" -ForegroundColor Green
-Write-Host "*                                                           *" -ForegroundColor Green
-Write-Host "*************************************************************`n" -ForegroundColor Green
-
 # Define paths
 $basePath = "C:\doppelganger_assistant"
 $setupScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/scripts/wsl_setup.ps1"
@@ -51,6 +33,24 @@ $wslEnableScriptPath = "$basePath\wsl_enable.ps1"
 $usbReconnectScriptPath = "$basePath\usb_reconnect.ps1"
 $proxmarkFlashScriptPath = "$basePath\proxmark_flash.ps1"
 $shortcutPath = [System.IO.Path]::Combine([System.Environment]::GetFolderPath("Desktop"), "Launch Doppelganger Assistant.lnk")
+
+# Download Write-ASCII function
+$writeAsciiUrl = "https://raw.githubusercontent.com/rgel/PowerShell/master/MS-Module/MS-Module.psm1"
+$writeAsciiPath = "$basePath\MS-Module.psm1"
+Invoke-WebRequest -Uri $writeAsciiUrl -OutFile $writeAsciiPath
+
+# Import the Write-ASCII function
+. $writeAsciiPath
+
+# Display ASCII art
+Write-ASCII "DOPPELGANGER" -ForegroundColor Red
+Write-ASCII "ASSISTANT" -ForegroundColor Red
+
+Write-Host "`n*************************************************************" -ForegroundColor Green
+Write-Host "*                                                           *" -ForegroundColor Green
+Write-Host "*           RUNNING WITH ADMINISTRATOR PRIVILEGES           *" -ForegroundColor Green
+Write-Host "*                                                           *" -ForegroundColor Green
+Write-Host "*************************************************************`n" -ForegroundColor Green
 
 # Log file path
 $logFile = "C:\doppelganger_assistant\install_windows.log"
