@@ -16,14 +16,17 @@ if (-not $isAdmin) {
     exit
 }
 
-Write-Host @"
-  __| | ___  _ __  _ __   ___| | __ _  __ _ _ __   __ _  ___ _ __ 
- / _` |/ _ \| '_ \| '_ \ / _ \ |/ _` |/ _` | '_ \ / _` |/ _ \ '__|
-| (_| | (_) | |_) | |_) |  __/ | (_| | (_| | | | | (_| |  __/ |   
- \__,_|\___/| .__/| .__/ \___|_|\__, |\__,_|_| |_|\__, |\___|_|   
-            |_|   |_|           |___/             |___/    
-                                             
-"@ -ForegroundColor Red
+# Download Write-ASCII function
+$writeAsciiUrl = "https://raw.githubusercontent.com/rgel/PowerShell/master/MS-Module/Write-ASCII.ps1"
+$writeAsciiPath = "$basePath\Write-ASCII.ps1"
+Invoke-WebRequest -Uri $writeAsciiUrl -OutFile $writeAsciiPath
+
+# Import the Write-ASCII function
+. $writeAsciiPath
+
+# Display ASCII art
+Write-ASCII "DOPPELGANGER" -ForegroundColor Red
+Write-ASCII "ASSISTANT" -ForegroundColor Red
 
 Write-Host "`n*************************************************************" -ForegroundColor Green
 Write-Host "*                                                           *" -ForegroundColor Green
