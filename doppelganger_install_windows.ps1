@@ -112,13 +112,13 @@ Log "Running WSL enable script..."
 
 # Check if a reboot is required
 if (Test-Path "$env:SystemRoot\System32\RebootPending.txt") {
-    Log "`n*************************************************************" -ForegroundColor Yellow
-    Log "*                                                           *" -ForegroundColor Yellow
-    Log "*   A REBOOT IS REQUIRED TO COMPLETE THE WSL INSTALLATION.  *" -ForegroundColor Yellow
-    Log "*    PLEASE REBOOT YOUR SYSTEM AND RUN THIS SCRIPT AGAIN.   *" -ForegroundColor Yellow
-    Log "*                                                           *" -ForegroundColor Yellow
-    Log "*************************************************************`n" -ForegroundColor Yellow
-    Log "Press any key to exit..."
+    Write-Host "`n*************************************************************" -ForegroundColor Yellow
+    Write-Host "*                                                           *" -ForegroundColor Yellow
+    Write-Host "*   A REBOOT IS REQUIRED TO COMPLETE THE WSL INSTALLATION.  *" -ForegroundColor Yellow
+    Write-Host "*    PLEASE REBOOT YOUR SYSTEM AND RUN THIS SCRIPT AGAIN.   *" -ForegroundColor Yellow
+    Write-Host "*                                                           *" -ForegroundColor Yellow
+    Write-Host "*************************************************************`n" -ForegroundColor Yellow
+    Write-Host "Press any key to exit..."
     $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
     exit
 }
