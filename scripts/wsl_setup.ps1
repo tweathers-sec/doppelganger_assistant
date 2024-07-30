@@ -96,10 +96,22 @@ Install-Aria2
 
 Log "Checking if NuGet provider is installed and PSGallery is trusted..."
 
+# Function to check if NuGet provider is installed
+function Test-NuGetProvider {
+    $providers = Get-PackageProvider -ListAvailable
+    return $providers | Where-Object { $_.Name -eq 'NuGet' }
+}
+
 # Check and install NuGet provider silently
-if (-not (Get-PackageProvider -Name "NuGet" -ErrorAction SilentlyContinue)) {
+if (-not (Test-NuGetProvider)) {
     Log "NuGet provider not found. Installing NuGet provider..."
-    Install-PackageProvider -Name "NuGet" -Force -Scope CurrentUser | Out-Null
+    try {
+        Install-PackageProvider -Name "NuGet" -Force -Scope CurrentUser -MinimumVersion 2.8.5.201 -ErrorAction Stop | Out-Null
+        Log "NuGet provider installed successfully."
+    }
+    catch {
+        Log "Failed to install NuGet provider. Error: $_"
+    }
 } else {
     Log "NuGet provider is already installed."
 }
