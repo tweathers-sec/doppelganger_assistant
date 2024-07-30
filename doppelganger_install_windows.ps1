@@ -1,12 +1,29 @@
 # Check if the script is running as an administrator
 $currentUser = [Security.Principal.WindowsIdentity]::GetCurrent()
 $currentPrincipal = New-Object Security.Principal.WindowsPrincipal($currentUser)
-$isAdmin = $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+# Check if the script is running as an administrator
+$isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 
 if (-not $isAdmin) {
-    Write-Output "This script must be run as an administrator. Please run PowerShell as an administrator and try again."
+    Write-Host "`n*************************************************************" -ForegroundColor Red
+    Write-Host "*                                                           *" -ForegroundColor Red
+    Write-Host "*       THIS SCRIPT MUST BE RUN AS AN ADMINISTRATOR         *" -ForegroundColor Red
+    Write-Host "*                                                           *" -ForegroundColor Red
+    Write-Host "*************************************************************`n" -ForegroundColor Red
+    Write-Host "Please follow these steps:" -ForegroundColor Yellow
+    Write-Host "1. Right-click on PowerShell and select 'Run as administrator'" -ForegroundColor Yellow
+    Write-Host "2. Navigate to the script's directory" -ForegroundColor Yellow
+    Write-Host "3. Run the script again" -ForegroundColor Yellow
+    Write-Host "`nPress any key to exit..."
+    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
     exit
 }
+
+Write-Host "`n*************************************************************" -ForegroundColor Green
+Write-Host "*                                                           *" -ForegroundColor Green
+Write-Host "*     RUNNING WITH ADMINISTRATOR PRIVILEGES. PROCEEDING     *" -ForegroundColor Green
+Write-Host "*                                                           *" -ForegroundColor Green
+Write-Host "*************************************************************`n" -ForegroundColor Green
 
 # Function to create a shortcut that runs as administrator
 function New-Shortcut {
@@ -84,13 +101,17 @@ Write-Output "Running WSL enable script..."
 
 # Check if a reboot is required
 if (Test-Path "$env:SystemRoot\System32\RebootPending.txt") {
-    Write-Host "`n" -NoNewline
-    Write-Host "A REBOOT IS REQUIRED TO COMPLETE THE WSL INSTALLATION." -ForegroundColor Yellow
-    Write-Host "PLEASE REBOOT YOUR SYSTEM AND RUN THIS SCRIPT AGAIN." -ForegroundColor Yellow
-    Write-Host "`n"
+    Write-Host "`n*************************************************************" -ForegroundColor Yellow
+    Write-Host "*                                                           *" -ForegroundColor Yellow
+    Write-Host "*   A REBOOT IS REQUIRED TO COMPLETE THE WSL INSTALLATION   *" -ForegroundColor Yellow
+    Write-Host "*        PLEASE REBOOT YOUR SYSTEM AND RUN THIS SCRIPT      *" -ForegroundColor Yellow
+    Write-Host "*                         AGAIN                             *" -ForegroundColor Yellow
+    Write-Host "*                                                           *" -ForegroundColor Yellow
+    Write-Host "*************************************************************`n" -ForegroundColor Yellow
+    Write-Host "Press any key to exit..."
+    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
     exit
 }
-
 # Run the setup script
 Write-Output "Running WSL setup script..."
 & $setupScriptPath
