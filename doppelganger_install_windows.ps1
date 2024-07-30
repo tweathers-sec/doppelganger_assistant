@@ -1,7 +1,4 @@
 # Check if the script is running as an administrator
-$currentUser = [Security.Principal.WindowsIdentity]::GetCurrent()
-$currentPrincipal = New-Object Security.Principal.WindowsPrincipal($currentUser)
-# Check if the script is running as an administrator
 $isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 
 if (-not $isAdmin) {
@@ -24,6 +21,22 @@ Write-Host "*                                                           *" -Fore
 Write-Host "*     RUNNING WITH ADMINISTRATOR PRIVILEGES. PROCEEDING     *" -ForegroundColor Green
 Write-Host "*                                                           *" -ForegroundColor Green
 Write-Host "*************************************************************`n" -ForegroundColor Green
+
+# Define paths
+$basePath = "C:\doppelganger_assistant"
+$setupScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/scripts/wsl_setup.ps1"
+$launchScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/scripts/wsl_windows_launch.ps1"
+$installScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/scripts/wsl_doppelganger_install.sh"
+$imageUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/img/doppelganger_assistant.ico"
+$wslEnableScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/scripts/wsl_enable.ps1"
+$usbReconnectScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/scripts/usb_reconnect.ps1"
+$setupScriptPath = "$basePath\wsl_setup.ps1"
+$launchScriptPath = "$basePath\wsl_windows_launch.ps1"
+$installScriptPath = "$basePath\wsl_doppelganger_install.sh"
+$imagePath = "$basePath\doppelganger_assistant.ico"
+$wslEnableScriptPath = "$basePath\wsl_enable.ps1"
+$usbReconnectScriptPath = "$basePath\usb_reconnect.ps1"
+$shortcutPath = [System.IO.Path]::Combine([System.Environment]::GetFolderPath("Desktop"), "Launch Doppelganger Assistant.lnk")
 
 # Function to create a shortcut that runs as administrator
 function New-Shortcut {
@@ -49,22 +62,6 @@ function New-Shortcut {
     $bytes[0x15] = $bytes[0x15] -bor 0x20 #set byte 21 (0x15) bit 6 (0x20) ON
     [System.IO.File]::WriteAllBytes($ShortcutPath, $bytes)
 }
-
-# Define paths
-$basePath = "C:\doppelganger_assistant"
-$setupScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/scripts/wsl_setup.ps1"
-$launchScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/scripts/wsl_windows_launch.ps1"
-$installScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/scripts/wsl_doppelganger_install.sh"
-$imageUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/img/doppelganger_assistant.ico"
-$wslEnableScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/scripts/wsl_enable.ps1"
-$usbReconnectScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/scripts/usb_reconnect.ps1"
-$setupScriptPath = "$basePath\wsl_setup.ps1"
-$launchScriptPath = "$basePath\wsl_windows_launch.ps1"
-$installScriptPath = "$basePath\wsl_doppelganger_install.sh"
-$imagePath = "$basePath\doppelganger_assistant.ico"
-$wslEnableScriptPath = "$basePath\wsl_enable.ps1"
-$usbReconnectScriptPath = "$basePath\usb_reconnect.ps1"
-$shortcutPath = [System.IO.Path]::Combine([System.Environment]::GetFolderPath("Desktop"), "Launch Doppelganger Assistant.lnk")
 
 # Remove RebootPending.txt if it exists
 if (Test-Path "$env:SystemRoot\System32\RebootPending.txt") {
