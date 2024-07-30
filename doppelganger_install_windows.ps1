@@ -17,8 +17,8 @@ if (-not $isAdmin) {
 }
 
 # Download Write-ASCII function
-$writeAsciiUrl = "https://raw.githubusercontent.com/rgel/PowerShell/master/MS-Module/Write-ASCII.ps1"
-$writeAsciiPath = "$basePath\Write-ASCII.ps1"
+$writeAsciiUrl = "https://raw.githubusercontent.com/rgel/PowerShell/master/MS-Module/MS-Module.psm1"
+$writeAsciiPath = "$basePath\MS-Module.psm1"
 Invoke-WebRequest -Uri $writeAsciiUrl -OutFile $writeAsciiPath
 
 # Import the Write-ASCII function
