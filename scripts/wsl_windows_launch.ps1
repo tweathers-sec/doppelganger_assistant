@@ -84,6 +84,7 @@ function AttachUSBDeviceToWSL {
 }
 
 # Function to launch Doppelganger Assistant in WSL and close the terminal
+# Function to launch Doppelganger Assistant in WSL and close the terminal
 function LaunchDoppelgangerAssistant {
     Log "Launching Doppelganger Assistant in WSL..."
     $wslCommand = "wsl -d Ubuntu-doppelganger_assistant -e bash -c 'nohup doppelganger_assistant > /dev/null 2>&1 &'"
@@ -97,14 +98,10 @@ function LaunchDoppelgangerAssistant {
     $vbsPath = [System.IO.Path]::GetTempFileName() + ".vbs"
     Set-Content -Path $vbsPath -Value $vbsScript
     
-    # Run the vbs script
+    # Run the vbs script in a new process
     Start-Process -FilePath "wscript.exe" -ArgumentList $vbsPath -WindowStyle Hidden
     
-    # Clean up the temporary vbs script
-    Start-Sleep -Seconds 2  # Wait a bit to ensure the script has run
-    Remove-Item $vbsPath
-    
-    Log "Doppelganger Assistant launched in WSL. Terminal will close."
+    Log "Doppelganger Assistant launch initiated. This script will now close."
 }
 
 # Clear the log file
@@ -168,6 +165,8 @@ if ($proxmark3Device) {
     # Launch Doppelganger Assistant without the Proxmark3 device
     LaunchDoppelgangerAssistant
 }
+
+Start-Sleep -Seconds 2
 
 # Exit the script, which will close the PowerShell window
 exit
