@@ -85,6 +85,7 @@ function InstallWinget {
     Log "Installing winget..."
     Install-Script -Name winget-install -Force
     winget-install
+    winget.exe update --accept-source-agreements --accept-package-agreements
     if (-not (CommandExists "winget")) {
         Log "Failed to install winget. Please install it manually."
         exit 1
@@ -136,8 +137,6 @@ if (-not (CommandExists "winget")) {
     Log "winget is already installed."
 }
 
-# Configure winget to accept agreements
-winget.exe update --accept-source-agreements --accept-package-agreements
 # Install usbipd using winget
 if (-not (CommandExists "usbipd")) {
     Log "Installing usbipd..."
