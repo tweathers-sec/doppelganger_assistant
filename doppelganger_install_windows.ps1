@@ -40,11 +40,11 @@ $writeAsciiPath = "$basePath\MS-Module.psm1"
 Invoke-WebRequest -Uri $writeAsciiUrl -OutFile $writeAsciiPath
 
 # Import the Write-ASCII function
-. $writeAsciiPath
+Import-Module $writeAsciiPath -Force
 
 # Display ASCII art
-Write-ASCII "DOPPELGANGER" -ForegroundColor Red
-Write-ASCII "ASSISTANT" -ForegroundColor Red
+Write-Host "DOPPELGANGER" -ForegroundColor Red
+Write-Host "ASSISTANT" -ForegroundColor Red
 
 Write-Host "`n*************************************************************" -ForegroundColor Green
 Write-Host "*                                                           *" -ForegroundColor Green
