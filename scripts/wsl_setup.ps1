@@ -94,22 +94,25 @@ function InstallWinget {
 # Ensure aria2 is installed
 Install-Aria2
 
-# Install NuGet provider and set PSGallery to trusted
 Log "Checking if NuGet provider is installed and PSGallery is trusted..."
 
-$nugetProvider = Get-PackageProvider -Name "NuGet" -ErrorAction SilentlyContinue
-$psGallery = Get-PSRepository -Name "PSGallery" -ErrorAction SilentlyContinue
-
-if (-not $nugetProvider) {
+# Check and install NuGet provider silently
+if (-not (Get-PackageProvider -Name "NuGet" -ErrorAction SilentlyContinue)) {
     Log "NuGet provider not found. Installing NuGet provider..."
-    Install-PackageProvider -Name "NuGet" -Force
+    Install-PackageProvider -Name "NuGet" -Force -Scope CurrentUser | Out-Null
 } else {
     Log "NuGet provider is already installed."
 }
 
-if ($psGallery.InstallationPolicy -ne "Trusted") {
-    Log "PSGallery is not set to trusted. Setting PSGallery to trusted..."
-    Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted
+# Check and set PSGallery to trusted silently
+$psGallery = Get-PSRepository -Name "PSGallery" -ErrorAction SilentlyContinue
+if ($psGallery -and $psGallery.InstallationPolicy -ne "Trusted") {
+    Log "Setting PSGallery to trusted..."
+    Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted -ErrorAction SilentlyContinue | Out-Null
+} elseif (-not $psGallery) {
+    Log "PSGallery not found. Registering and setting to trusted..."
+    Register-PSRepository -Default -ErrorAction SilentlyContinue | Out-Null
+    Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted -ErrorAction SilentlyContinue | Out-Null
 } else {
     Log "PSGallery is already set to trusted."
 }
