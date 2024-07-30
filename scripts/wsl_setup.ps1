@@ -19,10 +19,9 @@ function Log {
     )
     $timestamp = (Get-Date).ToString('u')
     $logMessage = "$timestamp - $message"
-    Write-Output $logMessage
+    Write-Output $message
     Add-Content -Path $logFile -Value $logMessage
 }
-
 # Function to check if a command exists
 function CommandExists {
     param (

@@ -38,6 +38,20 @@ $wslEnableScriptPath = "$basePath\wsl_enable.ps1"
 $usbReconnectScriptPath = "$basePath\usb_reconnect.ps1"
 $shortcutPath = [System.IO.Path]::Combine([System.Environment]::GetFolderPath("Desktop"), "Launch Doppelganger Assistant.lnk")
 
+# Log file path
+$logFile = "C:\doppelganger_assistant\install_windows.log"
+
+# Function to log output to both file and screen
+function Log {
+    param (
+        [string]$message
+    )
+    $timestamp = (Get-Date).ToString('u')
+    $logMessage = "$timestamp - $message"
+    Write-Output $message
+    Add-Content -Path $logFile -Value $logMessage
+}
+
 # Function to create a shortcut that runs as an administrator
 function New-Shortcut {
     param (
@@ -74,46 +88,46 @@ if (-Not (Test-Path -Path $basePath)) {
 }
 
 # Download the setup, launch, install scripts, and image from GitHub
-Write-Output "Downloading setup script..."
+Log "Downloading setup script..."
 Invoke-WebRequest -Uri $setupScriptUrl -OutFile $setupScriptPath
 
-Write-Output "Downloading launch script..."
+Log "Downloading launch script..."
 Invoke-WebRequest -Uri $launchScriptUrl -OutFile $launchScriptPath
 
-Write-Output "Downloading install script..."
+Log "Downloading install script..."
 Invoke-WebRequest -Uri $installScriptUrl -OutFile $installScriptPath
 
-Write-Output "Downloading image..."
+Log "Downloading image..."
 Invoke-WebRequest -Uri $imageUrl -OutFile $imagePath
 
-Write-Output "Downloading WSL enable script..."
+Log "Downloading WSL enable script..."
 Invoke-WebRequest -Uri $wslEnableScriptUrl -OutFile $wslEnableScriptPath
 
-Write-Output "Downloading USB reconnect script..."
+Log "Downloading USB reconnect script..."
 Invoke-WebRequest -Uri $usbReconnectScriptUrl -OutFile $usbReconnectScriptPath
 
 # Run the WSL enable script
-Write-Output "Running WSL enable script..."
+Log "Running WSL enable script..."
 & $wslEnableScriptPath
 
 # Check if a reboot is required
 if (Test-Path "$env:SystemRoot\System32\RebootPending.txt") {
-    Write-Host "`n*************************************************************" -ForegroundColor Yellow
-    Write-Host "*                                                           *" -ForegroundColor Yellow
-    Write-Host "*   A REBOOT IS REQUIRED TO COMPLETE THE WSL INSTALLATION.  *" -ForegroundColor Yellow
-    Write-Host "*    PLEASE REBOOT YOUR SYSTEM AND RUN THIS SCRIPT AGAIN.   *" -ForegroundColor Yellow
-    Write-Host "*                                                           *" -ForegroundColor Yellow
-    Write-Host "*************************************************************`n" -ForegroundColor Yellow
-    Write-Host "Press any key to exit..."
+    Log "`n*************************************************************" -ForegroundColor Yellow
+    Log "*                                                           *" -ForegroundColor Yellow
+    Log "*   A REBOOT IS REQUIRED TO COMPLETE THE WSL INSTALLATION.  *" -ForegroundColor Yellow
+    Log "*    PLEASE REBOOT YOUR SYSTEM AND RUN THIS SCRIPT AGAIN.   *" -ForegroundColor Yellow
+    Log "*                                                           *" -ForegroundColor Yellow
+    Log "*************************************************************`n" -ForegroundColor Yellow
+    Log "Press any key to exit..."
     $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
     exit
 }
 # Run the setup script
-Write-Output "Running WSL setup script..."
+Log "Running WSL setup script..."
 & $setupScriptPath
 
 # Create a shortcut on the desktop to run the launch script as an administrator
-Write-Output "Creating desktop shortcut..."
+Log "Creating desktop shortcut..."
 New-Shortcut -TargetPath "powershell.exe" `
              -ShortcutPath $shortcutPath `
              -Arguments "-NoProfile -ExecutionPolicy Bypass -File `"$launchScriptPath`"" `
@@ -121,6 +135,6 @@ New-Shortcut -TargetPath "powershell.exe" `
              -WorkingDirectory $basePath `
              -IconLocation $imagePath
 
-Write-Output "Shortcut created on the desktop with administrator privileges."
+Log "Shortcut created on the desktop with administrator privileges."
 
-Write-Output "Setup complete. Shortcut created on the desktop."
+Log "Setup complete. Shortcut created on the desktop."

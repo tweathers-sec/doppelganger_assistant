@@ -13,7 +13,6 @@ function Log {
     Write-Output $logMessage
     Add-Content -Path $logFile -Value $logMessage
 }
-
 # Enable the necessary features
 $rebootRequired = $false
 
