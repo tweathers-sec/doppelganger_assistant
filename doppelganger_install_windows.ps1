@@ -163,7 +163,7 @@ Log "Shortcut created on the desktop with administrator privileges."
 Log "Setup complete. Shortcut created on the desktop."
 
 # Prompt user to flash Proxmark3
-$flashChoice = Read-Host "Do you want to flash your Proxmark3 device now? (y/n)"
+$flashChoice = Read-Host "Do you want to flash your Proxmark3 device now (not recommended for virtual environments)? (y/n)"
 if ($flashChoice -eq "y" -or $flashChoice -eq "Y") {
     Log "User chose to flash Proxmark3. Running Proxmark3 flash script..."
     & $proxmarkFlashScriptPath
