@@ -88,17 +88,8 @@ function LaunchDoppelgangerAssistant {
     Log "Launching Doppelganger Assistant in WSL..."
     $wslCommand = "wsl -d Ubuntu-doppelganger_assistant -e bash -c 'doppelganger_assistant'"
     
-    # Create a vbs script to run the WSL command without showing the intermediate PowerShell window
-    $vbsScript = @"
-    Set WshShell = CreateObject("WScript.Shell")
-    WshShell.Run "powershell.exe -WindowStyle Hidden -Command $wslCommand", 0, false
-"@
-    
-    $vbsPath = [System.IO.Path]::GetTempFileName() + ".vbs"
-    Set-Content -Path $vbsPath -Value $vbsScript
-    
-    # Run the vbs script
-    Start-Process -FilePath "wscript.exe" -ArgumentList $vbsPath -WindowStyle Hidden
+    # Use Start-Process with -WindowStyle Hidden to launch the command without showing a window
+    Start-Process powershell -ArgumentList "-WindowStyle", "Hidden", "-Command", $wslCommand -WindowStyle Hidden
     
     Log "Doppelganger Assistant launch initiated. This script will now close."
 }
