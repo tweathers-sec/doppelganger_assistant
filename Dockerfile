@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y \
     curl \
     git \
     make \
+    xz-utils \
     gcc \
     g++ \
     libgl1 \
