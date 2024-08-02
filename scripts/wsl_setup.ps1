@@ -122,8 +122,11 @@ Log "Checking if NuGet provider is installed and PSGallery is trusted..."
 # Install NuGet provider silently if not already installed
 if (-not (Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue)) {
     Log "Installing NuGet provider..."
-    Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser | Out-Null
+    $null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.208 -Force -Scope CurrentUser
 }
+
+# Ensure the NuGet provider is loaded
+Import-PackageProvider -Name NuGet -Force | Out-Null
 
 # Check and set PSGallery to trusted silently
 $psGallery = Get-PSRepository -Name "PSGallery" -ErrorAction SilentlyContinue
@@ -137,7 +140,6 @@ if ($psGallery -and $psGallery.InstallationPolicy -ne "Trusted") {
 } else {
     Log "PSGallery is already set to trusted."
 }
-
 
 # Check winget version and update if necessary
 $minWingetVersion = "1.4.0"  # Set this to the minimum required version
