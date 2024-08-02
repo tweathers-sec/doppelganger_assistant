@@ -10,7 +10,6 @@ prompt_reinstall() {
     case "$choice" in
         y|Y ) return 0;;
         n|N ) return 1;;
-        * ) echo "Invalid choice. Skipping reinstallation."; return 1;;
     esac
 }
 
