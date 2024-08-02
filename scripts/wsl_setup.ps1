@@ -83,25 +83,42 @@ function Download-File {
 function Update-MicrosoftStore {
     Log "Updating Microsoft Store and its apps..."
     try {
-        # First update attempt
-        Log "First update attempt..."
-        Get-CimInstance -Namespace "Root\cimv2\mdm\dmmap" -ClassName "MDM_EnterpriseModernAppManagement_AppManagement01" | Invoke-CimMethod -MethodName UpdateScanMethod
-        $namespaceName = "root\cimv2\mdm\dmmap"
-        $className = "MDM_EnterpriseModernAppManagement_AppManagement01"
-        $wmiObj = Get-WmiObject -Namespace $namespaceName -Class $className
-        $result = $wmiObj.UpdateScanMethod()
-        Log "First update attempt completed. Result: $($result.ReturnValue)"
+        $maxAttempts = 3
+        $updateFound = $false
 
-        # Wait for 30 seconds
-        Log "Waiting for 30 seconds before second update attempt..."
-        Start-Sleep -Seconds 30
+        for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
+            Log "Update attempt $attempt of $maxAttempts..."
+            
+            Get-CimInstance -Namespace "Root\cimv2\mdm\dmmap" -ClassName "MDM_EnterpriseModernAppManagement_AppManagement01" | Invoke-CimMethod -MethodName UpdateScanMethod
+            $namespaceName = "root\cimv2\mdm\dmmap"
+            $className = "MDM_EnterpriseModernAppManagement_AppManagement01"
+            $wmiObj = Get-WmiObject -Namespace $namespaceName -Class $className
+            $result = $wmiObj.UpdateScanMethod()
+            Log "Update scan completed. Result: $($result.ReturnValue)"
 
-        # Second update attempt
-        Log "Second update attempt..."
-        Get-CimInstance -Namespace "Root\cimv2\mdm\dmmap" -ClassName "MDM_EnterpriseModernAppManagement_AppManagement01" | Invoke-CimMethod -MethodName UpdateScanMethod
-        $wmiObj = Get-WmiObject -Namespace $namespaceName -Class $className
-        $result = $wmiObj.UpdateScanMethod()
-        Log "Second update attempt completed. Result: $($result.ReturnValue)"
+            # Check for available updates
+            $updates = Get-CimInstance -Namespace "Root\cimv2\mdm\dmmap" -ClassName "MDM_EnterpriseModernAppManagement_AppManagement01" | Invoke-CimMethod -MethodName GetInventory | Select-Object -ExpandProperty InventoryItems
+            $pendingUpdates = $updates | Where-Object { $_.UpdateAvailable -eq $true }
+
+            if ($pendingUpdates) {
+                $updateFound = $true
+                Log "Found $($pendingUpdates.Count) pending updates."
+                break
+            }
+
+            if ($attempt -lt $maxAttempts) {
+                Log "No updates found. Waiting 30 seconds before next attempt..."
+                Start-Sleep -Seconds 30
+            }
+        }
+
+        if ($updateFound) {
+            Log "Initiating update installation..."
+            Get-CimInstance -Namespace "Root\cimv2\mdm\dmmap" -ClassName "MDM_EnterpriseModernAppManagement_AppManagement01" | Invoke-CimMethod -MethodName UpdateAllApps
+            Log "Update installation initiated."
+        } else {
+            Log "No updates found after $maxAttempts attempts."
+        }
 
         Log "Microsoft Store and apps update process completed."
     } catch {
