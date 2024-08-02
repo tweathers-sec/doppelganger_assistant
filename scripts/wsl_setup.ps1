@@ -141,6 +141,28 @@ if ($psGallery -and $psGallery.InstallationPolicy -ne "Trusted") {
     Log "PSGallery is already set to trusted."
 }
 
+# Function to check if winget is installed
+function Is-WingetInstalled {
+    try {
+        $null = Get-Command winget -ErrorAction Stop
+        return $true
+    } catch {
+        return $false
+    }
+}
+
+# Check if winget is installed
+if (-not (Is-WingetInstalled)) {
+    Log "Winget is not installed. Installing Winget..."
+    if (Install-Winget) {
+        Log "Winget installed successfully. Refreshing PATH..."
+        $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+    } else {
+        Log "Failed to install winget. Exiting script."
+        exit 1
+    }
+}
+
 # Check winget version and update if necessary
 $minWingetVersion = "1.4.0"  # Set this to the minimum required version
 $currentWingetVersion = (winget --version).Trim()
