@@ -136,7 +136,10 @@ $minWingetVersion = "1.4.0"  # Set this to the minimum required version
 $currentWingetVersion = (winget --version).Trim()
 Log "Current Winget version: $currentWingetVersion"
 
-if ([version]$currentWingetVersion -lt [version]$minWingetVersion) {
+$currentVersionWithoutV = $currentWingetVersion -replace '^v', ''
+$minVersionWithoutV = $minWingetVersion -replace '^v', ''
+
+if ([version]$currentVersionWithoutV -lt [version]$minVersionWithoutV) {
     Log "Winget version is older than $minWingetVersion. Updating Winget..."
     if (Install-Winget) {
         Log "Winget updated successfully. Refreshing PATH..."
