@@ -22,6 +22,7 @@ function Log {
     Write-Output $message
     Add-Content -Path $logFile -Value $logMessage
 }
+
 # Function to check if a command exists
 function CommandExists {
     param (
@@ -79,53 +80,6 @@ function Download-File {
     }
 }
 
-# Function to update Microsoft Store and its apps
-function Update-MicrosoftStore {
-    Log "Updating Microsoft Store and its apps..."
-    try {
-        $maxAttempts = 3
-        $updateFound = $false
-
-        for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
-            Log "Update attempt $attempt of $maxAttempts..."
-            
-            Get-CimInstance -Namespace "Root\cimv2\mdm\dmmap" -ClassName "MDM_EnterpriseModernAppManagement_AppManagement01" | Invoke-CimMethod -MethodName UpdateScanMethod
-            $namespaceName = "root\cimv2\mdm\dmmap"
-            $className = "MDM_EnterpriseModernAppManagement_AppManagement01"
-            $wmiObj = Get-WmiObject -Namespace $namespaceName -Class $className
-            $result = $wmiObj.UpdateScanMethod()
-            Log "Update scan completed. Result: $($result.ReturnValue)"
-
-            # Check for available updates
-            $updates = Get-CimInstance -Namespace "Root\cimv2\mdm\dmmap" -ClassName "MDM_EnterpriseModernAppManagement_AppManagement01" | Invoke-CimMethod -MethodName GetInventory | Select-Object -ExpandProperty InventoryItems
-            $pendingUpdates = $updates | Where-Object { $_.UpdateAvailable -eq $true }
-
-            if ($pendingUpdates) {
-                $updateFound = $true
-                Log "Found $($pendingUpdates.Count) pending updates."
-                break
-            }
-
-            if ($attempt -lt $maxAttempts) {
-                Log "No updates found. Waiting 30 seconds before next attempt..."
-                Start-Sleep -Seconds 30
-            }
-        }
-
-        if ($updateFound) {
-            Log "Initiating update installation..."
-            Get-CimInstance -Namespace "Root\cimv2\mdm\dmmap" -ClassName "MDM_EnterpriseModernAppManagement_AppManagement01" | Invoke-CimMethod -MethodName UpdateAllApps
-            Log "Update installation initiated."
-        } else {
-            Log "No updates found after $maxAttempts attempts."
-        }
-
-        Log "Microsoft Store and apps update process completed."
-    } catch {
-        Log "Error updating Microsoft Store and apps: $_"
-    }
-}
-
 # Function to install winget
 function Install-Winget {
     Log "Installing winget..."
@@ -164,45 +118,6 @@ Install-Aria2
 
 Log "Checking if NuGet provider is installed and PSGallery is trusted..."
 
-# Function to check if NuGet provider is installed
-function Update-MicrosoftStore {
-    Log "Updating Microsoft Store and its apps..."
-    try {
-        $maxAttempts = 3
-        $updateInitiated = $false
-
-        for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
-            Log "Update attempt $attempt of $maxAttempts..."
-            
-            $result = Get-CimInstance -Namespace "Root\cimv2\mdm\dmmap" -ClassName "MDM_EnterpriseModernAppManagement_AppManagement01" | Invoke-CimMethod -MethodName UpdateScanMethod
-            Log "Update scan completed. Result: $($result.ReturnValue)"
-
-            if ($result.ReturnValue -eq 0) {
-                $updateInitiated = $true
-                Log "Update scan initiated successfully."
-                break
-            }
-
-            if ($attempt -lt $maxAttempts) {
-                Log "Update scan failed. Waiting 30 seconds before next attempt..."
-                Start-Sleep -Seconds 30
-            }
-        }
-
-        if ($updateInitiated) {
-            Log "Initiating update installation..."
-            Get-CimInstance -Namespace "Root\cimv2\mdm\dmmap" -ClassName "MDM_EnterpriseModernAppManagement_AppManagement01" | Invoke-CimMethod -MethodName UpdateAllApps
-            Log "Update installation initiated."
-        } else {
-            Log "Failed to initiate update scan after $maxAttempts attempts."
-        }
-
-        Log "Microsoft Store and apps update process completed."
-    } catch {
-        Log "Error updating Microsoft Store and apps: $_"
-    }
-}
-
 # Check and set PSGallery to trusted silently
 $psGallery = Get-PSRepository -Name "PSGallery" -ErrorAction SilentlyContinue
 if ($psGallery -and $psGallery.InstallationPolicy -ne "Trusted") {
@@ -229,24 +144,27 @@ if (-not (CommandExists "winget")) {
     Log "Winget is already installed."
 }
 
-# Check winget version
+# Check winget version and update if necessary
 $wingetVersion = (winget --version).Trim()
-Log "Winget version: $wingetVersion"
+Log "Current Winget version: $wingetVersion"
 
-if ($wingetVersion -ne "v1.8.1911") {
-    # Update Microsoft Store
-    Update-MicrosoftStore
+Log "Updating Winget..."
+winget uninstall Microsoft.Winget.Source_8wekyb3d8bbwe
+winget source reset --force
+winget upgrade --all
 
-    # Wait for updates to process
-    Log "Waiting for updates to process..."
-    Start-Sleep -Seconds 30
+$newWingetVersion = (winget --version).Trim()
+Log "Updated Winget version: $newWingetVersion"
 
-    # Update winget and all packages
-    Log "Updating winget and all packages..."
-    winget upgrade --all
+if ($wingetVersion -ne $newWingetVersion) {
+    Log "Winget has been updated from $wingetVersion to $newWingetVersion"
 } else {
-    Log "Winget version is v1.8.1911. Skipping Microsoft Store update and winget upgrade."
+    Log "Winget version remains unchanged at $wingetVersion"
 }
+
+# Wait for updates to process
+Log "Waiting for updates to process..."
+Start-Sleep -Seconds 30
 
 # Install usbipd using winget or alternative methods
 if (-not (CommandExists "usbipd")) {
