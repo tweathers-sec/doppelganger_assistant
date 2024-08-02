@@ -79,16 +79,45 @@ function Download-File {
     }
 }
 
-# Function to install winget
-function InstallWinget {
-    Log "Installing winget..."
-    Install-Script -Name winget-install -Force
-    winget-install
-    winget.exe update --accept-source-agreements --accept-package-agreements
-    if (-not (CommandExists "winget")) {
-        Log "Failed to install winget. Please install it manually."
-        exit 1
+# Function to update Microsoft Store and its apps
+function Update-MicrosoftStore {
+    Log "Updating Microsoft Store and its apps..."
+    try {
+        # Force update of Microsoft Store
+        Get-CimInstance -Namespace "Root\cimv2\mdm\dmmap" -ClassName "MDM_EnterpriseModernAppManagement_AppManagement01" | Invoke-CimMethod -MethodName UpdateScanMethod
+
+        # Update all Microsoft Store apps
+        $namespaceName = "root\cimv2\mdm\dmmap"
+        $className = "MDM_EnterpriseModernAppManagement_AppManagement01"
+        $wmiObj = Get-WmiObject -Namespace $namespaceName -Class $className
+        $result = $wmiObj.UpdateScanMethod()
+        
+        Log "Microsoft Store and apps update initiated. Result: $($result.ReturnValue)"
+    } catch {
+        Log "Error updating Microsoft Store and apps: $_"
     }
+}
+
+# Update Microsoft Store before attempting to use winget
+Update-MicrosoftStore
+
+# Wait for a moment to allow updates to process
+Start-Sleep -Seconds 30
+
+# Now proceed with winget installation or update
+if (-not (CommandExists "winget")) {
+    Log "Attempting to install winget..."
+    try {
+        # Try to install winget from Microsoft Store
+        Start-Process "ms-windows-store://pdp/?ProductId=9NBLGGH4NNS1" -Wait
+        Log "Winget installation initiated. Please complete the installation in the Microsoft Store."
+        Read-Host "Press Enter when the installation is complete"
+    } catch {
+        Log "Error initiating winget installation: $_"
+    }
+} else {
+    Log "Updating winget..."
+    winget upgrade --all
 }
 
 # Function to refresh PATH and check for usbipd
