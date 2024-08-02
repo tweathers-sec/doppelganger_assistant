@@ -85,22 +85,27 @@ function Install-Winget {
     Log "Installing winget..."
     $wingetUrl = "https://github.com/microsoft/winget-cli/releases/latest/download/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle"
     $wingetPath = "$env:TEMP\Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle"
-    $xamlUrl = "https://www.nuget.org/api/v2/package/Microsoft.UI.Xaml/2.8.6"
-    $xamlPath = "$env:TEMP\Microsoft.UI.Xaml.2.8.6.nupkg"
-    $xamlExtractPath = "$env:TEMP\Microsoft.UI.Xaml"
     
+    $isWindows10 = [System.Environment]::OSVersion.Version.Major -eq 10
+
     try {
-        # Download XAML package
-        Log "Downloading XAML package..."
-        Download-File -Url $xamlUrl -Destination $xamlPath
+        if ($isWindows10) {
+            $xamlUrl = "https://www.nuget.org/api/v2/package/Microsoft.UI.Xaml/2.8.6"
+            $xamlPath = "$env:TEMP\Microsoft.UI.Xaml.2.8.6.nupkg"
+            $xamlExtractPath = "$env:TEMP\Microsoft.UI.Xaml"
 
-        # Extract XAML package
-        Log "Extracting XAML package..."
-        Expand-Archive -Path $xamlPath -DestinationPath $xamlExtractPath -Force
+            # Download XAML package
+            Log "Downloading XAML package..."
+            Download-File -Url $xamlUrl -Destination $xamlPath
 
-        # Install XAML package
-        Log "Installing XAML package..."
-        Add-AppxPackage -Path "$xamlExtractPath\tools\AppX\x64\Release\Microsoft.UI.Xaml.2.8.appx"
+            # Extract XAML package
+            Log "Extracting XAML package..."
+            Expand-Archive -Path $xamlPath -DestinationPath $xamlExtractPath -Force
+
+            # Install XAML package
+            Log "Installing XAML package..."
+            Add-AppxPackage -Path "$xamlExtractPath\tools\AppX\x64\Release\Microsoft.UI.Xaml.2.8.appx"
+        }
 
         # Download and install Winget
         Log "Downloading Winget..."
@@ -115,8 +120,10 @@ function Install-Winget {
         return $false
     } finally {
         Remove-Item $wingetPath -ErrorAction SilentlyContinue
-        Remove-Item $xamlPath -ErrorAction SilentlyContinue
-        Remove-Item $xamlExtractPath -Recurse -Force -ErrorAction SilentlyContinue
+        if ($isWindows10) {
+            Remove-Item $xamlPath -ErrorAction SilentlyContinue
+            Remove-Item $xamlExtractPath -Recurse -Force -ErrorAction SilentlyContinue
+        }
     }
 }
 
@@ -175,34 +182,38 @@ if (-not (Is-WingetInstalled)) {
     if (Install-Winget) {
         Log "Winget installed successfully. Refreshing PATH..."
         $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+        # Force PowerShell to refresh its command cache
+        $env:PSModulePath = [System.Environment]::GetEnvironmentVariable("PSModulePath", "Machine")
     } else {
-        Log "Failed to install winget. Exiting script."
-        exit 1
+        Log "Failed to install winget. Continuing without winget."
     }
 }
 
 # Check winget version and update if necessary
-$minWingetVersion = "1.4.0"  # Set this to the minimum required version
-$currentWingetVersion = (winget --version).Trim()
-Log "Current Winget version: $currentWingetVersion"
+if (Is-WingetInstalled) {
+    $minWingetVersion = "1.4.0"  # Set this to the minimum required version
+    $currentWingetVersion = (winget --version).Trim()
+    Log "Current Winget version: $currentWingetVersion"
 
-$currentVersionWithoutV = $currentWingetVersion -replace '^v', ''
-$minVersionWithoutV = $minWingetVersion -replace '^v', ''
+    $currentVersionWithoutV = $currentWingetVersion -replace '^v', ''
+    $minVersionWithoutV = $minWingetVersion -replace '^v', ''
 
-if ([version]$currentVersionWithoutV -lt [version]$minVersionWithoutV) {
-    Log "Winget version is older than $minWingetVersion. Updating Winget..."
-    if (Install-Winget) {
-        Log "Winget updated successfully. Refreshing PATH..."
-        $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
-        $newWingetVersion = (winget --version).Trim()
-        Log "Updated Winget version: $newWingetVersion"
+    if ([version]$currentVersionWithoutV -lt [version]$minVersionWithoutV) {
+        Log "Winget version is older than $minWingetVersion. Updating Winget..."
+        if (Install-Winget) {
+            Log "Winget updated successfully. Refreshing PATH..."
+            $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+            $newWingetVersion = (winget --version).Trim()
+            Log "Updated Winget version: $newWingetVersion"
+        } else {
+            Log "Failed to update winget. Continuing with current version."
+        }
     } else {
-        Log "Failed to update winget. Continuing with current version."
+        Log "Winget version is up to date."
     }
 } else {
-    Log "Winget version is up to date."
+    Log "Winget is not available. Skipping version check and update."
 }
-
 # Install usbipd using winget or alternative methods
 if (-not (CommandExists "usbipd")) {
     Log "Installing usbipd..."
