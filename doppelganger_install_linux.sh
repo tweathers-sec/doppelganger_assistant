@@ -121,4 +121,40 @@ if [ -z "$skip_proxmark_install" ]; then
     fi
 fi
 
+# Create desktop shortcut for Doppelganger Assistant
+if [ -z "$skip_doppelganger_install" ]; then
+    desktop_file="$HOME/.local/share/applications/doppelganger_assistant.desktop"
+    icon_path="/usr/share/pixmaps/doppelganger_assistant.png"
+
+    # Download the icon
+    if [ -f "$icon_path" ]; then
+        echo "Icon already exists. Skipping download."
+    else
+        echo "Downloading Doppelganger Assistant icon..."
+        run_with_sudo wget -O "$icon_path" "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/img/doppelganger_assistant.png"
+    fi
+
+    # Create .desktop file
+    echo "Creating desktop shortcut..."
+    cat > "$desktop_file" << EOL
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Doppelganger Assistant
+Comment=Launch Doppelganger Assistant
+Exec=doppelganger_assistant
+Icon=$icon_path
+Terminal=false
+Categories=Utility;
+EOL
+
+    # Make the .desktop file executable
+    chmod +x "$desktop_file"
+
+    # Create symlink on the desktop
+    ln -sf "$desktop_file" "$HOME/Desktop/Doppelganger Assistant.desktop"
+
+    echo "Desktop shortcut created successfully."
+fi
+
 echo "Installation process completed. If any steps were skipped due to lack of privileges, please run them manually as root or with sudo."
