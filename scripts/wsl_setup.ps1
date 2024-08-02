@@ -203,7 +203,7 @@ if ($wingetVersion -ne "v1.8.1911") {
 
     # Wait for updates to process
     Log "Waiting for updates to process..."
-    Start-Sleep -Seconds 60
+    Start-Sleep -Seconds 15
 
     # Update winget and all packages
     Log "Updating winget and all packages..."
