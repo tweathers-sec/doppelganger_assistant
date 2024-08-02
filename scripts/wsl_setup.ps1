@@ -91,22 +91,20 @@ function Install-Winget {
     try {
         if ($isWindows10) {
             $xamlUrl = "https://www.nuget.org/api/v2/package/Microsoft.UI.Xaml/2.8.6"
-            $xamlPath = "$env:TEMP\Microsoft.UI.Xaml.2.8.6.nupkg"
+            $xamlPath = "$env:TEMP\Microsoft.UI.Xaml.2.8.6.zip"
             $xamlExtractPath = "$env:TEMP\Microsoft.UI.Xaml"
 
             # Download XAML package
             Log "Downloading XAML package..."
             (New-Object System.Net.WebClient).DownloadFile($xamlUrl, $xamlPath)
 
-            # Extract XAML package using NuGet
+            # Extract XAML package
             Log "Extracting XAML package..."
-            $nugetPath = "$env:TEMP\nuget.exe"
-            (New-Object System.Net.WebClient).DownloadFile("https://dist.nuget.org/win-x86-commandline/latest/nuget.exe", $nugetPath)
-            & $nugetPath install Microsoft.UI.Xaml -Version 2.8.6 -OutputDirectory $xamlExtractPath
+            Expand-Archive -Path $xamlPath -DestinationPath $xamlExtractPath -Force
 
             # Install XAML package
             Log "Installing XAML package..."
-            Add-AppxPackage -Path "$xamlExtractPath\Microsoft.UI.Xaml.2.8.6\tools\AppX\x64\Release\Microsoft.UI.Xaml.2.8.appx"
+            Add-AppxPackage -Path "$xamlExtractPath\tools\AppX\x64\Release\Microsoft.UI.Xaml.2.8.appx"
         }
 
         # Download and install Winget
@@ -125,7 +123,6 @@ function Install-Winget {
         if ($isWindows10) {
             Remove-Item $xamlPath -ErrorAction SilentlyContinue
             Remove-Item $xamlExtractPath -Recurse -Force -ErrorAction SilentlyContinue
-            Remove-Item $nugetPath -ErrorAction SilentlyContinue
         }
     }
 }
