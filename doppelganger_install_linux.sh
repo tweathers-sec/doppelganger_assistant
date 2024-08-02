@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # Function to check if a command exists
 command_exists() {
     command -v "$1" &> /dev/null
@@ -41,22 +40,34 @@ fi
 
 # Check if doppelganger_assistant is installed
 if command_exists doppelganger_assistant; then
-    if ! prompt_reinstall "Doppelganger Assistant"; then
+    if prompt_reinstall "Doppelganger Assistant"; then
+        echo "Proceeding with Doppelganger Assistant reinstallation."
+        skip_doppelganger_install=false
+    else
         echo "Skipping Doppelganger Assistant installation."
         skip_doppelganger_install=true
     fi
+else
+    echo "Doppelganger Assistant not found. Proceeding with installation."
+    skip_doppelganger_install=false
 fi
 
 # Check if Proxmark3 is installed
 if command_exists pm3; then
-    if ! prompt_reinstall "Proxmark3"; then
+    if prompt_reinstall "Proxmark3"; then
+        echo "Proceeding with Proxmark3 reinstallation."
+        skip_proxmark_install=false
+    else
         echo "Skipping Proxmark3 installation."
         skip_proxmark_install=true
     fi
+else
+    echo "Proxmark3 not found. Proceeding with installation."
+    skip_proxmark_install=false
 fi
 
 # Install necessary packages for Doppelganger Assistant
-if [ -z "$skip_doppelganger_install" ]; then
+if [ "$skip_doppelganger_install" = false ]; then
     if $as_root || command_exists sudo; then
         run_with_sudo apt install -y libgl1 xterm make git
     else
@@ -88,7 +99,7 @@ if [ -z "$skip_doppelganger_install" ]; then
 fi
 
 # Install dependencies for Proxmark3
-if [ -z "$skip_proxmark_install" ]; then
+if [ "$skip_proxmark_install" = false ]; then
     if $as_root || command_exists sudo; then
         run_with_sudo apt install --no-install-recommends -y git ca-certificates build-essential pkg-config \
         libreadline-dev gcc-arm-none-eabi libnewlib-dev qtbase5-dev \
