@@ -88,7 +88,7 @@ function Install-Winget {
     $wingetPath = "$env:TEMP\Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle"
     
     try {
-        Invoke-WebRequest -Uri $wingetUrl -OutFile $wingetPath
+        Download-File -Url $wingetUrl -Destination $wingetPath
         Add-AppxPackage -Path $wingetPath
         Log "Winget installed successfully."
     } catch {
