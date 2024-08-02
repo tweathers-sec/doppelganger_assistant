@@ -81,25 +81,43 @@ function Download-File {
 }
 
 # Function to install winget
-# Function to install winget
 function Install-Winget {
     Log "Installing winget..."
     $wingetUrl = "https://github.com/microsoft/winget-cli/releases/latest/download/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle"
     $wingetPath = "$env:TEMP\Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle"
+    $xamlUrl = "https://www.nuget.org/api/v2/package/Microsoft.UI.Xaml/2.8.6"
+    $xamlPath = "$env:TEMP\Microsoft.UI.Xaml.2.8.6.nupkg"
+    $xamlExtractPath = "$env:TEMP\Microsoft.UI.Xaml"
     
     try {
+        # Download XAML package
+        Log "Downloading XAML package..."
+        Download-File -Url $xamlUrl -Destination $xamlPath
+
+        # Extract XAML package
+        Log "Extracting XAML package..."
+        Expand-Archive -Path $xamlPath -DestinationPath $xamlExtractPath -Force
+
+        # Install XAML package
+        Log "Installing XAML package..."
+        Add-AppxPackage -Path "$xamlExtractPath\tools\AppX\x64\Release\Microsoft.UI.Xaml.2.8.appx"
+
+        # Download and install Winget
+        Log "Downloading Winget..."
         Download-File -Url $wingetUrl -Destination $wingetPath
+        
+        Log "Installing Winget..."
         Add-AppxPackage -Path $wingetPath
         Log "Winget installed successfully."
-        Log "Upgrading winget and all packages..."
-        winget upgrade --all --accept-source-agreements --accept-package-agreements
+        return $true
     } catch {
         Log "Error installing winget: $_"
         return $false
     } finally {
         Remove-Item $wingetPath -ErrorAction SilentlyContinue
+        Remove-Item $xamlPath -ErrorAction SilentlyContinue
+        Remove-Item $xamlExtractPath -Recurse -Force -ErrorAction SilentlyContinue
     }
-    return $true
 }
 
 # Function to refresh PATH and check for usbipd
