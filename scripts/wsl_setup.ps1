@@ -131,40 +131,28 @@ if ($psGallery -and $psGallery.InstallationPolicy -ne "Trusted") {
     Log "PSGallery is already set to trusted."
 }
 
-# Install winget if not present
-if (-not (CommandExists "winget")) {
+# Check winget version and update if necessary
+$minWingetVersion = "1.4.0"  # Set this to the minimum required version
+$currentWingetVersion = (winget --version).Trim()
+Log "Current Winget version: $currentWingetVersion"
+
+if ([version]$currentWingetVersion -lt [version]$minWingetVersion) {
+    Log "Winget version is older than $minWingetVersion. Updating Winget..."
     if (Install-Winget) {
-        Log "Winget installed successfully. Refreshing PATH..."
+        Log "Winget updated successfully. Refreshing PATH..."
         $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+        $newWingetVersion = (winget --version).Trim()
+        Log "Updated Winget version: $newWingetVersion"
     } else {
-        Log "Failed to install winget. Exiting script."
-        exit 1
+        Log "Failed to update winget. Continuing with current version."
     }
 } else {
-    Log "Winget is already installed."
-}
-
-# Check winget version and update if necessary
-$wingetVersion = (winget --version).Trim()
-Log "Current Winget version: $wingetVersion"
-
-Log "Updating Winget..."
-winget uninstall Microsoft.Winget.Source_8wekyb3d8bbwe
-winget source reset --force
-winget upgrade --all
-
-$newWingetVersion = (winget --version).Trim()
-Log "Updated Winget version: $newWingetVersion"
-
-if ($wingetVersion -ne $newWingetVersion) {
-    Log "Winget has been updated from $wingetVersion to $newWingetVersion"
-} else {
-    Log "Winget version remains unchanged at $wingetVersion"
+    Log "Winget version is up to date."
 }
 
 # Wait for updates to process
 Log "Waiting for updates to process..."
-Start-Sleep -Seconds 30
+Start-Sleep -Seconds 10
 
 # Install usbipd using winget or alternative methods
 if (-not (CommandExists "usbipd")) {
