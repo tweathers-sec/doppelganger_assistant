@@ -91,6 +91,8 @@ function Install-Winget {
         Download-File -Url $wingetUrl -Destination $wingetPath
         Add-AppxPackage -Path $wingetPath
         Log "Winget installed successfully."
+        Log "Upgrading winget and all packages..."
+        winget upgrade --all --accept-source-agreements --accept-package-agreements
     } catch {
         Log "Error installing winget: $_"
         return $false
