@@ -119,6 +119,12 @@ Install-Aria2
 
 Log "Checking if NuGet provider is installed and PSGallery is trusted..."
 
+# Install NuGet provider silently if not already installed
+if (-not (Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue)) {
+    Log "Installing NuGet provider..."
+    Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser | Out-Null
+}
+
 # Check and set PSGallery to trusted silently
 $psGallery = Get-PSRepository -Name "PSGallery" -ErrorAction SilentlyContinue
 if ($psGallery -and $psGallery.InstallationPolicy -ne "Trusted") {
@@ -153,10 +159,6 @@ if ([version]$currentVersionWithoutV -lt [version]$minVersionWithoutV) {
 } else {
     Log "Winget version is up to date."
 }
-
-# Wait for updates to process
-Log "Waiting for updates to process..."
-Start-Sleep -Seconds 10
 
 # Install usbipd using winget or alternative methods
 if (-not (CommandExists "usbipd")) {
