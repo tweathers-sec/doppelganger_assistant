@@ -98,26 +98,23 @@ function Update-MicrosoftStore {
     }
 }
 
-# Update Microsoft Store before attempting to use winget
-Update-MicrosoftStore
-
-# Wait for a moment to allow updates to process
-Start-Sleep -Seconds 30
-
-# Now proceed with winget installation or update
-if (-not (CommandExists "winget")) {
-    Log "Attempting to install winget..."
+# Function to install winget
+function Install-Winget {
+    Log "Installing winget..."
+    $wingetUrl = "https://github.com/microsoft/winget-cli/releases/latest/download/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle"
+    $wingetPath = "$env:TEMP\Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle"
+    
     try {
-        # Try to install winget from Microsoft Store
-        Start-Process "ms-windows-store://pdp/?ProductId=9NBLGGH4NNS1" -Wait
-        Log "Winget installation initiated. Please complete the installation in the Microsoft Store."
-        Read-Host "Press Enter when the installation is complete"
+        Invoke-WebRequest -Uri $wingetUrl -OutFile $wingetPath
+        Add-AppxPackage -Path $wingetPath
+        Log "Winget installed successfully."
     } catch {
-        Log "Error initiating winget installation: $_"
+        Log "Error installing winget: $_"
+        return $false
+    } finally {
+        Remove-Item $wingetPath -ErrorAction SilentlyContinue
     }
-} else {
-    Log "Updating winget..."
-    winget upgrade --all
+    return $true
 }
 
 # Function to refresh PATH and check for usbipd
@@ -172,12 +169,29 @@ if ($psGallery -and $psGallery.InstallationPolicy -ne "Trusted") {
     Log "PSGallery is already set to trusted."
 }
 
-# Install usbipd if it is not installed
+# Install winget if not present
 if (-not (CommandExists "winget")) {
-    InstallWinget
+    if (Install-Winget) {
+        Log "Winget installed successfully. Refreshing PATH..."
+        $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+    } else {
+        Log "Failed to install winget. Exiting script."
+        exit 1
+    }
 } else {
-    Log "winget is already installed."
+    Log "Winget is already installed."
 }
+
+# Update Microsoft Store
+Update-MicrosoftStore
+
+# Wait for a moment to allow updates to process
+Log "Waiting for updates to process..."
+Start-Sleep -Seconds 10
+
+# Update winget and all packages
+Log "Updating winget and all packages..."
+winget upgrade --all
 
 # Install usbipd using winget
 if (-not (CommandExists "usbipd")) {
