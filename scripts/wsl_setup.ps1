@@ -83,16 +83,27 @@ function Download-File {
 function Update-MicrosoftStore {
     Log "Updating Microsoft Store and its apps..."
     try {
-        # Force update of Microsoft Store
+        # First update attempt
+        Log "First update attempt..."
         Get-CimInstance -Namespace "Root\cimv2\mdm\dmmap" -ClassName "MDM_EnterpriseModernAppManagement_AppManagement01" | Invoke-CimMethod -MethodName UpdateScanMethod
-
-        # Update all Microsoft Store apps
         $namespaceName = "root\cimv2\mdm\dmmap"
         $className = "MDM_EnterpriseModernAppManagement_AppManagement01"
         $wmiObj = Get-WmiObject -Namespace $namespaceName -Class $className
         $result = $wmiObj.UpdateScanMethod()
-        
-        Log "Microsoft Store and apps update initiated. Result: $($result.ReturnValue)"
+        Log "First update attempt completed. Result: $($result.ReturnValue)"
+
+        # Wait for 30 seconds
+        Log "Waiting for 30 seconds before second update attempt..."
+        Start-Sleep -Seconds 30
+
+        # Second update attempt
+        Log "Second update attempt..."
+        Get-CimInstance -Namespace "Root\cimv2\mdm\dmmap" -ClassName "MDM_EnterpriseModernAppManagement_AppManagement01" | Invoke-CimMethod -MethodName UpdateScanMethod
+        $wmiObj = Get-WmiObject -Namespace $namespaceName -Class $className
+        $result = $wmiObj.UpdateScanMethod()
+        Log "Second update attempt completed. Result: $($result.ReturnValue)"
+
+        Log "Microsoft Store and apps update process completed."
     } catch {
         Log "Error updating Microsoft Store and apps: $_"
     }
@@ -182,24 +193,44 @@ if (-not (CommandExists "winget")) {
     Log "Winget is already installed."
 }
 
-# Update Microsoft Store
-Update-MicrosoftStore
+# Check winget version
+$wingetVersion = (winget --version).Trim()
+Log "Winget version: $wingetVersion"
 
-# Wait for a moment to allow updates to process
-Log "Waiting for updates to process..."
-Start-Sleep -Seconds 10
+if ($wingetVersion -ne "v1.8.1911") {
+    # Update Microsoft Store
+    Update-MicrosoftStore
 
-# Update winget and all packages
-Log "Updating winget and all packages..."
-winget upgrade --all
+    # Wait for updates to process
+    Log "Waiting for updates to process..."
+    Start-Sleep -Seconds 60
 
-# Install usbipd using winget
+    # Update winget and all packages
+    Log "Updating winget and all packages..."
+    winget upgrade --all
+} else {
+    Log "Winget version is v1.8.1911. Skipping Microsoft Store update and winget upgrade."
+}
+
+# Install usbipd using winget or alternative methods
 if (-not (CommandExists "usbipd")) {
     Log "Installing usbipd..."
-    $installOutput = Start-Process winget -ArgumentList "install --exact dorssel.usbipd-win" -Wait -PassThru
-    if ($installOutput.ExitCode -ne 0) {
-        Log "Error installing usbipd. Exit code: $($installOutput.ExitCode)"
-        exit 1
+    try {
+        $installOutput = Start-Process winget -ArgumentList "install --exact dorssel.usbipd-win" -Wait -PassThru -ErrorAction Stop
+        if ($installOutput.ExitCode -ne 0) {
+            throw "Winget installation failed with exit code: $($installOutput.ExitCode)"
+        }
+    } catch {
+        Log "Error installing usbipd using winget. Trying alternative method..."
+        $usbIpdUrl = "https://github.com/dorssel/usbipd-win/releases/latest/download/usbipd-win_x64.msi"
+        $usbIpdMsiPath = "$env:TEMP\usbipd-win_x64.msi"
+        Invoke-WebRequest -Uri $usbIpdUrl -OutFile $usbIpdMsiPath
+        $msiExecOutput = Start-Process msiexec.exe -ArgumentList "/i `"$usbIpdMsiPath`" /qn" -Wait -PassThru
+        if ($msiExecOutput.ExitCode -ne 0) {
+            Log "Error installing usbipd using MSI. Exit code: $($msiExecOutput.ExitCode)"
+            exit 1
+        }
+        Remove-Item $usbIpdMsiPath -Force
     }
     
     # Check if usbipd is available after installation
