@@ -138,6 +138,7 @@ if ($psGallery -and $psGallery.InstallationPolicy -ne "Trusted") {
     Log "PSGallery is already set to trusted."
 }
 
+
 # Check winget version and update if necessary
 $minWingetVersion = "1.4.0"  # Set this to the minimum required version
 $currentWingetVersion = (winget --version).Trim()
