@@ -165,23 +165,42 @@ Install-Aria2
 Log "Checking if NuGet provider is installed and PSGallery is trusted..."
 
 # Function to check if NuGet provider is installed
-function Test-NuGetProvider {
-    $providers = Get-PackageProvider -ListAvailable
-    return $providers | Where-Object { $_.Name -eq 'NuGet' }
-}
-
-# Check and install NuGet provider silently
-if (-not (Test-NuGetProvider)) {
-    Log "NuGet provider not found. Installing NuGet provider..."
+function Update-MicrosoftStore {
+    Log "Updating Microsoft Store and its apps..."
     try {
-        Install-PackageProvider -Name "NuGet" -Force -Scope CurrentUser -MinimumVersion 2.8.5.201 -ErrorAction Stop | Out-Null
-        Log "NuGet provider installed successfully."
+        $maxAttempts = 3
+        $updateInitiated = $false
+
+        for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
+            Log "Update attempt $attempt of $maxAttempts..."
+            
+            $result = Get-CimInstance -Namespace "Root\cimv2\mdm\dmmap" -ClassName "MDM_EnterpriseModernAppManagement_AppManagement01" | Invoke-CimMethod -MethodName UpdateScanMethod
+            Log "Update scan completed. Result: $($result.ReturnValue)"
+
+            if ($result.ReturnValue -eq 0) {
+                $updateInitiated = $true
+                Log "Update scan initiated successfully."
+                break
+            }
+
+            if ($attempt -lt $maxAttempts) {
+                Log "Update scan failed. Waiting 30 seconds before next attempt..."
+                Start-Sleep -Seconds 30
+            }
+        }
+
+        if ($updateInitiated) {
+            Log "Initiating update installation..."
+            Get-CimInstance -Namespace "Root\cimv2\mdm\dmmap" -ClassName "MDM_EnterpriseModernAppManagement_AppManagement01" | Invoke-CimMethod -MethodName UpdateAllApps
+            Log "Update installation initiated."
+        } else {
+            Log "Failed to initiate update scan after $maxAttempts attempts."
+        }
+
+        Log "Microsoft Store and apps update process completed."
+    } catch {
+        Log "Error updating Microsoft Store and apps: $_"
     }
-    catch {
-        Log "Failed to install NuGet provider. Error: $_"
-    }
-} else {
-    Log "NuGet provider is already installed."
 }
 
 # Check and set PSGallery to trusted silently
@@ -220,7 +239,7 @@ if ($wingetVersion -ne "v1.8.1911") {
 
     # Wait for updates to process
     Log "Waiting for updates to process..."
-    Start-Sleep -Seconds 15
+    Start-Sleep -Seconds 30
 
     # Update winget and all packages
     Log "Updating winget and all packages..."
