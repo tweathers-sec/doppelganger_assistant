@@ -120,10 +120,8 @@ Install-Aria2
 Log "Checking if NuGet provider is installed and PSGallery is trusted..."
 
 # Install NuGet provider silently if not already installed
-if (-not (Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue)) {
-    Log "Installing NuGet provider..."
-    $null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.208 -Force -Scope CurrentUser
-}
+Log "Installing NuGet provider..."
+Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.208 -Force -Scope CurrentUser
 
 # Ensure the NuGet provider is loaded
 Import-PackageProvider -Name NuGet -Force | Out-Null
