@@ -96,7 +96,7 @@ function Install-Winget {
 
             # Download XAML package
             Log "Downloading XAML package..."
-            Download-File -Url $xamlUrl -Destination $xamlPath
+            (New-Object System.Net.WebClient).DownloadFile($xamlUrl, $xamlPath)
 
             # Extract XAML package
             Log "Extracting XAML package..."
@@ -109,7 +109,7 @@ function Install-Winget {
 
         # Download and install Winget
         Log "Downloading Winget..."
-        Download-File -Url $wingetUrl -Destination $wingetPath
+        (New-Object System.Net.WebClient).DownloadFile($wingetUrl, $wingetPath)
         
         Log "Installing Winget..."
         Add-AppxPackage -Path $wingetPath
@@ -124,6 +124,16 @@ function Install-Winget {
             Remove-Item $xamlPath -ErrorAction SilentlyContinue
             Remove-Item $xamlExtractPath -Recurse -Force -ErrorAction SilentlyContinue
         }
+    }
+}
+
+# Function to check if winget is installed
+function Is-WingetInstalled {
+    try {
+        $null = Get-Command winget -ErrorAction Stop
+        return $true
+    } catch {
+        return $false
     }
 }
 
@@ -164,16 +174,6 @@ if ($psGallery -and $psGallery.InstallationPolicy -ne "Trusted") {
     Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted -ErrorAction SilentlyContinue | Out-Null
 } else {
     Log "PSGallery is already set to trusted."
-}
-
-# Function to check if winget is installed
-function Is-WingetInstalled {
-    try {
-        $null = Get-Command winget -ErrorAction Stop
-        return $true
-    } catch {
-        return $false
-    }
 }
 
 # Check if winget is installed
