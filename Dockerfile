@@ -6,6 +6,8 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # Install necessary packages
 RUN apt-get update && apt-get install -y \
+    wget \
+    apt-utils \
     curl \
     git \
     make \
