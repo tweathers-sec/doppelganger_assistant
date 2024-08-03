@@ -1,10 +1,5 @@
 #!/bin/bash
 
-# Check for uninstall flag
-if [ "$1" = "--uninstall" ]; then
-    uninstall_doppelganger
-fi
-
 # Function to check if a command exists
 command_exists() {
     command -v "$1" &> /dev/null
@@ -28,7 +23,7 @@ EOF
 
 # Function to prompt for reinstallation
 prompt_reinstall() {
-    read -p "$1 is already installed. Do you want to reinstall it? (y/n): " choice
+    read -p "$1 is already installed. Do you want to reinstall it? (y/n): " choice < /dev/tty
     case "$choice" in
         y|Y ) return 0;;
         n|N ) return 1;;
@@ -45,32 +40,23 @@ uninstall_doppelganger() {
     rm -f "$HOME/.local/share/applications/doppelganger_assistant.desktop"
     
     # Remove the icon
-    run_with_sudo rm -f "/usr/share/pixmaps/doppelganger_assistant.png"
+    sudo rm -f "/usr/share/pixmaps/doppelganger_assistant.png"
     
     # Uninstall Doppelganger Assistant
     if command_exists doppelganger_assistant; then
-        run_with_sudo make uninstall
+        sudo make uninstall
     fi
     
     # Remove Proxmark3
     if [ -d "proxmark3" ]; then
         cd proxmark3
-        run_with_sudo make uninstall
+        sudo make uninstall
         cd ..
         rm -rf proxmark3
     fi
     
     echo "Doppelganger Assistant has been uninstalled."
     exit 0
-}
-
-# Function to run a command with sudo if available, otherwise run without sudo
-run_with_sudo() {
-    if command_exists sudo; then
-        sudo "$@"
-    else
-        "$@"
-    fi
 }
 
 # Function to detect the OS
@@ -107,14 +93,8 @@ display_doppelganger_ascii
 install_packages() {
     case "$OS" in
         "Ubuntu"|"Debian"|"Kali GNU/Linux"|"Parrot GNU/Linux"|"Parrot Security")
-            if $as_root || command_exists sudo; then
-                run_with_sudo apt update
-                run_with_sudo apt install -y "$@"
-            else
-                echo "Warning: Cannot install packages without sudo or root privileges."
-                echo "Please install the following packages manually: $@"
-                read -p "Press Enter to continue once you've installed the required packages..."
-            fi
+            sudo apt update
+            sudo apt install -y "$@"
             ;;
         *)
             echo "Unsupported operating system: $OS"
@@ -122,21 +102,18 @@ install_packages() {
             ;;
     esac
 }
+
 # Update and upgrade system packages
-if $as_root || command_exists sudo; then
-    case "$OS" in
-        "Ubuntu"|"Debian"|"Kali GNU/Linux"|"Parrot GNU/Linux"|"Parrot Security")
-            run_with_sudo apt update
-            run_with_sudo apt upgrade -y
-            ;;
-        *)
-            echo "Unsupported operating system: $OS"
-            exit 1
-            ;;
-    esac
-else
-    echo "Warning: Cannot update system packages without sudo or root privileges."
-fi
+case "$OS" in
+    "Ubuntu"|"Debian"|"Kali GNU/Linux"|"Parrot GNU/Linux"|"Parrot Security")
+        sudo apt update
+        sudo apt upgrade -y
+        ;;
+    *)
+        echo "Unsupported operating system: $OS"
+        exit 1
+        ;;
+esac
 
 # Check if doppelganger_assistant is installed
 if command_exists doppelganger_assistant; then
@@ -179,12 +156,7 @@ if [ "$skip_doppelganger_install" = false ]; then
 
     # Extract and install Doppelganger Assistant
     tar xvf doppelganger_assistant_*.tar.xz
-    if $as_root || command_exists sudo; then
-        run_with_sudo make install
-    else
-        echo "Warning: Cannot install Doppelganger Assistant without sudo or root privileges."
-        echo "Please run 'sudo make install' manually after the script finishes."
-    fi
+    sudo make install
 
     # Cleanup the directory, if desired
     rm -rf usr/
@@ -211,12 +183,7 @@ if [ "$skip_proxmark_install" = false ]; then
 
     # Compile and install Proxmark3 software
     make clean && make -j$(nproc)
-    if $as_root || command_exists sudo; then
-        run_with_sudo make install
-    else
-        echo "Warning: Cannot install Proxmark3 software without sudo or root privileges."
-        echo "Please run 'sudo make install' manually after the script finishes."
-    fi
+    sudo make install
 fi
 
 # Create desktop shortcut for Doppelganger Assistant
@@ -229,7 +196,7 @@ if [ "$skip_doppelganger_install" = false ]; then
         echo "Icon already exists. Skipping download."
     else
         echo "Downloading Doppelganger Assistant icon..."
-        run_with_sudo wget -O "$icon_path" "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/img/doppelganger_assistant.png"
+        sudo wget -O "$icon_path" "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/img/doppelganger_assistant.png"
     fi
 
     # Create .desktop file
@@ -255,4 +222,4 @@ EOL
     echo "Desktop shortcut created successfully."
 fi
 
-echo "Installation process completed. If any steps were skipped due to lack of privileges, please run them manually as root or with sudo."
+echo "Installation process completed."
