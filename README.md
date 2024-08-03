@@ -42,16 +42,22 @@ Supported technologies include:
 
 ## Installation
 
+#### Manual Installation
+
 1) Grab your desired package from the [release page](https://github.com/tweathers-sec/doppelganger_assistant/releases).
 2) Ensure that you have the [Iceman fork of the Proxmark3](https://github.com/RfidResearchGroup/proxmark3?tab=readme-ov-file#proxmark3-installation-and-overview) software installed.
 3) Install dependencies, if required (WSL).
+
+#### Automated Installation
+
+Alternatively, you can use one of the one-liners below to install on [Linux](https://github.com/tweathers-sec/doppelganger_assistant?tab=readme-ov-file#automated-linux-installation-recommend) and [Windows (WSL)](https://github.com/tweathers-sec/doppelganger_assistant?tab=readme-ov-file#installation-windows-wsl). These one-liners will install Doppelganger Assistant, any required dependencies, and the latest fork of the (Iceman) Proxmark3 software. 
 
 ### Installation MacOS
 
 Download the application (.app) from the [release page](https://github.com/tweathers-sec/doppelganger_assistant/releases) and place it in the `/Applications` directory. You can create a symbolic link to run the application from the terminal or you create an alias in your shell profile.
 
 ```sh
-Only chose one of the following options...
+Only choose one of the following options...
 
 # Symbolic Link
 sudo ln -s /Applications/doppelganger_assistant.app/Contents/MacOS/doppelganger_assistant /usr/local/bin/doppelganger_assistant
