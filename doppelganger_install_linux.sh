@@ -1,10 +1,5 @@
 #!/bin/bash
 
-# Check for uninstall flag
-if [ "$1" = "--uninstall" ]; then
-    uninstall_doppelganger
-fi
-
 
 # Function to check if a command exists
 command_exists() {
@@ -64,6 +59,11 @@ uninstall_doppelganger() {
     echo "Doppelganger Assistant has been uninstalled."
     exit 0
 }
+
+# Check for uninstall flag
+if [ "$1" = "--uninstall" ]; then
+    uninstall_doppelganger
+fi
 
 # Function to detect the OS
 detect_os() {
