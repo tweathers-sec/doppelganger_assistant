@@ -68,6 +68,16 @@ xattr -cr /Applications/doppelganger_assistant.app
 
 ### Installation Linux
 
+#### Automated Linux Installation (RECOMMEND)
+
+Run the following command inside your preferred terminal application:
+
+```bash
+curl -sSL https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/doppelganger_install_linux.sh | sudo bash
+```
+
+#### Manual Linux Installation
+
 Install Doppelganger Assistant Dependencies. *Note that this step should only be required if you encounter errors that prevent the deployment of doppelganger_assistant.*
 
 ```sh
