@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# Check for uninstall flag
+if [ "$1" = "--uninstall" ]; then
+    uninstall_doppelganger
+fi
+
 # Function to check if a command exists
 command_exists() {
     command -v "$1" &> /dev/null
@@ -29,6 +34,34 @@ prompt_reinstall() {
         n|N ) return 1;;
         * ) echo "Invalid choice. Skipping reinstallation."; return 1;;
     esac
+}
+
+# Function to uninstall Doppelganger Assistant and Proxmark3
+uninstall_doppelganger() {
+    echo "Uninstalling Doppelganger Assistant..."
+    
+    # Remove the desktop shortcut
+    rm -f "$HOME/Desktop/Doppelganger Assistant.desktop"
+    rm -f "$HOME/.local/share/applications/doppelganger_assistant.desktop"
+    
+    # Remove the icon
+    run_with_sudo rm -f "/usr/share/pixmaps/doppelganger_assistant.png"
+    
+    # Uninstall Doppelganger Assistant
+    if command_exists doppelganger_assistant; then
+        run_with_sudo make uninstall
+    fi
+    
+    # Remove Proxmark3
+    if [ -d "proxmark3" ]; then
+        cd proxmark3
+        run_with_sudo make uninstall
+        cd ..
+        rm -rf proxmark3
+    fi
+    
+    echo "Doppelganger Assistant has been uninstalled."
+    exit 0
 }
 
 # Function to run a command with sudo if available, otherwise run without sudo
