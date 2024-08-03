@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Check for uninstall flag
+if [ "$1" = "--uninstall" ]; then
+    uninstall_doppelganger
+fi
+
+
 # Function to check if a command exists
 command_exists() {
     command -v "$1" &> /dev/null
