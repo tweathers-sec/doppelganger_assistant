@@ -79,11 +79,11 @@ if [[ "$OSTYPE" == "linux-gnu"* ]]; then
     mv fyne-cross/dist/linux-amd64/doppelganger_assistant.tar.xz build/doppelganger_assistant_linux_amd64.tar.xz
 
     # Check if the SDKs folder exists in the user's home directory
-    if [ -d "$HOME/SDKs/MacOSX13.3.sdk" ]; then
-        SDK_PATH="$HOME/SDKs/MacOSX13.3.sdk"
+    if [ -d "$HOME/SDKs/MacOSX14.4.sdk" ]; then
+        SDK_PATH="$HOME/SDKs/MacOSX14.4.sdk"
         print_color "green" "Found MacOSX SDK at $SDK_PATH"
     else
-        print_color "red" "MacOSX SDK not found at $HOME/SDKs/MacOSX13.3.sdk"
+        print_color "red" "MacOSX SDK not found at $HOME/SDKs/MacOSX14.4.sdk"
         exit 1
     fi
 
