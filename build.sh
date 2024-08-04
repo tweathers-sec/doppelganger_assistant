@@ -68,32 +68,24 @@ print_color "blue" "Initializing Go module..."
 go mod init doppelganger_assistant || true
 go mod tidy
 
-print_color "blue" "Building for Linux (arm64 and amd64)..."
-# Build for Linux (arm64 and amd64)
-fyne-cross linux -arch=arm64,amd64 -icon=img/doppelganger_assistant.png -app-id=io.mwgroup.doppelganger_assistant
-
-print_color "blue" "Building for macOS (arm64 and amd64)..."
-# Build for macOS (arm64 and amd64)
-fyne-cross darwin -arch=arm64,amd64 -icon=img/doppelganger_assistant.png -app-id=io.mwgroup.doppelganger_assistant
-
-# Create DMG for macOS applications
-hdiutil create -volname doppelganger_assistant_darwin_amd64 -srcfolder fyne-cross/dist/darwin-amd64/doppelganger_assistant.app -ov -format UDZO fyne-cross/dist/darwin-amd64/doppelganger_assistant_darwin_amd64.dmg
-hdiutil create -volname doppelganger_assistant_darwin_arm64 -srcfolder fyne-cross/dist/darwin-arm64/doppelganger_assistant.app -ov -format UDZO fyne-cross/dist/darwin-arm64/doppelganger_assistant_darwin_arm64.dmg
-
-print_color "blue" "Moving and relabeling binaries..."
-# Move and relabel binaries
-mkdir -p build/
-tar -cJf fyne-cross/bin/darwin-arm64/doppelganger_assistant_darwin_arm64.tar.xz fyne-cross/bin/darwin-arm64/doppelganger_assistant
-tar -cJf fyne-cross/bin/darwin-amd64/doppelganger_assistant_darwin_amd64.tar.xz fyne-cross/bin/darwin-amd64/doppelganger_assistant
-mv fyne-cross/dist/linux-arm64/doppelganger_assistant.tar.xz build/doppelganger_assistant_linux_arm64.tar.xz
-mv fyne-cross/dist/linux-amd64/doppelganger_assistant.tar.xz build/doppelganger_assistant_linux_amd64.tar.xz
-mv fyne-cross/bin/darwin-arm64/doppelganger_assistant_darwin_arm64.tar.xz build/
-mv fyne-cross/bin/darwin-amd64/doppelganger_assistant_darwin_amd64.tar.xz build/
-mv fyne-cross/dist/darwin-arm64/doppelganger_assistant_darwin_arm64.dmg build/
-mv fyne-cross/dist/darwin-amd64/doppelganger_assistant_darwin_amd64.dmg build/
-
-# mv fyne-cross/bin/windows-arm64/doppelganger_assistant* build/doppelganger_assistant_windows_arm64.exe
-# mv fyne-cross/bin/windows-amd64/doppelganger_assistant* build/doppelganger_assistant_windows_amd64.exe
+if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    print_color "blue" "Building for Linux (arm64 and amd64)..."
+    # Build for Linux (arm64 and amd64)
+    fyne-cross linux -arch=arm64,amd64 -icon=img/doppelganger_assistant.png -app-id=io.mwgroup.doppelganger_assistant
+    mv fyne-cross/dist/linux-arm64/doppelganger_assistant.tar.xz build/doppelganger_assistant_linux_arm64.tar.xz
+    mv fyne-cross/dist/linux-amd64/doppelganger_assistant.tar.xz build/doppelganger_assistant_linux_amd64.tar.xz
+elif [[ "$OSTYPE" == "darwin"* ]]; then
+    print_color "blue" "Building for macOS (arm64 and amd64)..."
+    # Build for macOS (arm64 and amd64)
+    fyne-cross darwin -arch=arm64,amd64 -icon=img/doppelganger_assistant.png -app-id=io.mwgroup.doppelganger_assistant
+    # Create DMG for macOS applications
+    hdiutil create -volname doppelganger_assistant_darwin_amd64 -srcfolder fyne-cross/dist/darwin-amd64/doppelganger_assistant.app -ov -format UDZO fyne-cross/dist/darwin-amd64/doppelganger_assistant_darwin_amd64.dmg
+    hdiutil create -volname doppelganger_assistant_darwin_arm64 -srcfolder fyne-cross/dist/darwin-arm64/doppelganger_assistant.app -ov -format UDZO fyne-cross/dist/darwin-arm64/doppelganger_assistant_darwin_arm64.dmg
+    mv fyne-cross/bin/darwin-arm64/doppelganger_assistant_darwin_arm64.tar.xz build/
+    mv fyne-cross/bin/darwin-amd64/doppelganger_assistant_darwin_amd64.tar.xz build/
+    mv fyne-cross/dist/darwin-arm64/doppelganger_assistant_darwin_arm64.dmg build/
+    mv fyne-cross/dist/darwin-amd64/doppelganger_assistant_darwin_amd64.dmg build/
+fi
 
 print_color "blue" "Cleaning up..."
 # Clean up
