@@ -10,7 +10,11 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
 
     steps:
       - name: Set up Git repository
@@ -21,7 +25,8 @@ jobs:
         with:
           go-version: '1.22.3'  # Specify the Go version
 
-      - name: Set up Docker
+      - name: Set up Docker (Linux only)
+        if: matrix.os == 'ubuntu-latest'
         run: |
           curl -fsSL https://get.docker.com -o get-docker.sh
           sh get-docker.sh
