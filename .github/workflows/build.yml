@@ -33,22 +33,6 @@ jobs:
           chmod +x ./build.sh
           ./build.sh
 
-      - name: Configure Git
-        run: |
-          git config --global user.email "2996680+ralphte@users.noreply.github.com."
-          git config --global user.name "Runner"
-
-      - name: Create Release
-        id: create-release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.PAT }}
-        with:
-          tag_name: v${{ github.run_number }}
-          release_name: Release v${{ github.run_number }}
-          draft: false
-          prerelease: false
-
       - name: Upload Release Assets
         uses: actions/upload-release-asset@v1
         env:
