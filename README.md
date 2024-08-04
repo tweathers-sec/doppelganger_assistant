@@ -50,9 +50,27 @@ Supported technologies include:
 
 #### Automated Installation
 
-Alternatively, you can use one of the one-liners below to install on [Linux](https://github.com/tweathers-sec/doppelganger_assistant?tab=readme-ov-file#automated-linux-installation-recommend) and [Windows (WSL)](https://github.com/tweathers-sec/doppelganger_assistant?tab=readme-ov-file#installation-windows-wsl). These one-liners will install Doppelganger Assistant, any required dependencies, and the latest fork of the (Iceman) Proxmark3 software. 
+Alternatively, you can use one of the one-liners below to install on [Linux](https://github.com/tweathers-sec/doppelganger_assistant?tab=readme-ov-file#automated-linux-installation-recommend) and [Windows (WSL)](https://github.com/tweathers-sec/doppelganger_assistant?tab=readme-ov-file#installation-windows-wsl). These one-liners will install Doppelganger Assistant, any required dependencies, and the latest fork of the (Iceman) Proxmark3 software.
 
 ### Installation MacOS
+
+#### Automated MacOS Installation (RECOMMENDED)
+
+Run the following command in the terminal:
+
+```sh
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/doppelganger_install_macos.sh)"
+```
+
+#### Manual MacOS Installation
+
+Run the following command inside your preferred terminal application:
+
+```bash
+curl -sSL https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/doppelganger_install_macos.sh | sudo bash
+```
+
+#### Manual MacOS Installation
 
 Download the application (.app) from the [release page](https://github.com/tweathers-sec/doppelganger_assistant/releases) and place it in the `/Applications` directory. You can create a symbolic link to run the application from the terminal or you create an alias in your shell profile.
 

@@ -47,25 +47,54 @@ else
 fi
 print_color "0;32" "Disk image unmounted successfully."
 
+# Remove downloaded files
+print_color "1;33" "Removing downloaded files..."
+rm -f "$TMP_DMG"
+print_color "0;32" "Downloaded files removed successfully."
+
 # Run command to ignore Apple Error
 print_color "1;33" "Ignoring Apple error for Doppelganger Assistant..."
-xattr -cr "/Applications/Doppelganger Assistant.app"
+xattr -cr "/Applications/doppelganger_assistant.app"
 print_color "0;32" "Apple error ignored successfully."
 
 # Add Assistant to path
 print_color "1;33" "Adding Doppelganger Assistant to path..."
 PROFILE_FILE="$HOME/.zprofile"
 [[ -f "$HOME/.zshrc" ]] && PROFILE_FILE="$HOME/.zshrc"
-echo "alias doppelganger_assistant='/Applications/Doppelganger Assistant.app/Contents/MacOS/doppelganger_assistant'" >> "$PROFILE_FILE"
-print_color "0;32" "Doppelganger Assistant added to path successfully."
+ALIAS_LINE="alias doppelganger_assistant='/Applications/Doppelganger Assistant.app/Contents/MacOS/doppelganger_assistant'"
+
+if grep -q "$ALIAS_LINE" "$PROFILE_FILE"; then
+    print_color "0;32" "Doppelganger Assistant alias already exists in $PROFILE_FILE."
+else
+    echo "$ALIAS_LINE" >> "$PROFILE_FILE"
+    print_color "0;32" "Doppelganger Assistant added to path successfully."
+fi
 
 # Check if 'pm3' is installed
 print_color "1;33" "Checking if Proxmark3 is installed..."
 if ! command -v pm3 &> /dev/null; then
     print_color "1;31" "Proxmark3 is not installed."
-    read -p "Do you want to install it? (y/n) " -n 1 -r
+    read -p "Do you want to install the Iceman fork Proxmark3? (y/n) " -n 1 -r
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
+        print_color "1;33" "Checking if Homebrew is installed..."
+        if ! command -v brew &> /dev/null; then
+            print_color "1;31" "Homebrew is not installed."
+            read -p "Do you want to install Homebrew? (y/n) " -n 1 -r
+            echo
+            if [[ $REPLY =~ ^[Yy]$ ]]; then
+                print_color "1;33" "Installing Homebrew..."
+                /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+                print_color "0;32" "Homebrew installed successfully."
+            else
+                print_color "1;31" "Homebrew installation skipped. Proxmark3 cannot be installed."
+                print_color "1;31" "Exiting Proxmark3 installation."
+                break
+            fi
+        else
+            print_color "0;32" "Homebrew is already installed."
+        fi
+
         print_color "1;33" "Installing Proxmark3..."
         xcode-select --install
         brew install xquartz
@@ -75,5 +104,5 @@ if ! command -v pm3 &> /dev/null; then
     fi
 fi
 
-print_color "1;32" "Doppelganger Assistant has been installed successfully!"
+print_color "1;32" "Doppelganger Assistant has been installed successfully at /Applications/doppelganger_assistant.app!"
 print_color "1;33" "Please restart your terminal or run 'source $PROFILE_FILE' to use the 'doppelganger_assistant' command."
