@@ -52,18 +52,29 @@ else
     print_color "green" "fyne-cross is already installed."
 fi
 
+print_color "blue" "Checking if fyne is installed..."
+# Ensure that fyne is installed
+if ! command -v fyne &> /dev/null
+then
+    print_color "yellow" "fyne not found. Installing..."
+    go install fyne.io/fyne/v2/cmd/fyne@latest
+    export PATH=$PATH:$(go env GOPATH)/bin
+else
+    print_color "green" "fyne is already installed."
+fi
+
 print_color "blue" "Initializing Go module..."
 # Initialize Go module
-go mod init doppelganger_assistant
+go mod init doppelganger_assistant || true
 go mod tidy
 
 print_color "blue" "Building for Linux (arm64 and amd64)..."
 # Build for Linux (arm64 and amd64)
-fyne-cross linux -arch=arm64,amd64 -icon=img/Icon.png -app-id=io.mwgroup.doppelganger_assistant
+fyne-cross linux -arch=arm64,amd64 -icon=img/doppelganger_assistant.png -app-id=io.mwgroup.doppelganger_assistant
 
 print_color "blue" "Building for macOS (arm64 and amd64)..."
 # Build for macOS (arm64 and amd64)
-fyne-cross darwin -arch=arm64,amd64 -icon=img/Icon.png -app-id=io.mwgroup.doppelganger_assistant
+fyne-cross darwin -arch=arm64,amd64 -icon=img/doppelganger_assistant.png -app-id=io.mwgroup.doppelganger_assistant
 
 # Create DMG for macOS applications
 hdiutil create -volname doppelganger_assistant_darwin_amd64 -srcfolder fyne-cross/dist/darwin-amd64/doppelganger_assistant.app -ov -format UDZO fyne-cross/dist/darwin-amd64/doppelganger_assistant_darwin_amd64.dmg
@@ -71,7 +82,7 @@ hdiutil create -volname doppelganger_assistant_darwin_arm64 -srcfolder fyne-cros
 
 print_color "blue" "Moving and relabeling binaries..."
 # Move and relabel binaries
-mkdir build/
+mkdir -p build/
 tar -cJf fyne-cross/bin/darwin-arm64/doppelganger_assistant_darwin_arm64.tar.xz fyne-cross/bin/darwin-arm64/doppelganger_assistant
 tar -cJf fyne-cross/bin/darwin-amd64/doppelganger_assistant_darwin_amd64.tar.xz fyne-cross/bin/darwin-amd64/doppelganger_assistant
 mv fyne-cross/dist/linux-arm64/doppelganger_assistant.tar.xz build/doppelganger_assistant_linux_arm64.tar.xz

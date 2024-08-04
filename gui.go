@@ -146,7 +146,19 @@ func runGUI() {
 
 		switch runtime.GOOS {
 		case "darwin":
-			cmd = exec.Command("osascript", "-e", fmt.Sprintf("tell application \"Terminal\" to do script \"cd '%s' && clear && %s\"", cwd, command))
+			if _, err := exec.LookPath("/Applications/iTerm.app"); err == nil {
+				script := fmt.Sprintf(`
+					tell application "iTerm"
+						create window with default profile
+						tell current session of current window
+							write text "cd '%s' && clear && %s"
+						end tell
+					end tell
+				`, cwd, command)
+				cmd = exec.Command("osascript", "-e", script)
+			} else {
+				cmd = exec.Command("osascript", "-e", fmt.Sprintf("tell application \"Terminal\" to do script \"cd '%s' && clear && %s\"", cwd, command))
+			}
 		case "linux":
 			if _, err := exec.LookPath("gnome-terminal"); err == nil {
 				cmd = exec.Command("gnome-terminal", "--", "sh", "-c", fmt.Sprintf("cd \"%s\" && clear && %s; exec bash", cwd, command))
