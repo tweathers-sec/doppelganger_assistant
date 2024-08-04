@@ -72,6 +72,9 @@ if [[ "$OSTYPE" == "linux-gnu"* ]]; then
     print_color "blue" "Building for Linux (arm64 and amd64)..."
     # Build for Linux (arm64 and amd64)
     fyne-cross linux -arch=arm64,amd64 -icon=img/doppelganger_assistant.png -app-id=io.mwgroup.doppelganger_assistant
+    mkdir -p build/
+    tar -cJf fyne-cross/bin/linux-arm64/doppelganger_assistant_linux_arm64.tar.xz fyne-cross/bin/linux-arm64/doppelganger_assistant
+    tar -cJf fyne-cross/bin/linux-amd64/doppelganger_assistant_linux_amd64.tar.xz fyne-cross/bin/linux-amd64/doppelganger_assistant
     mv fyne-cross/dist/linux-arm64/doppelganger_assistant.tar.xz build/doppelganger_assistant_linux_arm64.tar.xz
     mv fyne-cross/dist/linux-amd64/doppelganger_assistant.tar.xz build/doppelganger_assistant_linux_amd64.tar.xz
 elif [[ "$OSTYPE" == "darwin"* ]]; then
@@ -81,6 +84,9 @@ elif [[ "$OSTYPE" == "darwin"* ]]; then
     # Create DMG for macOS applications
     hdiutil create -volname doppelganger_assistant_darwin_amd64 -srcfolder fyne-cross/dist/darwin-amd64/doppelganger_assistant.app -ov -format UDZO fyne-cross/dist/darwin-amd64/doppelganger_assistant_darwin_amd64.dmg
     hdiutil create -volname doppelganger_assistant_darwin_arm64 -srcfolder fyne-cross/dist/darwin-arm64/doppelganger_assistant.app -ov -format UDZO fyne-cross/dist/darwin-arm64/doppelganger_assistant_darwin_arm64.dmg
+    mkdir -p build/
+    tar -cJf fyne-cross/bin/darwin-arm64/doppelganger_assistant_darwin_arm64.tar.xz fyne-cross/bin/darwin-arm64/doppelganger_assistant
+    tar -cJf fyne-cross/bin/darwin-amd64/doppelganger_assistant_darwin_amd64.tar.xz fyne-cross/bin/darwin-amd64/doppelganger_assistant
     mv fyne-cross/bin/darwin-arm64/doppelganger_assistant_darwin_arm64.tar.xz build/
     mv fyne-cross/bin/darwin-amd64/doppelganger_assistant_darwin_amd64.tar.xz build/
     mv fyne-cross/dist/darwin-arm64/doppelganger_assistant_darwin_arm64.dmg build/
