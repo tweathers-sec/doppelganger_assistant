@@ -3,7 +3,7 @@ name: Build and Release
 on:
   push:
     branches:
-      - 'test'
+      - 'dev'
   pull_request:
     branches:
       - 'main'
