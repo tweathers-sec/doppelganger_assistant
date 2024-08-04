@@ -10,11 +10,7 @@ on:
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
-
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
+    runs-on: self-hosted
 
     steps:
       - name: Set up Git repository
@@ -25,17 +21,12 @@ jobs:
         with:
           go-version: '1.22.3'  # Specify the Go version
 
-      - name: Set up Docker (Linux only)
-        if: matrix.os == 'ubuntu-latest'
+      - name: Set up Docker
         run: |
           curl -fsSL https://get.docker.com -o get-docker.sh
           sh get-docker.sh
           sudo usermod -aG docker $USER
           newgrp docker
-
-      - name: Set up Docker on macOS
-        if: matrix.os == 'macos-latest'
-        uses: douglascamata/setup-docker-macos-action@v1-alpha
 
       - name: Create directories and build binaries
         run: |
@@ -46,12 +37,6 @@ jobs:
         run: |
           git config --global user.email "2996680+ralphte@users.noreply.github.com."
           git config --global user.name "Runner"
-
-      - name: Create Tag
-        id: create_tag
-        run: |
-          git tag -a v${{ github.run_number }} -m "Release v${{ github.run_number }}"
-          git push origin v${{ github.run_number }}
 
       - name: Create Release
         id: create-release
