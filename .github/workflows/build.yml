@@ -1,4 +1,4 @@
-name: Build on Tag
+name: Build and Release
 
 on:
   push:
@@ -8,6 +8,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Set up Git repository
         uses: actions/checkout@v2
@@ -16,6 +17,13 @@ jobs:
         uses: actions/setup-go@v2
         with:
           go-version: '1.22.3'  # Specify the Go version
+
+      - name: Set up Docker
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y docker.io
+          sudo systemctl start docker
+          sudo systemctl enable docker
 
       - name: Create directories and build binaries
         run: |
@@ -39,7 +47,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create-release.outputs.upload_url }}
-          asset_path: ${{ github.workspace }}/build/${{ matrix.os }}_${{ matrix.arch }}
+          asset_path: build/
           asset_name: doppelganger_assistant_${{ matrix.os }}_${{ matrix.arch }}
           asset_content_type: application/octet-stream
         if: success()
@@ -51,7 +59,7 @@ jobs:
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: build/${{ matrix.os }}_${{ matrix.arch }}
+          file: build/*
           asset_name: doppelganger_assistant_${{ matrix.os }}_${{ matrix.arch }}
           tag: ${{ github.ref }}
           overwrite: true
