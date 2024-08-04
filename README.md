@@ -66,7 +66,7 @@ sudo ln -s /Applications/doppelganger_assistant.app/Contents/MacOS/doppelganger_
 alias doppelganger_assistant='/Applications/doppelganger_assistant.app/Contents/MacOS/doppelganger_assistant'
 ```
 
-If you encounter a stating that the **"doppelganger_assistant.app" is damaged and can't be opened. You should move it to the Trash.** Run the following command in the directory where the doppelganger assistant resides.
+If you encounter an error stating that the **"doppelganger_assistant.app" is damaged and can't be opened. You should move it to the Trash.** Run the following command in the directory where the doppelganger assistant resides.
 
 ```sh
 xattr -cr /Applications/doppelganger_assistant.app
