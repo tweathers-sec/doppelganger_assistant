@@ -14,12 +14,31 @@ jobs:
 
     strategy:
       matrix:
-        os: [macos-latest, ubuntu-latest]
-        arch: [amd64, arm64]
+        include:
+          - os: ubuntu-latest
+            arch: amd64
+          - os: macos-latest
+            arch: arm64
+          - os: macos-13
+            arch: amd64
 
     steps:
       - name: Set up Git repository
         uses: actions/checkout@v2
+
+      - name: Install GitHub CLI
+        run: |
+          if [[ "$RUNNER_OS" == "Linux" ]]; then
+            type -p wget >/dev/null || (sudo apt update && sudo apt-get install wget -y)
+            sudo mkdir -p -m 755 /etc/apt/keyrings
+            wget -qO- https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null
+            sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg
+            echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+            sudo apt update
+            sudo apt install gh -y
+          elif [[ "$RUNNER_OS" == "macOS" ]]; then
+            brew install gh
+          fi
 
       - name: Set up Go
         uses: actions/setup-go@v2
@@ -31,26 +50,104 @@ jobs:
           chmod +x ./build.sh
           ./build.sh
 
+      - name: List all files in build directory
+        run: ls build/
+
+      # - name: Install Certificate
+      #   if: matrix.os == 'macos-latest' || matrix.os == 'macos-13'
+      #   run: |
+      #     echo "${{ secrets.MACOS_CERTIFICATE }}" | base64 --decode > certificate.p12
+      #     security create-keychain -p "" build.keychain
+      #     security import certificate.p12 -k build.keychain -P "${{ secrets.MACOS_CERTIFICATE_PASSWORD }}" -T /usr/bin/codesign
+      #     security list-keychains -s build.keychain
+      #     security default-keychain -s build.keychain
+      #     security unlock-keychain -p "" build.keychain
+      #     security set-key-partition-list -S apple-tool:,apple: -s -k "" build.keychain
+
+      # - name: Sign Application
+      #   if: matrix.os == 'macos-latest' || matrix.os == 'macos-13'
+      #   run: |
+      #     codesign --deep --force --verbose --sign "Developer ID Application: Your Name (TEAMID)" build/doppelganger_assistant.app
+
+      - name: Upload build artifacts
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v2
+        with:
+          name: build-ubuntu-latest
+          path: build/
+
+      - name: Upload build artifacts for macOS
+        if: matrix.os == 'macos-latest'
+        uses: actions/upload-artifact@v2
+        with:
+          name: build-${{ matrix.os }}-${{ matrix.arch }}
+          path: build/
+
+      - name: Upload build artifacts for macOS (macos-13)
+        if: matrix.os == 'macos-13'
+        uses: actions/upload-artifact@v2
+        with:
+          name: build-${{ matrix.os }}-${{ matrix.arch }}
+          path: build/
+
+  create_release:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Set up Git repository
+        uses: actions/checkout@v2
+
+      - name: Download build artifacts
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p build
+          for os in macos-latest; do
+            for arch in arm64; do
+              echo "Downloading build-${os}-${arch}..."
+              mkdir -p build-${os}-${arch}
+              gh run download --name build-${os}-${arch} --dir build-${os}-${arch}/ || echo "Failed to download build-${os}-${arch}"
+              mv build-${os}-${arch}/* build/ || echo "Failed to move files for build-${os}-${arch}"
+            done
+          done
+          echo "Downloading build-macos-13-amd64..."
+          mkdir -p build-macos-13-amd64
+          gh run download --name build-macos-13-amd64 --dir build-macos-13-amd64/ || echo "Failed to download build-macos-13-amd64"
+          mv build-macos-13-amd64/* build/ || echo "Failed to move files for build-macos-13-amd64"
+          echo "Downloading build-ubuntu-latest..."
+          mkdir -p build-ubuntu-latest
+          gh run download --name build-ubuntu-latest --dir build-ubuntu-latest/ || echo "Failed to download build-ubuntu-latest"
+          mv build-ubuntu-latest/* build/ || echo "Failed to move files for build-ubuntu-latest"
+
+      - name: List all files in build directory before upload
+        run: ls -l build/
+
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.sha }}
+          tag_name: v1.0-${{ github.sha }}
           release_name: Release ${{ github.sha }}
           draft: false
           prerelease: false
 
       - name: Upload Release Assets
-        uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: build/
-          asset_name: doppelganger_assistant_${{ matrix.os }}_${{ matrix.arch }}
-          asset_content_type: application/octet-stream
+        run: |
+          if [ -d build ]; then
+            for file in build/*; do
+              echo "Uploading $file..."
+              gh release upload v1.0-${{ github.sha }} "$file" --clobber
+              sleep 5  # Add a delay between uploads
+            done
+          else
+            echo "Build directory does not exist or is empty."
+            exit 1
+          fi
 
-      - name: List all files in build directory
-        run: ls build/
+      - name: List all files in build directory after upload
+        run: ls -l build/
