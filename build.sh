@@ -38,11 +38,11 @@ mkdir -p build/
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
     if [[ $(uname -m) == "x86_64" ]]; then
         print_color "blue" "Building for Linux amd64..."
-        fyne package -os linux -arch amd64 -icon img/doppelganger_assistant.png -appID io.mwgroup.doppelganger_assistant
+        fyne package -os linux -icon img/doppelganger_assistant.png -appID io.mwgroup.doppelganger_assistant
         tar -cJf build/doppelganger_assistant_linux_amd64.tar.xz doppelganger_assistant
     elif [[ $(uname -m) == "aarch64" ]]; then
         print_color "blue" "Building for Linux arm64..."
-        fyne package -os linux -arch arm64 -icon img/doppelganger_assistant.png -appID io.mwgroup.doppelganger_assistant
+        fyne package -os linux -icon img/doppelganger_assistant.png -appID io.mwgroup.doppelganger_assistant
         tar -cJf build/doppelganger_assistant_linux_arm64.tar.xz doppelganger_assistant
     else
         print_color "red" "Unsupported architecture for Linux."
@@ -51,18 +51,18 @@ if [[ "$OSTYPE" == "linux-gnu"* ]]; then
 elif [[ "$OSTYPE" == "darwin"* ]]; then
     if [[ $(uname -m) == "arm64" ]]; then
         print_color "blue" "Building for macOS arm64..."
-        fyne package -os darwin -arch arm64 -icon img/doppelganger_assistant.png -appID io.mwgroup.doppelganger_assistant
+        fyne package -os darwin -icon img/doppelganger_assistant.png -appID io.mwgroup.doppelganger_assistant
         hdiutil create -volname doppelganger_assistant_darwin_arm64 -srcfolder doppelganger_assistant.app -ov -format UDZO build/doppelganger_assistant_darwin_arm64.dmg
-        tar -cJf build/doppelganger_assistant_darwin_arm64.tar.xz doppelganger_assistant.app
         # Extract CLI binary and compress it
-        tar -cJf build/doppelganger_assistant_darwin_arm64_cli.tar.xz doppelganger_assistant.app/Contents/MacOS/doppelganger_assistant
+        tar -cJf build/doppelganger_assistant_darwin_arm64.tar.xz doppelganger_assistant.app/Contents/MacOS/doppelganger_assistant
+        rm -rf doppelganger_assistant.app
     elif [[ $(uname -m) == "x86_64" ]]; then
         print_color "blue" "Building for macOS amd64..."
-        fyne package -os darwin -arch amd64 -icon img/doppelganger_assistant.png -appID io.mwgroup.doppelganger_assistant
+        fyne package -os darwin -icon img/doppelganger_assistant.png -appID io.mwgroup.doppelganger_assistant
         hdiutil create -volname doppelganger_assistant_darwin_amd64 -srcfolder doppelganger_assistant.app -ov -format UDZO build/doppelganger_assistant_darwin_amd64.dmg
-        tar -cJf build/doppelganger_assistant_darwin_amd64.tar.xz doppelganger_assistant.app
         # Extract CLI binary and compress it
-        tar -cJf build/doppelganger_assistant_darwin_amd64_cli.tar.xz doppelganger_assistant.app/Contents/MacOS/doppelganger_assistant
+        tar -cJf build/doppelganger_assistant_darwin_amd64.tar.xz doppelganger_assistant.app/Contents/MacOS/doppelganger_assistant
+        rm -rf doppelganger_assistant.app
     else
         print_color "red" "Unsupported architecture for macOS."
         exit 1
