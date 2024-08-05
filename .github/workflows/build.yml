@@ -3,11 +3,10 @@ name: Build and Release
 on:
   push:
     branches:
-      - 'dev'
-  pull_request:
-    branches:
       - 'main'
-
+    tags:
+      - '*'
+      
 jobs:
   build:
     runs-on: ${{ matrix.os }}
