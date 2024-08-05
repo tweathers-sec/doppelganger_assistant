@@ -43,11 +43,11 @@ if [[ "$OSTYPE" == "linux-gnu"* ]]; then
     if [[ $(uname -m) == "x86_64" ]]; then
         print_color "blue" "Building for Linux amd64..."
         fyne package -os linux -icon img/doppelganger_assistant.png -appID io.mwgroup.doppelganger_assistant
-        mv doppelganger_assistant_linux_amd64.tar.xz build/doppelganger_assistant_linux_amd64.tar.xz
+        mv doppelganger_assistant.tar.xz build/doppelganger_assistant_linux_amd64.tar.xz
     elif [[ $(uname -m) == "aarch64" ]]; then
         print_color "blue" "Building for Linux arm64..."
         fyne package -os linux -icon img/doppelganger_assistant.png -appID io.mwgroup.doppelganger_assistant
-        mv doppelganger_assistant_linux_arm64.tar.xz build/doppelganger_assistant_linux_arm64.tar.xz
+        mv doppelganger_assistant.tar.xz build/doppelganger_assistant_linux_arm64.tar.xz
     else
         print_color "red" "Unsupported architecture for Linux."
         exit 1
