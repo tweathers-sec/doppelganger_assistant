@@ -77,45 +77,24 @@ if [[ "$OSTYPE" == "linux-gnu"* ]]; then
     tar -cJf fyne-cross/bin/linux-amd64/doppelganger_assistant_linux_amd64.tar.xz fyne-cross/bin/linux-amd64/doppelganger_assistant
     mv fyne-cross/dist/linux-arm64/doppelganger_assistant.tar.xz build/doppelganger_assistant_linux_arm64.tar.xz
     mv fyne-cross/dist/linux-amd64/doppelganger_assistant.tar.xz build/doppelganger_assistant_linux_amd64.tar.xz
-
-    # Check if the SDKs folder exists in the user's home directory
-    if [ -d "$HOME/SDKs/MacOSX14.4.sdk" ]; then
-        SDK_PATH="$HOME/SDKs/MacOSX14.4.sdk"
-        print_color "green" "Found MacOSX SDK at $SDK_PATH"
-    else
-        print_color "red" "MacOSX SDK not found at $HOME/SDKs/MacOSX14.4.sdk"
-        exit 1
-    fi
-
-    # Build for macOS (arm64 and amd64) with the specified SDK path
-    print_color "blue" "Building for macOS (arm64 and amd64)..."
-    fyne-cross darwin -arch=arm64,amd64 -icon=img/doppelganger_assistant.png -app-id=io.mwgroup.doppelganger_assistant --macosx-sdk-path=$SDK_PATH
-
-    # Create DMG for macOS applications
-    hdiutil create -volname doppelganger_assistant_darwin_amd64 -srcfolder fyne-cross/dist/darwin-amd64/doppelganger_assistant.app -ov -format UDZO fyne-cross/dist/darwin-amd64/doppelganger_assistant_darwin_amd64.dmg
-    hdiutil create -volname doppelganger_assistant_darwin_arm64 -srcfolder fyne-cross/dist/darwin-arm64/doppelganger_assistant.app -ov -format UDZO fyne-cross/dist/darwin-arm64/doppelganger_assistant_darwin_arm64.dmg
-    mkdir -p build/
-    tar -cJf fyne-cross/bin/darwin-arm64/doppelganger_assistant_darwin_arm64.tar.xz fyne-cross/bin/darwin-arm64/doppelganger_assistant
-    tar -cJf fyne-cross/bin/darwin-amd64/doppelganger_assistant_darwin_amd64.tar.xz fyne-cross/bin/darwin-amd64/doppelganger_assistant
-    mv fyne-cross/bin/darwin-arm64/doppelganger_assistant_darwin_arm64.tar.xz build/
-    mv fyne-cross/bin/darwin-amd64/doppelganger_assistant_darwin_amd64.tar.xz build/
-    mv fyne-cross/dist/darwin-arm64/doppelganger_assistant_darwin_arm64.dmg build/
-    mv fyne-cross/dist/darwin-amd64/doppelganger_assistant_darwin_amd64.dmg build/
 elif [[ "$OSTYPE" == "darwin"* ]]; then
-    print_color "blue" "Building for macOS (arm64 and amd64)..."
-    # Build for macOS (arm64 and amd64)
-    fyne-cross darwin -arch=arm64,amd64 -icon=img/doppelganger_assistant.png -app-id=io.mwgroup.doppelganger_assistant
-
-    # Create DMG for macOS applications
-    hdiutil create -volname doppelganger_assistant_darwin_amd64 -srcfolder fyne-cross/dist/darwin-amd64/doppelganger_assistant.app -ov -format UDZO fyne-cross/dist/darwin-amd64/doppelganger_assistant_darwin_amd64.dmg
-    hdiutil create -volname doppelganger_assistant_darwin_arm64 -srcfolder fyne-cross/dist/darwin-arm64/doppelganger_assistant.app -ov -format UDZO fyne-cross/dist/darwin-arm64/doppelganger_assistant_darwin_arm64.dmg
+    print_color "blue" "Building for macOS..."
     mkdir -p build/
-    tar -cJf fyne-cross/bin/darwin-arm64/doppelganger_assistant_darwin_arm64.tar.xz fyne-cross/bin/darwin-arm64/doppelganger_assistant
-    tar -cJf fyne-cross/bin/darwin-amd64/doppelganger_assistant_darwin_amd64.tar.xz fyne-cross/bin/darwin-amd64/doppelganger_assistant
-    mv fyne-cross/bin/darwin-arm64/doppelganger_assistant_darwin_arm64.tar.xz build/
-    mv fyne-cross/bin/darwin-amd64/doppelganger_assistant_darwin_amd64.tar.xz build/
-    mv fyne-cross/dist/darwin-arm64/doppelganger_assistant_darwin_arm64.dmg build/
-    mv fyne-cross/dist/darwin-amd64/doppelganger_assistant_darwin_amd64.dmg build/
+    if [[ $(uname -m) == "arm64" ]]; then
+        print_color "blue" "Building for macOS arm64..."
+        fyne package -os darwin -arch arm64 -icon img/doppelganger_assistant.png -appID io.mwgroup.doppelganger_assistant
+        hdiutil create -volname doppelganger_assistant_darwin_arm64 -srcfolder doppelganger_assistant.app -ov -format UDZO build/doppelganger_assistant_darwin_arm64.dmg
+        tar -cJf build/doppelganger_assistant_darwin_arm64.tar.xz doppelganger_assistant.app
+        # Extract CLI binary and compress it
+        tar -cJf build/doppelganger_assistant_darwin_arm64_cli.tar.xz doppelganger_assistant.app/Contents/MacOS/doppelganger_assistant
+    else
+        print_color "blue" "Building for macOS amd64..."
+        fyne package -os darwin -arch amd64 -icon img/doppelganger_assistant.png -appID io.mwgroup.doppelganger_assistant
+        hdiutil create -volname doppelganger_assistant_darwin_amd64 -srcfolder doppelganger_assistant.app -ov -format UDZO build/doppelganger_assistant_darwin_amd64.dmg
+        tar -cJf build/doppelganger_assistant_darwin_amd64.tar.xz doppelganger_assistant.app
+        # Extract CLI binary and compress it
+        tar -cJf build/doppelganger_assistant_darwin_amd64_cli.tar.xz doppelganger_assistant.app/Contents/MacOS/doppelganger_assistant
+    fi
 fi
 
 print_color "blue" "Cleaning up..."

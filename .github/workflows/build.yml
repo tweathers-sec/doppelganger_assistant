@@ -10,7 +10,12 @@ on:
 
 jobs:
   build:
-    runs-on: self-hosted
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+        arch: [amd64, arm64]
 
     steps:
       - name: Set up Git repository
@@ -22,6 +27,7 @@ jobs:
           go-version: '1.22.3'  # Specify the Go version
 
       - name: Set up Docker
+        if: runner.os == 'Linux'
         run: |
           curl -fsSL https://get.docker.com -o get-docker.sh
           sh get-docker.sh
@@ -46,13 +52,3 @@ jobs:
 
       - name: List all files in build directory
         run: ls build/
-
-      - name: Upload each file
-        uses: svenstaro/upload-release-action@v2
-        with:
-          repo_token: ${{ secrets.PAT }}
-          file: build/*
-          asset_name: doppelganger_assistant_${{ matrix.os }}_${{ matrix.arch }}
-          tag: v${{ github.run_number }}
-          overwrite: true
-        if: success()
