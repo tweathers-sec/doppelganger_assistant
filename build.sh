@@ -36,6 +36,10 @@ go mod tidy
 print_color "blue" "Building for the current platform..."
 mkdir -p build/
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    print_color "blue" "Installing Linux dependencies..."
+    sudo apt-get update
+    sudo apt-get install -y libxcursor-dev libgl1-mesa-dev xorg-dev
+
     if [[ $(uname -m) == "x86_64" ]]; then
         print_color "blue" "Building for Linux amd64..."
         fyne package -os linux -icon img/doppelganger_assistant.png -appID io.mwgroup.doppelganger_assistant
