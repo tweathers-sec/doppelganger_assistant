@@ -78,7 +78,7 @@ else
     exit 1
 fi
 
-print_color "blue" "Listing files in build directory..."
+print_color "blue" "Listing files in build directory."
 ls -l build/
 
 print_color "green" "Build process completed successfully."
