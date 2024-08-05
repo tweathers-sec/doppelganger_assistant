@@ -5,7 +5,7 @@ on:
     branches:
       - 'main'
     tags:
-      - '*'
+      - 'v*'
       
 jobs:
   build:
@@ -51,22 +51,6 @@ jobs:
 
       - name: List all files in build directory
         run: ls build/
-
-      # - name: Install Certificate
-      #   if: matrix.os == 'macos-latest' || matrix.os == 'macos-13'
-      #   run: |
-      #     echo "${{ secrets.MACOS_CERTIFICATE }}" | base64 --decode > certificate.p12
-      #     security create-keychain -p "" build.keychain
-      #     security import certificate.p12 -k build.keychain -P "${{ secrets.MACOS_CERTIFICATE_PASSWORD }}" -T /usr/bin/codesign
-      #     security list-keychains -s build.keychain
-      #     security default-keychain -s build.keychain
-      #     security unlock-keychain -p "" build.keychain
-      #     security set-key-partition-list -S apple-tool:,apple: -s -k "" build.keychain
-
-      # - name: Sign Application
-      #   if: matrix.os == 'macos-latest' || matrix.os == 'macos-13'
-      #   run: |
-      #     codesign --deep --force --verbose --sign "Developer ID Application: Your Name (TEAMID)" build/doppelganger_assistant.app
 
       - name: Upload build artifacts
         if: matrix.os == 'ubuntu-latest'
@@ -128,8 +112,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v1.0-${{ github.sha }}
-          release_name: Release ${{ github.sha }}
+          tag_name: ${{ github.ref_name }}
+          release_name: Release ${{ github.ref_name }}
           draft: false
           prerelease: false
 
@@ -140,7 +124,7 @@ jobs:
           if [ -d build ]; then
             for file in build/*; do
               echo "Uploading $file..."
-              gh release upload v1.0-${{ github.sha }} "$file" --clobber
+              gh release upload ${{ github.ref_name }} "$file" --clobber
               sleep 5  # Add a delay between uploads
             done
           else
