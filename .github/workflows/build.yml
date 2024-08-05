@@ -26,14 +26,6 @@ jobs:
         with:
           go-version: '1.22.3'  # Specify the Go version
 
-      - name: Set up Docker
-        if: runner.os == 'Linux'
-        run: |
-          curl -fsSL https://get.docker.com -o get-docker.sh
-          sh get-docker.sh
-          sudo usermod -aG docker $USER
-          newgrp docker
-
       - name: Create directories and build binaries
         run: |
           chmod +x ./build.sh
