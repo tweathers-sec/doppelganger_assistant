@@ -84,7 +84,7 @@ func handleProx(facilityCode, cardNumber, bitLength int, simulate, write, verify
 		case 37:
 			fmt.Println(Yellow, fmt.Sprintf("lf hid clone -w H10304 --fc %d --cn %d", facilityCode, cardNumber), Reset)
 		case 48:
-			fmt.Println(Yellow, fmt.Sprintf("lf hid sim -w C1k48s --fc %d --cn %d", facilityCode, cardNumber), Reset)
+			fmt.Println(Yellow, fmt.Sprintf("lf hid clone -w C1k48s --fc %d --cn %d", facilityCode, cardNumber), Reset)
 		default:
 			fmt.Println(Red, "Unsupported bit length for Prox card.", Reset)
 			return
