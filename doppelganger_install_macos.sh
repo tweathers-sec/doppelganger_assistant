@@ -61,7 +61,7 @@ print_color "0;32" "Apple error ignored successfully."
 print_color "1;33" "Adding Doppelganger Assistant to path..."
 PROFILE_FILE="$HOME/.zprofile"
 [[ -f "$HOME/.zshrc" ]] && PROFILE_FILE="$HOME/.zshrc"
-ALIAS_LINE="alias doppelganger_assistant='/Applications/Doppelganger Assistant.app/Contents/MacOS/doppelganger_assistant'"
+ALIAS_LINE="alias doppelganger_assistant='/Applications/doppelganger_assistant.app/Contents/MacOS/doppelganger_assistant'"
 
 if grep -q "$ALIAS_LINE" "$PROFILE_FILE"; then
     print_color "0;32" "Doppelganger Assistant alias already exists in $PROFILE_FILE."
@@ -99,7 +99,7 @@ if ! command -v pm3 &> /dev/null; then
         xcode-select --install
         brew install xquartz
         brew tap RfidResearchGroup/proxmark3
-        brew install --HEAD --with-blueshark proxmark3
+        brew install --HEAD --with-blueshark rfidresearchgroup/proxmark3/proxmark3
         print_color "0;32" "Proxmark3 installed successfully."
     fi
 fi
