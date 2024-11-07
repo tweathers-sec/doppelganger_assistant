@@ -65,32 +65,24 @@ print_color "blue" "Building for macOS (arm64 and amd64)..."
 # Build for macOS (arm64 and amd64)
 fyne-cross darwin -arch=arm64,amd64 -icon=img/doppelganger_assistant.png -app-id=io.mwgroup.doppelganger_assistant
 
+# Create DMG for macOS applications
+hdiutil create -volname doppelganger_assistant_darwin_amd64 -srcfolder fyne-cross/dist/darwin-amd64/doppelganger_assistant.app -ov -format UDZO fyne-cross/dist/darwin-amd64/doppelganger_assistant_darwin_amd64.dmg
+hdiutil create -volname doppelganger_assistant_darwin_arm64 -srcfolder fyne-cross/dist/darwin-arm64/doppelganger_assistant.app -ov -format UDZO fyne-cross/dist/darwin-arm64/doppelganger_assistant_darwin_arm64.dmg
+
 print_color "blue" "Moving and relabeling binaries..."
 # move and relabel binaries
 mkdir build/
-
-cd fyne-cross/dist/darwin-arm64
-tar -cJf ../../../build/doppelganger_assistant_darwin_arm64.tar.xz doppelganger_assistant.app
-cd - 
-
-cd fyne-cross/dist/darwin-amd64
-tar -cJf ../../../build/doppelganger_assistant_darwin_amd64.tar.xz doppelganger_assistant.app
-cd -
-
-mv fyne-cross/dist/linux-amd64/doppelganger_assistant.tar.xz build/doppelganger_assistant_linux_amd64.tar.xz
+tar -cJf fyne-cross/bin/darwin-arm64/doppelganger_assistant_darwin_arm64.tar.xz fyne-cross/bin/darwin-arm64/doppelganger_assistant
+tar -cJf fyne-cross/bin/darwin-amd64/doppelganger_assistant_darwin_amd64.tar.xz fyne-cross/bin/darwin-amd64/doppelganger_assistant
 mv fyne-cross/dist/linux-arm64/doppelganger_assistant.tar.xz build/doppelganger_assistant_linux_arm64.tar.xz
-
-# cd fyne-cross/bin/linux-arm64
-# tar -cJf ../../../build/doppelganger_assistant_linux_arm64.tar.xz doppelganger_assistant
-# cd -
-
-# cd fyne-cross/bin/linux-amd64
-# tar -cJf ../../../build/doppelganger_assistant_linux_amd64.tar.xz doppelganger_assistant
-# cd -
+mv fyne-cross/dist/linux-amd64/doppelganger_assistant.tar.xz build/doppelganger_assistant_linux_amd64.tar.xz
+mv fyne-cross/bin/darwin-arm64/doppelganger_assistant_darwin_arm64.tar.xz build/
+mv fyne-cross/bin/darwin-amd64/doppelganger_assistant_darwin_amd64.tar.xz build/
+mv fyne-cross/dist/darwin-arm64/doppelganger_assistant_darwin_arm64.dmg build/
+mv fyne-cross/dist/darwin-amd64/doppelganger_assistant_darwin_amd64.dmg build/
 
 print_color "blue" "Cleaning up..."
 # clean up
-# rm -rf fyne-cross/
-#rm Icon.png
+rm -rf fyne-cross/
 
 print_color "green" "Build process completed successfully."
