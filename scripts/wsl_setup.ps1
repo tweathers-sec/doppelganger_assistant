@@ -5,25 +5,18 @@ $wslInstallationPath = "$basePath\wsl"
 $username = "doppelganger"
 $installAllSoftware = $true
 
-# Warn user about antivirus modification
-Write-Host "`nWARNING: This script needs to temporarily disable Windows Defender real-time protection." -ForegroundColor Yellow
-Write-Host "This is required to prevent false positives when building the Iceman Proxmark3 (Orca) firwmare from source." -ForegroundColor Yellow
-Write-Host "Real-time protection will be re-enabled when the installation is complete.`n" -ForegroundColor Yellow
-
-$response = Read-Host "Do you want to continue? (y/n)"
-if ($response -ne 'y') {
-    Log "`nUser chose not to continue. Exiting."
-    exit
+# Determine system architecture
+$systemArch = (Get-CimInstance -ClassName Win32_OperatingSystem).OSArchitecture
+$rootfsArch = if ($systemArch -like "*ARM*") {
+    "arm64"
+} else {
+    "amd64"
 }
 
-# Disable real-time protection
-Log "`nTemporarily disabling Windows Defender real-time protection..."
-Set-MpPreference -DisableRealtimeMonitoring $true
-
-$rootfsUrl = "https://cloud-images.ubuntu.com/wsl/noble/current/ubuntu-noble-wsl-amd64-ubuntu24.04lts.rootfs.tar.gz"
+$rootfsUrl = "https://cloud-images.ubuntu.com/wsl/noble/current/ubuntu-noble-wsl-$rootfsArch-ubuntu24.04lts.rootfs.tar.gz"
 
 $stagingPath = "$basePath\staging"
-$rootfsPath = "$stagingPath\ubuntu-noble-wsl-amd64-ubuntu.rootfs.tar.gz"
+$rootfsPath = "$stagingPath\ubuntu-noble-wsl-$rootfsArch-ubuntu.rootfs.tar.gz"
 $installScriptPath = "$basePath\wsl_doppelganger_install.sh"  # Update this path as needed
 
 # Log file path
@@ -381,9 +374,5 @@ chmod 0440 /etc/sudoers.d/\$username
     Log "Running custom installation script..."
     wsl -d $wslName -u $username bash -ic "bash $wslInstallScriptPath"
 }
-
-# Re-enable real-time protection at the end
-Log "Re-enabling Windows Defender real-time protection..."
-Set-MpPreference -DisableRealtimeMonitoring $false
 
 Log "Doppelganger_assistant WSL and Ubuntu setup is complete."
