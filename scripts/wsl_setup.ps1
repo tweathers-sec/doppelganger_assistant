@@ -12,24 +12,18 @@ Write-Host "Real-time protection will be re-enabled when the installation is com
 
 $response = Read-Host "Do you want to continue? (y/n)"
 if ($response -ne 'y') {
-    Log "User chose not to continue. Exiting."
+    Log "`nUser chose not to continue. Exiting."
     exit
 }
 
 # Disable real-time protection
-Log "Temporarily disabling Windows Defender real-time protection..."
+Log "`nTemporarily disabling Windows Defender real-time protection..."
 Set-MpPreference -DisableRealtimeMonitoring $true
 
-# Determine system architecture and set appropriate rootfs URL
-$architecture = (Get-CimInstance Win32_OperatingSystem).OSArchitecture
-$rootfsUrl = if ($architecture -like "*ARM*64*") {
-    "https://cloud-images.ubuntu.com/wsl/noble/current/ubuntu-noble-wsl-arm64-ubuntu24.04lts.rootfs.tar.gz"
-} else {
-    "https://cloud-images.ubuntu.com/wsl/noble/current/ubuntu-noble-wsl-amd64-ubuntu24.04lts.rootfs.tar.gz"
-}
+$rootfsUrl = "https://cloud-images.ubuntu.com/wsl/noble/current/ubuntu-noble-wsl-amd64-ubuntu24.04lts.rootfs.tar.gz"
 
 $stagingPath = "$basePath\staging"
-$rootfsPath = "$stagingPath\ubuntu-noble-wsl-$(if ($architecture -like '*ARM*64*') {'amd64'} else {'arm64'})-ubuntu.rootfs.tar.gz"
+$rootfsPath = "$stagingPath\ubuntu-noble-wsl-amd64-ubuntu.rootfs.tar.gz"
 $installScriptPath = "$basePath\wsl_doppelganger_install.sh"  # Update this path as needed
 
 # Log file path
