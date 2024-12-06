@@ -4,9 +4,17 @@ $basePath = "C:\doppelganger_assistant"
 $wslInstallationPath = "$basePath\wsl"
 $username = "doppelganger"
 $installAllSoftware = $true
-$rootfsUrl = "https://cloud-images.ubuntu.com/wsl/noble/current/ubuntu-noble-wsl-amd64-ubuntu.rootfs.tar.gz"
+
+# Determine system architecture and set appropriate rootfs URL
+$architecture = (Get-CimInstance Win32_OperatingSystem).OSArchitecture
+$rootfsUrl = if ($architecture -like "*ARM64*") {
+    "https://cloud-images.ubuntu.com/wsl/noble/current/ubuntu-noble-wsl-arm64-ubuntu.rootfs.tar.gz"
+} else {
+    "https://cloud-images.ubuntu.com/wsl/noble/current/ubuntu-noble-wsl-amd64-ubuntu.rootfs.tar.gz"
+}
+
 $stagingPath = "$basePath\staging"
-$rootfsPath = "$stagingPath\ubuntu-noble-wsl-amd64-ubuntu.rootfs.tar.gz"
+$rootfsPath = "$stagingPath\ubuntu-noble-wsl-$(if ($architecture -like '*ARM64*') {'arm64'} else {'amd64'})-ubuntu.rootfs.tar.gz"
 $installScriptPath = "$basePath\wsl_doppelganger_install.sh"  # Update this path as needed
 
 # Log file path
