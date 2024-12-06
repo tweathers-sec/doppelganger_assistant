@@ -6,8 +6,8 @@ $username = "doppelganger"
 $installAllSoftware = $true
 
 # Warn user about antivirus modification
-Write-Host "`nWARNING: This script needs to temporarily disable Windows Defender real-time protection" -ForegroundColor Yellow
-Write-Host "This is required to prevent false positives when building the Iceman Proxmark3 firwmare from source." -ForegroundColor Yellow
+Write-Host "`nWARNING: This script needs to temporarily disable Windows Defender real-time protection." -ForegroundColor Yellow
+Write-Host "This is required to prevent false positives when building the Iceman Proxmark3 (Orca) firwmare from source." -ForegroundColor Yellow
 Write-Host "Real-time protection will be re-enabled when the installation is complete.`n" -ForegroundColor Yellow
 
 $response = Read-Host "Do you want to continue? (y/n)"
@@ -23,13 +23,13 @@ Set-MpPreference -DisableRealtimeMonitoring $true
 # Determine system architecture and set appropriate rootfs URL
 $architecture = (Get-CimInstance Win32_OperatingSystem).OSArchitecture
 $rootfsUrl = if ($architecture -like "*ARM*64*") {
-    "https://cloud-images.ubuntu.com/wsl/noble/current/ubuntu-noble-wsl-arm64-ubuntu.rootfs.tar.gz"
+    "https://cloud-images.ubuntu.com/wsl/noble/current/ubuntu-noble-wsl-amd64-ubuntu24.04lts.rootfs.tar.gz"
 } else {
-    "https://cloud-images.ubuntu.com/wsl/noble/current/ubuntu-noble-wsl-amd64-ubuntu.rootfs.tar.gz"
+    "https://cloud-images.ubuntu.com/wsl/noble/current/ubuntu-noble-wsl-arm64-ubuntu24.04lts.rootfs.tar.gz"
 }
 
 $stagingPath = "$basePath\staging"
-$rootfsPath = "$stagingPath\ubuntu-noble-wsl-$(if ($architecture -like '*ARM*64*') {'arm64'} else {'amd64'})-ubuntu.rootfs.tar.gz"
+$rootfsPath = "$stagingPath\ubuntu-noble-wsl-$(if ($architecture -like '*ARM*64*') {'amd64'} else {'arm64'})-ubuntu.rootfs.tar.gz"
 $installScriptPath = "$basePath\wsl_doppelganger_install.sh"  # Update this path as needed
 
 # Log file path
