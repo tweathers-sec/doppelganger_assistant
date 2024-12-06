@@ -57,11 +57,11 @@ if [ -z "$skip_doppelganger_install" ]; then
 fi
 
 # Install dependencies for Proxmark3
-if [ "$skip_proxmark_install" = false ]; then
-    install_packages git ca-certificates build-essential pkg-config \
+if [ -z "$skip_proxmark_install" ]; then
+    sudo apt install --no-install-recommends -y git ca-certificates build-essential pkg-config \
     libreadline-dev gcc-arm-none-eabi libnewlib-dev qtbase5-dev \
     libbz2-dev liblz4-dev libbluetooth-dev libpython3-dev libssl-dev libgd-dev
-    
+
     # Clone the Proxmark3 repository
     if [ ! -d "proxmark3" ]; then
         git clone https://github.com/RfidResearchGroup/proxmark3.git
@@ -72,9 +72,6 @@ if [ "$skip_proxmark_install" = false ]; then
     # Modify Makefile to support the Blueshark Device, if desired
     cp Makefile.platform.sample Makefile.platform
     sed -i 's/#PLATFORM_EXTRAS=BTADDON/PLATFORM_EXTRAS=BTADDON/' Makefile.platform
-
-    # Set installation prefix to /usr/local
-    echo "INSTALL_PREFIX=/usr/local" >> Makefile.platform
 
     # Compile and install Proxmark3 software
     make clean && make -j$(nproc)
