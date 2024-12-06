@@ -23,9 +23,9 @@ Set-MpPreference -DisableRealtimeMonitoring $true
 # Determine system architecture and set appropriate rootfs URL
 $architecture = (Get-CimInstance Win32_OperatingSystem).OSArchitecture
 $rootfsUrl = if ($architecture -like "*ARM*64*") {
-    "https://cloud-images.ubuntu.com/wsl/noble/current/ubuntu-noble-wsl-amd64-ubuntu24.04lts.rootfs.tar.gz"
-} else {
     "https://cloud-images.ubuntu.com/wsl/noble/current/ubuntu-noble-wsl-arm64-ubuntu24.04lts.rootfs.tar.gz"
+} else {
+    "https://cloud-images.ubuntu.com/wsl/noble/current/ubuntu-noble-wsl-amd64-ubuntu24.04lts.rootfs.tar.gz"
 }
 
 $stagingPath = "$basePath\staging"
