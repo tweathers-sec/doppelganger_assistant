@@ -61,7 +61,11 @@ if [ -z "$skip_proxmark_install" ]; then
     sudo apt install --no-install-recommends -y git ca-certificates build-essential pkg-config \
     libreadline-dev gcc-arm-none-eabi libnewlib-dev qtbase5-dev \
     libbz2-dev liblz4-dev libbluetooth-dev libpython3-dev libssl-dev libgd-dev
-
+    
+    # Create src directory if it doesn't exist
+    mkdir -p ~/src
+    cd ~/src
+    
     # Clone the Proxmark3 repository
     if [ ! -d "proxmark3" ]; then
         git clone https://github.com/RfidResearchGroup/proxmark3.git
