@@ -5,6 +5,21 @@ $wslInstallationPath = "$basePath\wsl"
 $username = "doppelganger"
 $installAllSoftware = $true
 
+# Warn user about antivirus modification
+Write-Host "`nWARNING: This script needs to temporarily disable Windows Defender real-time protection" -ForegroundColor Yellow
+Write-Host "This is required to prevent false positives when building the Iceman Proxmark3 firwmare from source." -ForegroundColor Yellow
+Write-Host "Real-time protection will be re-enabled when the installation is complete.`n" -ForegroundColor Yellow
+
+$response = Read-Host "Do you want to continue? (y/n)"
+if ($response -ne 'y') {
+    Log "User chose not to continue. Exiting."
+    exit
+}
+
+# Disable real-time protection
+Log "Temporarily disabling Windows Defender real-time protection..."
+Set-MpPreference -DisableRealtimeMonitoring $true
+
 # Determine system architecture and set appropriate rootfs URL
 $architecture = (Get-CimInstance Win32_OperatingSystem).OSArchitecture
 $rootfsUrl = if ($architecture -like "*ARM*64*") {
@@ -372,5 +387,9 @@ chmod 0440 /etc/sudoers.d/\$username
     Log "Running custom installation script..."
     wsl -d $wslName -u $username bash -ic "bash $wslInstallScriptPath"
 }
+
+# Re-enable real-time protection at the end
+Log "Re-enabling Windows Defender real-time protection..."
+Set-MpPreference -DisableRealtimeMonitoring $false
 
 Log "Doppelganger_assistant WSL and Ubuntu setup is complete."
