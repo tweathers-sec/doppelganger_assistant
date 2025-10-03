@@ -278,56 +278,60 @@ foreach ($distro in $allDistros) {
     }
 }
 
-# If no Ubuntu exists, install it
+# If no Ubuntu exists, install it by importing a rootfs directly
 if (-not $existingUbuntu) {
-    Log "Installing Ubuntu via WSL..."
+    Log "No existing Ubuntu distribution found. Installing via direct rootfs import..."
     
-    # Try WSL2 installation first
-    $installOutput = wsl.exe --install Ubuntu --no-launch 2>&1 | Out-String
-    Start-Sleep -Seconds 10
+    # Create staging directory
+    if (-Not (Test-Path -Path "$basePath\staging")) { mkdir "$basePath\staging" }
     
-    # Check if installation succeeded
-    Log "Checking for Ubuntu distribution..."
-    $allDistros = wsl.exe -l -q
-    foreach ($distro in $allDistros) {
-        $distroName = $distro.Trim()
-        if ($distroName -match "^Ubuntu" -and $distroName -ne $wslName) {
-            $existingUbuntu = $distroName
-            Log "Found newly installed Ubuntu: $existingUbuntu"
-            break
-        }
+    # Download Ubuntu rootfs directly
+    $arch = (Get-WmiObject Win32_Processor).AddressWidth
+    if ($arch -eq 64) {
+        $rootfsUrl = "https://cloud-images.ubuntu.com/wsl/noble/current/ubuntu-noble-wsl-amd64-wsl.rootfs.tar.gz"
+        $rootfsFile = "$basePath\staging\ubuntu-amd64.rootfs.tar.gz"
+    } else {
+        $rootfsUrl = "https://cloud-images.ubuntu.com/wsl/noble/current/ubuntu-noble-wsl-arm64-wsl.rootfs.tar.gz"
+        $rootfsFile = "$basePath\staging\ubuntu-arm64.rootfs.tar.gz"
     }
     
-    # If WSL2 installation failed with hypervisor error, try WSL1
-    if (-not $existingUbuntu -and $installOutput -match "HCS_E_HYPERV_NOT_INSTALLED") {
-        Log "WSL2 installation failed due to nested virtualization limitations."
-        Log "Attempting WSL1 installation as fallback..."
-        
-        # Set WSL1 as default
-        wsl.exe --set-default-version 1
-        Start-Sleep -Seconds 2
-        
-        # Try installing Ubuntu with WSL1
-        wsl.exe --install Ubuntu --no-launch 2>&1 | Out-Null
-        Start-Sleep -Seconds 10
-        
-        # Check again for Ubuntu
-        Log "Checking for Ubuntu distribution (WSL1)..."
-        $allDistros = wsl.exe -l -q
-        foreach ($distro in $allDistros) {
-            $distroName = $distro.Trim()
-            if ($distroName -match "^Ubuntu" -and $distroName -ne $wslName) {
-                $existingUbuntu = $distroName
-                Log "Successfully installed Ubuntu with WSL1: $existingUbuntu"
-                break
-            }
+    Log "Downloading Ubuntu rootfs from $rootfsUrl..."
+    Log "This may take several minutes..."
+    
+    try {
+        # Use aria2 for faster download if available, otherwise use Invoke-WebRequest
+        if (Test-Path "$basePath\aria2\aria2c.exe") {
+            & "$basePath\aria2\aria2c.exe" -x 16 -s 16 -d "$basePath\staging" -o ([System.IO.Path]::GetFileName($rootfsFile)) $rootfsUrl
+        } else {
+            Invoke-WebRequest -Uri $rootfsUrl -OutFile $rootfsFile -UseBasicParsing
         }
+        
+        if (-Not (Test-Path $rootfsFile)) {
+            throw "Failed to download Ubuntu rootfs"
+        }
+        
+        Log "Download complete. Importing Ubuntu distribution..."
+        
+        # Import the rootfs directly as our custom distribution name
+        if (-Not (Test-Path -Path $wslInstallationPath)) { mkdir $wslInstallationPath }
+        wsl.exe --import $wslName $wslInstallationPath $rootfsFile --version 1
+        
+        Log "Ubuntu imported successfully as $wslName"
+        
+        # Clean up downloaded rootfs
+        Remove-Item $rootfsFile -Force
+        
+        # Mark that we directly imported (skip the export/import step later)
+        $directImport = $true
+    } catch {
+        Log "ERROR: Failed to download or import Ubuntu rootfs: $_"
+        throw "Ubuntu installation failed"
     }
 }
 
-# Use the Ubuntu distribution (either existing or newly installed)
+# Handle existing Ubuntu distribution or verify direct import succeeded
 if ($existingUbuntu) {
-    Log "Using Ubuntu distribution: $existingUbuntu"
+    Log "Using existing Ubuntu distribution: $existingUbuntu"
     # Export and re-import with custom name
     if (-Not (Test-Path -Path "$basePath\staging")) { mkdir "$basePath\staging" }
     $tempTar = "$basePath\staging\ubuntu-temp.tar"
@@ -342,10 +346,35 @@ if ($existingUbuntu) {
     Log "Cleaning up..."
     wsl.exe --unregister $existingUbuntu
     Remove-Item $tempTar -Force
-} else {
-    Log "ERROR: Could not find Ubuntu distribution."
-    Log "Available distributions: $(wsl.exe -l -q)"
+} elseif (-not $directImport) {
+    # Only throw error if we didn't successfully do a direct import
+    Log "ERROR: Could not find or install Ubuntu distribution."
+    $allDistrosDebug = wsl.exe -l -v
+    Log "Available distributions (detailed):"
+    Log "$allDistrosDebug"
+    
+    # Check if WSL is working at all
+    Log "Testing WSL functionality..."
+    $wslTest = wsl.exe --status 2>&1
+    Log "WSL Status: $wslTest"
+    
+    Write-Host "`n*************************************************************" -ForegroundColor Red
+    Write-Host "*                                                           *" -ForegroundColor Red
+    Write-Host "*        UBUNTU DISTRIBUTION INSTALLATION FAILED            *" -ForegroundColor Red
+    Write-Host "*                                                           *" -ForegroundColor Red
+    Write-Host "*************************************************************`n" -ForegroundColor Red
+    Write-Host "Ubuntu could not be installed via WSL." -ForegroundColor Yellow
+    Write-Host "`nPossible solutions:" -ForegroundColor Yellow
+    Write-Host "1. Ensure WSL is properly installed: wsl --status" -ForegroundColor Yellow
+    Write-Host "2. Try manually installing Ubuntu: wsl --install -d Ubuntu" -ForegroundColor Yellow
+    Write-Host "3. Check Windows Updates for WSL updates" -ForegroundColor Yellow
+    Write-Host "4. Reboot and try again" -ForegroundColor Yellow
+    Write-Host "`nIf in a VM, ensure nested virtualization is enabled or WSL1 is available." -ForegroundColor Yellow
+    Write-Host "`nPress any key to exit..."
+    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
     throw "Ubuntu distribution not found after installation."
+} else {
+    Log "Ubuntu distribution directly imported as $wslName"
 }
 
 # Ensure WSL is initialized
