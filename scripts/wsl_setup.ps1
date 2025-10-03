@@ -252,7 +252,7 @@ if (-not (CommandExists "usbipd")) {
 # Note: Skipping virtualization checks to allow installation in nested VM environments
 Log "Proceeding with WSL installation..."
 
-# Check if the WSL distribution already exists
+# Check if the target WSL distribution already exists
 $wslList = wsl.exe -l -q
 if ($wslList -contains $wslName) {
     $response = Read-Host "$wslName already exists. Do you want to reinstall it? (y/n)"
@@ -265,45 +265,59 @@ if ($wslList -contains $wslName) {
     }
 }
 
-# Install Ubuntu using WSL's built-in installer (works for all architectures)
-Log "Installing Ubuntu via WSL..."
-wsl.exe --install Ubuntu --no-launch
-
-# Wait for installation to complete
-Start-Sleep -Seconds 10
-
-# Find the newly installed Ubuntu distribution
-Log "Looking for installed Ubuntu distribution..."
-$wslList = wsl.exe -l -q | Where-Object { $_ -match "Ubuntu" -and $_ -ne $wslName }
-Log "Found distributions: $wslList"
-
-$defaultUbuntu = $null
-foreach ($distro in $wslList) {
+# Check if a base Ubuntu distribution already exists
+Log "Checking for existing Ubuntu distributions..."
+$existingUbuntu = $null
+$allDistros = wsl.exe -l -q
+foreach ($distro in $allDistros) {
     $distroName = $distro.Trim()
-    if ($distroName -match "^Ubuntu") {
-        $defaultUbuntu = $distroName
+    if ($distroName -match "^Ubuntu" -and $distroName -ne $wslName) {
+        $existingUbuntu = $distroName
+        Log "Found existing Ubuntu distribution: $existingUbuntu"
         break
     }
 }
 
-if ($defaultUbuntu) {
-    Log "Found Ubuntu distribution: $defaultUbuntu"
+# If no Ubuntu exists, install it
+if (-not $existingUbuntu) {
+    Log "Installing Ubuntu via WSL..."
+    wsl.exe --install Ubuntu --no-launch
+    
+    # Wait for installation to complete
+    Start-Sleep -Seconds 10
+    
+    # Find the newly installed Ubuntu distribution
+    Log "Looking for newly installed Ubuntu distribution..."
+    $allDistros = wsl.exe -l -q
+    foreach ($distro in $allDistros) {
+        $distroName = $distro.Trim()
+        if ($distroName -match "^Ubuntu" -and $distroName -ne $wslName) {
+            $existingUbuntu = $distroName
+            Log "Found newly installed Ubuntu: $existingUbuntu"
+            break
+        }
+    }
+}
+
+# Use the Ubuntu distribution (either existing or newly installed)
+if ($existingUbuntu) {
+    Log "Using Ubuntu distribution: $existingUbuntu"
     # Export and re-import with custom name
     if (-Not (Test-Path -Path "$basePath\staging")) { mkdir "$basePath\staging" }
     $tempTar = "$basePath\staging\ubuntu-temp.tar"
     
-    Log "Exporting $defaultUbuntu..."
-    wsl.exe --export $defaultUbuntu $tempTar
+    Log "Exporting $existingUbuntu..."
+    wsl.exe --export $existingUbuntu $tempTar
     
     Log "Importing as $wslName..."
     if (-Not (Test-Path -Path $wslInstallationPath)) { mkdir $wslInstallationPath }
     wsl.exe --import $wslName $wslInstallationPath $tempTar
     
     Log "Cleaning up..."
-    wsl.exe --unregister $defaultUbuntu
+    wsl.exe --unregister $existingUbuntu
     Remove-Item $tempTar -Force
 } else {
-    Log "ERROR: Could not find newly installed Ubuntu distribution."
+    Log "ERROR: Could not find Ubuntu distribution."
     Log "Available distributions: $(wsl.exe -l -q)"
     throw "Ubuntu distribution not found after installation."
 }
