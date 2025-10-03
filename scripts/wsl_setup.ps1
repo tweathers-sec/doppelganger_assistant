@@ -285,16 +285,19 @@ if (-not $existingUbuntu) {
     if (-Not (Test-Path -Path "$basePath\staging")) { mkdir "$basePath\staging" }
     
     # Download Ubuntu rootfs directly
-    # Use architecture detection to get correct rootfs
-    $is64bit = [Environment]::Is64BitOperatingSystem
+    # Detect actual processor architecture (x86_64 vs ARM64)
+    $processorArch = (Get-WmiObject Win32_Processor).Architecture
+    # Architecture codes: 0=x86, 5=ARM, 9=x64, 12=ARM64
     
-    if ($is64bit) {
-        # AMD64 for x86_64 processors
-        $rootfsUrl = "https://cloud-images.ubuntu.com/wsl/jammy/current/ubuntu-jammy-wsl-amd64-ubuntu22.04lts.rootfs.tar.gz"
+    if ($processorArch -eq 12) {
+        # ARM64 for Apple Silicon or Snapdragon processors
+        Log "Detected ARM64 processor architecture"
+        $rootfsUrl = "https://cloud-images.ubuntu.com/wsl/jammy/current/ubuntu-jammy-wsl-arm64-ubuntu22.04lts.rootfs.tar.gz"
         $rootfsFile = "$basePath\staging\ubuntu.rootfs.tar.gz"
     } else {
-        # ARM64 for ARM processors
-        $rootfsUrl = "https://cloud-images.ubuntu.com/wsl/jammy/current/ubuntu-jammy-wsl-arm64-ubuntu22.04lts.rootfs.tar.gz"
+        # AMD64/x86_64 for Intel/AMD processors (most common)
+        Log "Detected x86_64/AMD64 processor architecture"
+        $rootfsUrl = "https://cloud-images.ubuntu.com/wsl/jammy/current/ubuntu-jammy-wsl-amd64-ubuntu22.04lts.rootfs.tar.gz"
         $rootfsFile = "$basePath\staging\ubuntu.rootfs.tar.gz"
     }
     
