@@ -141,7 +141,7 @@ Invoke-WebRequest -Uri $proxmarkFlashScriptUrl -OutFile $proxmarkFlashScriptPath
 
 # Run the WSL enable script
 Log "Running WSL enable script..."
-& $wslEnableScriptPath
+powershell -ExecutionPolicy Bypass -File $wslEnableScriptPath
 
 # Check if a reboot is required
 if (Test-Path "$env:SystemRoot\System32\RebootPending.txt") {
@@ -157,7 +157,7 @@ if (Test-Path "$env:SystemRoot\System32\RebootPending.txt") {
 }
 # Run the setup script
 Log "Running WSL setup script..."
-& $setupScriptPath
+powershell -ExecutionPolicy Bypass -File $setupScriptPath
 
 # Create a shortcut on the desktop to run the launch script as an administrator
 Log "Creating desktop shortcut..."
@@ -176,7 +176,7 @@ Log "Setup complete. Shortcut created on the desktop."
 $flashChoice = Read-Host "Do you want to flash your Proxmark3 device now (not recommended for virtual environments)? (y/n)"
 if ($flashChoice -eq "y" -or $flashChoice -eq "Y") {
     Log "User chose to flash Proxmark3. Running Proxmark3 flash script..."
-    & $proxmarkFlashScriptPath
+    powershell -ExecutionPolicy Bypass -File $proxmarkFlashScriptPath
 } else {
     Log "User chose not to flash Proxmark3."
 }
