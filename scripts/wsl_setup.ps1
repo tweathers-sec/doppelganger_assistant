@@ -290,12 +290,12 @@ if (-not $existingUbuntu) {
     $is64bit = [Environment]::Is64BitOperatingSystem
     
     if ($is64bit) {
-        # Try AMD64 first, most common
-        $rootfsUrl = "https://cloud-images.ubuntu.com/wsl/jammy/current/ubuntu-jammy-wsl-amd64-ubuntu.rootfs.tar.gz"
+        # AMD64 for x86_64 processors
+        $rootfsUrl = "https://cloud-images.ubuntu.com/wsl/jammy/current/ubuntu-jammy-wsl-amd64-ubuntu22.04lts.rootfs.tar.gz"
         $rootfsFile = "$basePath\staging\ubuntu.rootfs.tar.gz"
     } else {
         # ARM64 for ARM processors
-        $rootfsUrl = "https://cloud-images.ubuntu.com/wsl/jammy/current/ubuntu-jammy-wsl-arm64-ubuntu.rootfs.tar.gz"
+        $rootfsUrl = "https://cloud-images.ubuntu.com/wsl/jammy/current/ubuntu-jammy-wsl-arm64-ubuntu22.04lts.rootfs.tar.gz"
         $rootfsFile = "$basePath\staging\ubuntu.rootfs.tar.gz"
     }
     
