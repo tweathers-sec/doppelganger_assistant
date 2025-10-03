@@ -223,27 +223,26 @@ if (-not (CommandExists "usbipd")) {
         }
     } catch {
         Log "Error installing usbipd using winget. Trying alternative method..."
-        $usbIpdUrl = "https://github.com/dorssel/usbipd-win/releases/latest/download/usbipd-win_x64.msi"
-        $usbIpdMsiPath = "$env:TEMP\usbipd-win_x64.msi"
-        Invoke-WebRequest -Uri $usbIpdUrl -OutFile $usbIpdMsiPath
-        $msiExecOutput = Start-Process msiexec.exe -ArgumentList "/i `"$usbIpdMsiPath`" /qn" -Wait -PassThru
-        if ($msiExecOutput.ExitCode -ne 0) {
-            Log "Error installing usbipd using MSI. Exit code: $($msiExecOutput.ExitCode)"
-            exit 1
+        try {
+            $usbIpdUrl = "https://github.com/dorssel/usbipd-win/releases/latest/download/usbipd-win_x64.msi"
+            $usbIpdMsiPath = "$env:TEMP\usbipd-win_x64.msi"
+            Invoke-WebRequest -Uri $usbIpdUrl -OutFile $usbIpdMsiPath
+            $msiExecOutput = Start-Process msiexec.exe -ArgumentList "/i `"$usbIpdMsiPath`" /qn" -Wait -PassThru
+            if ($msiExecOutput.ExitCode -ne 0) {
+                throw "MSI installation failed with exit code: $($msiExecOutput.ExitCode)"
+            }
+            Remove-Item $usbIpdMsiPath -Force
+        } catch {
+            Log "WARNING: Failed to install usbipd: $_"
+            Log "You can manually install usbipd later from: https://github.com/dorssel/usbipd-win/releases"
+            Log "Continuing with installation..."
         }
-        Remove-Item $usbIpdMsiPath -Force
     }
     
     # Check if usbipd is available after installation
     if (-not (Refresh-UsbIpdCommand)) {
-        $response = Read-Host "usbipd command is not available. Do you want to restart PowerShell to make it available? (y/n)"
-        if ($response -eq 'y') {
-            Log "Restarting PowerShell to make usbipd available..."
-            Start-Process powershell -ArgumentList "-File `"$($MyInvocation.MyCommand.Path)`"" -Wait
-            exit
-        } else {
-            Log "User chose not to restart PowerShell. usbipd may not be available for this session."
-        }
+        Log "NOTE: usbipd is not available in current session. It may require a restart or manual installation."
+        Log "Continuing with WSL setup..."
     }
 } else {
     Log "usbipd is already installed."
