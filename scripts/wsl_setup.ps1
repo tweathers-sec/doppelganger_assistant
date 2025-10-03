@@ -13,7 +13,7 @@ $rootfsArch = if ($systemArch -like "*ARM*") {
     "amd64"
 }
 
-$rootfsUrl = "https://cloud-images.ubuntu.com/wsl/noble/current/ubuntu-noble-wsl-$rootfsArch-ubuntu24.04lts.rootfs.tar.gz"
+$rootfsUrl = "https://cloud-images.ubuntu.com/wsl/noble/current/ubuntu-noble-wsl-$rootfsArch-wsl.rootfs.tar.gz"
 
 $stagingPath = "$basePath\staging"
 $rootfsPath = "$stagingPath\ubuntu-noble-wsl-$rootfsArch-ubuntu.rootfs.tar.gz"
