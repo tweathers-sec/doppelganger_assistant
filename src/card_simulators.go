@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"time"
 )
 
@@ -109,7 +110,7 @@ func simulateCardData(cardType string, cardData uint64, bitLength, facilityCode,
 			return
 		}
 
-		fileName := fmt.Sprintf("%s/iclass_sim_%d_%d_%d_%s.json", homeDir, bitLength, facilityCode, cardNumber, time.Now().Format("20060102150405"))
+		fileName := filepath.Join(homeDir, fmt.Sprintf("iclass_sim_%d_%d_%d_%s.json", bitLength, facilityCode, cardNumber, time.Now().Format("20060102150405")))
 		file, err := os.Create(fileName)
 		if err != nil {
 			fmt.Println("Error creating file:", err)

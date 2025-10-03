@@ -190,6 +190,7 @@ func (t *arrowDarkTheme) Size(name fyne.ThemeSizeName) float32 {
 }
 
 func runGUI() {
+
 	// Suppress Fyne thread checking warnings from terminal library
 	// The fyne-io/terminal library updates UI from background threads,
 	// which is safe in this context but triggers warnings
@@ -354,7 +355,25 @@ func runGUI() {
 
 		// Run command with PTY in terminal
 		go func() {
-			cmd := exec.Command("./doppelganger_assistant", args...)
+			// Recover from any panics in the terminal widget
+			defer func() {
+				if r := recover(); r != nil {
+					errMsg := fmt.Sprintf("\n\n[Terminal Error] The terminal widget encountered an error: %v\nThe command may have completed successfully. Check your Proxmark3 device.\n", r)
+					// Try to write error to terminal if possible
+					defer func() { recover() }() // Catch any panic from this write too
+					currentTerm.Write([]byte(errMsg))
+				}
+			}()
+
+			// Get the path of the currently running executable
+			execPath, err := os.Executable()
+			if err != nil {
+				errMsg := fmt.Sprintf("Error getting executable path: %v\n", err)
+				currentTerm.Write([]byte(errMsg))
+				return
+			}
+
+			cmd := exec.Command(execPath, args...)
 
 			// Start the command with a pty
 			ptmx, err := pty.Start(cmd)
@@ -397,6 +416,13 @@ func runGUI() {
 	// Users can manually select text in the terminal and use Cmd+C/Ctrl+C to copy
 
 	clearTerminal := newOutlinedButton("CLEAR TERMINAL", func() {
+		// Recover from any crashes during terminal clear
+		defer func() {
+			if r := recover(); r != nil {
+				// Silently recover - terminal may be in bad state
+			}
+		}()
+
 		// Stop any running process and clear terminal
 		if currentTerm != nil {
 			currentTerm.Exit()
@@ -463,12 +489,8 @@ func runGUI() {
 
 	terminalWithBg := container.NewStack(
 		terminalBorder,
-		container.NewPadded(
-			terminalBg,
-		),
-		container.NewPadded(
-			container.NewPadded(terminalContainer),
-		),
+		terminalBg,
+		container.NewPadded(terminalContainer),
 	)
 
 	rightColumn := container.NewBorder(
