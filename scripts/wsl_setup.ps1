@@ -267,17 +267,29 @@ Log "Installing Ubuntu via WSL..."
 wsl.exe --install Ubuntu --no-launch
 
 # Wait for installation to complete
-Start-Sleep -Seconds 5
+Start-Sleep -Seconds 10
 
-# Rename the distribution
-Log "Setting up $wslName..."
-$defaultUbuntu = "Ubuntu"
-if ((wsl.exe -l -q) -contains $defaultUbuntu) {
+# Find the newly installed Ubuntu distribution
+Log "Looking for installed Ubuntu distribution..."
+$wslList = wsl.exe -l -q | Where-Object { $_ -match "Ubuntu" -and $_ -ne $wslName }
+Log "Found distributions: $wslList"
+
+$defaultUbuntu = $null
+foreach ($distro in $wslList) {
+    $distroName = $distro.Trim()
+    if ($distroName -match "^Ubuntu") {
+        $defaultUbuntu = $distroName
+        break
+    }
+}
+
+if ($defaultUbuntu) {
+    Log "Found Ubuntu distribution: $defaultUbuntu"
     # Export and re-import with custom name
     if (-Not (Test-Path -Path "$basePath\staging")) { mkdir "$basePath\staging" }
     $tempTar = "$basePath\staging\ubuntu-temp.tar"
     
-    Log "Exporting default Ubuntu..."
+    Log "Exporting $defaultUbuntu..."
     wsl.exe --export $defaultUbuntu $tempTar
     
     Log "Importing as $wslName..."
@@ -287,6 +299,10 @@ if ((wsl.exe -l -q) -contains $defaultUbuntu) {
     Log "Cleaning up..."
     wsl.exe --unregister $defaultUbuntu
     Remove-Item $tempTar -Force
+} else {
+    Log "ERROR: Could not find newly installed Ubuntu distribution."
+    Log "Available distributions: $(wsl.exe -l -q)"
+    throw "Ubuntu distribution not found after installation."
 }
 
 # Ensure WSL is initialized
