@@ -288,10 +288,10 @@ if (-not $existingUbuntu) {
     # Download Ubuntu rootfs directly
     $arch = (Get-WmiObject Win32_Processor).AddressWidth
     if ($arch -eq 64) {
-        $rootfsUrl = "https://cloud-images.ubuntu.com/wsl/noble/current/ubuntu-noble-wsl-amd64-wsl.rootfs.tar.gz"
+        $rootfsUrl = "https://cloud-images.ubuntu.com/wsl/jammy/current/ubuntu-jammy-wsl-amd64-wsl.rootfs.tar.gz"
         $rootfsFile = "$basePath\staging\ubuntu-amd64.rootfs.tar.gz"
     } else {
-        $rootfsUrl = "https://cloud-images.ubuntu.com/wsl/noble/current/ubuntu-noble-wsl-arm64-wsl.rootfs.tar.gz"
+        $rootfsUrl = "https://cloud-images.ubuntu.com/wsl/jammy/current/ubuntu-jammy-wsl-arm64-wsl.rootfs.tar.gz"
         $rootfsFile = "$basePath\staging\ubuntu-arm64.rootfs.tar.gz"
     }
     
