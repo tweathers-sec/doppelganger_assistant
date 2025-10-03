@@ -5,19 +5,9 @@ $wslInstallationPath = "$basePath\wsl"
 $username = "doppelganger"
 $installAllSoftware = $true
 
-# Determine system architecture
-$systemArch = (Get-CimInstance -ClassName Win32_OperatingSystem).OSArchitecture
-$rootfsArch = if ($systemArch -like "*ARM*") {
-    "arm64"
-} else {
-    "amd64"
-}
-
-$rootfsUrl = "https://cloud-images.ubuntu.com/wsl/noble/current/ubuntu-noble-wsl-$rootfsArch-wsl.rootfs.tar.gz"
-
-$stagingPath = "$basePath\staging"
-$rootfsPath = "$stagingPath\ubuntu-noble-wsl-$rootfsArch-ubuntu.rootfs.tar.gz"
-$installScriptPath = "$basePath\wsl_doppelganger_install.sh"  # Update this path as needed
+# Use WSL's built-in Ubuntu installation instead of manual rootfs download
+# This works for both AMD64 and ARM64 architectures
+$installScriptPath = "$basePath\wsl_doppelganger_install.sh"
 
 # Log file path
 $logFile = "C:\doppelganger_assistant\wsl_setup.log"
@@ -262,28 +252,42 @@ if (-not (CommandExists "usbipd")) {
 # Check if the WSL distribution already exists
 $wslList = wsl.exe -l -q
 if ($wslList -contains $wslName) {
-    $response = Read-Host "$wslName already exists. Do you want to redownload and reinstall it? (y/n)"
+    $response = Read-Host "$wslName already exists. Do you want to reinstall it? (y/n)"
     if ($response -ne 'y') {
         Log "Skipping reinstallation."
         exit
+    } else {
+        Log "Unregistering existing $wslName..."
+        wsl.exe --unregister $wslName
     }
 }
 
-# Create staging directory if it does not exist
-if (-Not (Test-Path -Path $stagingPath)) { mkdir $stagingPath }
+# Install Ubuntu using WSL's built-in installer (works for all architectures)
+Log "Installing Ubuntu via WSL..."
+wsl.exe --install Ubuntu --no-launch
 
-# Download Ubuntu root filesystem
-Log "Downloading Ubuntu root filesystem..."
-Download-File -Url $rootfsUrl -Destination $rootfsPath
+# Wait for installation to complete
+Start-Sleep -Seconds 5
 
-# Import the WSL distribution
-if (-Not (Test-Path -Path $wslInstallationPath)) {
-    mkdir $wslInstallationPath
+# Rename the distribution
+Log "Setting up $wslName..."
+$defaultUbuntu = "Ubuntu"
+if ((wsl.exe -l -q) -contains $defaultUbuntu) {
+    # Export and re-import with custom name
+    if (-Not (Test-Path -Path "$basePath\staging")) { mkdir "$basePath\staging" }
+    $tempTar = "$basePath\staging\ubuntu-temp.tar"
+    
+    Log "Exporting default Ubuntu..."
+    wsl.exe --export $defaultUbuntu $tempTar
+    
+    Log "Importing as $wslName..."
+    if (-Not (Test-Path -Path $wslInstallationPath)) { mkdir $wslInstallationPath }
+    wsl.exe --import $wslName $wslInstallationPath $tempTar
+    
+    Log "Cleaning up..."
+    wsl.exe --unregister $defaultUbuntu
+    Remove-Item $tempTar -Force
 }
-wsl.exe --import $wslName $wslInstallationPath $rootfsPath
-
-# Clean up staging files
-Remove-Item $rootfsPath
 
 # Ensure WSL is initialized
 Log "Initializing WSL and $wslName..."
