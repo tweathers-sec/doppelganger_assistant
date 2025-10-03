@@ -172,17 +172,15 @@ doppelganger_assistant
 
 This process will install WSL, Doppelganger Assistant, Proxmark3 software, and create a desktop shortcut.
 
-Open **PowerShell as Administrator** and run the following command.
+Open **PowerShell as Administrator** and run:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -Command "Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/refs/heads/main/installers/doppelganger_install_windows.ps1' -OutFile '$env:TEMP\doppelganger_assistant_install.ps1'; & '$env:TEMP\doppelganger_assistant_install.ps1'"
+irm https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/installers/doppelganger_install_windows.ps1 | iex
 ```
 
-Alternatively, you can download the files and run them in this order:
+**Note:** The installer will automatically clean up any previous installation attempts. If a reboot is required to enable WSL features, you'll be prompted. Simply run the same command again after rebooting.
 
-1. wsl_enable.ps1
-2. Reboot the system
-3. installers/doppelganger_install_windows.ps1
+**For nested VMs (Proxmox, Parallels, VMware, etc.):** Ensure nested virtualization is enabled in your hypervisor settings before running the installer.
 
 #### Manual WSL Installation
 

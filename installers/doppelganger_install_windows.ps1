@@ -102,10 +102,14 @@ if (Test-Path "$env:SystemRoot\System32\RebootPending.txt") {
     Remove-Item "$env:SystemRoot\System32\RebootPending.txt" -Force
 }
 
-# Create base directory if it doesn't exist
-if (-Not (Test-Path -Path $basePath)) {
-    mkdir $basePath
+# Clean up existing installation if present
+if (Test-Path -Path $basePath) {
+    Log "Cleaning up existing installation..."
+    Remove-Item -Path $basePath -Recurse -Force -ErrorAction SilentlyContinue
 }
+
+# Create base directory
+mkdir $basePath | Out-Null
 
 # Download the setup, launch, install scripts, and image from GitHub
 # Use headers to prevent caching
