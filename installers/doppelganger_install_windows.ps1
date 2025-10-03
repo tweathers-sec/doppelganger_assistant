@@ -181,9 +181,14 @@ if ($flashChoice -eq "y" -or $flashChoice -eq "Y") {
     Log "User chose not to flash Proxmark3."
 }
 
-# Delete this script
+# Delete this script (only if running from a file)
 $scriptPath = $MyInvocation.MyCommand.Path
-Log "Deleting installation script..."
-Remove-Item -Path $scriptPath -Force
+if ($scriptPath) {
+    Log "Deleting installation script..."
+    Remove-Item -Path $scriptPath -Force -ErrorAction SilentlyContinue
+    Log "Installation script deleted."
+} else {
+    Log "Script was run directly (not from file). Nothing to delete."
+}
 
-Log "Installation script deleted. Process complete."
+Log "Installation complete!"
