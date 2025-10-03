@@ -286,13 +286,17 @@ if (-not $existingUbuntu) {
     if (-Not (Test-Path -Path "$basePath\staging")) { mkdir "$basePath\staging" }
     
     # Download Ubuntu rootfs directly
-    $arch = (Get-WmiObject Win32_Processor).AddressWidth
-    if ($arch -eq 64) {
-        $rootfsUrl = "https://cloud-images.ubuntu.com/wsl/jammy/current/ubuntu-jammy-wsl-amd64-wsl.rootfs.tar.gz"
-        $rootfsFile = "$basePath\staging\ubuntu-amd64.rootfs.tar.gz"
+    # Use architecture detection to get correct rootfs
+    $is64bit = [Environment]::Is64BitOperatingSystem
+    
+    if ($is64bit) {
+        # Try AMD64 first, most common
+        $rootfsUrl = "https://cloud-images.ubuntu.com/wsl/jammy/current/ubuntu-jammy-wsl-amd64-ubuntu.rootfs.tar.gz"
+        $rootfsFile = "$basePath\staging\ubuntu.rootfs.tar.gz"
     } else {
-        $rootfsUrl = "https://cloud-images.ubuntu.com/wsl/jammy/current/ubuntu-jammy-wsl-arm64-wsl.rootfs.tar.gz"
-        $rootfsFile = "$basePath\staging\ubuntu-arm64.rootfs.tar.gz"
+        # ARM64 for ARM processors
+        $rootfsUrl = "https://cloud-images.ubuntu.com/wsl/jammy/current/ubuntu-jammy-wsl-arm64-ubuntu.rootfs.tar.gz"
+        $rootfsFile = "$basePath\staging\ubuntu.rootfs.tar.gz"
     }
     
     Log "Downloading Ubuntu rootfs from $rootfsUrl..."
