@@ -30,13 +30,6 @@ if ($vmFeature.State -ne "Enabled") {
     $rebootRequired = $true
 }
 
-# Check if WSL 2 is available
-$wslVersion = Get-WindowsOptionalFeature -Online | Where-Object { $_.FeatureName -eq "VirtualMachinePlatform" }
-if ($wslVersion.State -ne "Enabled") {
-    Log "WSL 2 is not available. Please ensure your Windows is updated."
-    exit
-}
-
 # Check if a reboot is required
 if ($rebootRequired) {
     Log "A reboot is required to complete the WSL installation. Please reboot your system and run this script again."

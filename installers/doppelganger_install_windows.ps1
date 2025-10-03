@@ -108,26 +108,32 @@ if (-Not (Test-Path -Path $basePath)) {
 }
 
 # Download the setup, launch, install scripts, and image from GitHub
+# Use headers to prevent caching
+$headers = @{
+    'Cache-Control' = 'no-cache'
+    'Pragma' = 'no-cache'
+}
+
 Log "Downloading setup script..."
-Invoke-WebRequest -Uri $setupScriptUrl -OutFile $setupScriptPath
+Invoke-WebRequest -Uri $setupScriptUrl -OutFile $setupScriptPath -Headers $headers
 
 Log "Downloading launch script..."
-Invoke-WebRequest -Uri $launchScriptUrl -OutFile $launchScriptPath
+Invoke-WebRequest -Uri $launchScriptUrl -OutFile $launchScriptPath -Headers $headers
 
 Log "Downloading install script..."
-Invoke-WebRequest -Uri $installScriptUrl -OutFile $installScriptPath
+Invoke-WebRequest -Uri $installScriptUrl -OutFile $installScriptPath -Headers $headers
 
 Log "Downloading image..."
-Invoke-WebRequest -Uri $imageUrl -OutFile $imagePath
+Invoke-WebRequest -Uri $imageUrl -OutFile $imagePath -Headers $headers
 
 Log "Downloading WSL enable script..."
-Invoke-WebRequest -Uri $wslEnableScriptUrl -OutFile $wslEnableScriptPath
+Invoke-WebRequest -Uri $wslEnableScriptUrl -OutFile $wslEnableScriptPath -Headers $headers
 
 Log "Downloading USB reconnect script..."
-Invoke-WebRequest -Uri $usbReconnectScriptUrl -OutFile $usbReconnectScriptPath
+Invoke-WebRequest -Uri $usbReconnectScriptUrl -OutFile $usbReconnectScriptPath -Headers $headers
 
 Log "Downloading Proxmark3 flash script..."
-Invoke-WebRequest -Uri $proxmarkFlashScriptUrl -OutFile $proxmarkFlashScriptPath
+Invoke-WebRequest -Uri $proxmarkFlashScriptUrl -OutFile $proxmarkFlashScriptPath -Headers $headers
 
 # Run the WSL enable script
 Log "Running WSL enable script..."
