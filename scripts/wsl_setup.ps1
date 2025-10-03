@@ -320,7 +320,17 @@ if (-not $existingUbuntu) {
         
         # Import the rootfs directly as our custom distribution name
         if (-Not (Test-Path -Path $wslInstallationPath)) { mkdir $wslInstallationPath }
-        wsl.exe --import $wslName $wslInstallationPath $rootfsFile --version 1
+        
+        # Try WSL2 first, fallback to WSL1 if it fails
+        Log "Attempting to import as WSL2..."
+        $importOutput = wsl.exe --import $wslName $wslInstallationPath $rootfsFile --version 2 2>&1
+        
+        if ($LASTEXITCODE -ne 0) {
+            Log "WSL2 import failed, trying WSL1..."
+            wsl.exe --import $wslName $wslInstallationPath $rootfsFile --version 1
+        } else {
+            Log "Successfully imported as WSL2"
+        }
         
         Log "Ubuntu imported successfully as $wslName"
         
@@ -347,7 +357,17 @@ if ($existingUbuntu) {
     
     Log "Importing as $wslName..."
     if (-Not (Test-Path -Path $wslInstallationPath)) { mkdir $wslInstallationPath }
-    wsl.exe --import $wslName $wslInstallationPath $tempTar
+    
+    # Try WSL2 first, fallback to WSL1 if it fails
+    Log "Attempting to import as WSL2..."
+    $importOutput = wsl.exe --import $wslName $wslInstallationPath $tempTar --version 2 2>&1
+    
+    if ($LASTEXITCODE -ne 0) {
+        Log "WSL2 import failed, trying WSL1..."
+        wsl.exe --import $wslName $wslInstallationPath $tempTar --version 1
+    } else {
+        Log "Successfully imported as WSL2"
+    }
     
     Log "Cleaning up..."
     wsl.exe --unregister $existingUbuntu

@@ -68,11 +68,47 @@ function DetachUSBDevice {
     Log "Device $busId did not detach within the expected time."
 }
 
+# Function to check WSL version
+function GetWSLVersion {
+    $wslInfo = wsl -l -v | Select-String "Ubuntu-doppelganger_assistant"
+    if ($wslInfo -match "\s+(\d+)\s*$") {
+        return [int]$matches[1]
+    }
+    return 0
+}
+
 # Function to attach a USB device to WSL
 function AttachUSBDeviceToWSL {
     param (
         [string]$busId
     )
+    
+    # Check WSL version
+    $wslVersion = GetWSLVersion
+    Log "WSL version detected: $wslVersion"
+    
+    if ($wslVersion -eq 1) {
+        Log "WARNING: Ubuntu-doppelganger_assistant is running WSL1. USB passthrough requires WSL2."
+        Log "Attempting to convert to WSL2..."
+        
+        wsl --set-version Ubuntu-doppelganger_assistant 2 2>&1 | Tee-Object -Variable conversionOutput
+        
+        if ($LASTEXITCODE -eq 0) {
+            Log "Successfully converted to WSL2. Waiting for conversion to complete..."
+            Start-Sleep -Seconds 5
+        } else {
+            Log "ERROR: Failed to convert to WSL2. USB passthrough will not work."
+            Log "This usually means nested virtualization is not available in your VM."
+            Log "You can still launch the app, but Proxmark3 USB access won't work."
+            $response = Read-Host "Continue without USB passthrough? (y/n)"
+            if ($response -ne 'y') {
+                Log "User chose not to continue. Exiting."
+                exit 1
+            }
+            return
+        }
+    }
+    
     Log "Attaching device with busid $busId to WSL..."
     $attachOutput = & usbipd attach --wsl --busid $busId 2>&1 | Tee-Object -Variable attachOutputResult
     if ($LASTEXITCODE -ne 0) {
