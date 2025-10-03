@@ -281,13 +281,13 @@ foreach ($distro in $allDistros) {
 # If no Ubuntu exists, install it
 if (-not $existingUbuntu) {
     Log "Installing Ubuntu via WSL..."
-    wsl.exe --install Ubuntu --no-launch
     
-    # Wait for installation to complete
+    # Try WSL2 installation first
+    $installOutput = wsl.exe --install Ubuntu --no-launch 2>&1 | Out-String
     Start-Sleep -Seconds 10
     
-    # Find the newly installed Ubuntu distribution
-    Log "Looking for newly installed Ubuntu distribution..."
+    # Check if installation succeeded
+    Log "Checking for Ubuntu distribution..."
     $allDistros = wsl.exe -l -q
     foreach ($distro in $allDistros) {
         $distroName = $distro.Trim()
@@ -295,6 +295,32 @@ if (-not $existingUbuntu) {
             $existingUbuntu = $distroName
             Log "Found newly installed Ubuntu: $existingUbuntu"
             break
+        }
+    }
+    
+    # If WSL2 installation failed with hypervisor error, try WSL1
+    if (-not $existingUbuntu -and $installOutput -match "HCS_E_HYPERV_NOT_INSTALLED") {
+        Log "WSL2 installation failed due to nested virtualization limitations."
+        Log "Attempting WSL1 installation as fallback..."
+        
+        # Set WSL1 as default
+        wsl.exe --set-default-version 1
+        Start-Sleep -Seconds 2
+        
+        # Try installing Ubuntu with WSL1
+        wsl.exe --install Ubuntu --no-launch 2>&1 | Out-Null
+        Start-Sleep -Seconds 10
+        
+        # Check again for Ubuntu
+        Log "Checking for Ubuntu distribution (WSL1)..."
+        $allDistros = wsl.exe -l -q
+        foreach ($distro in $allDistros) {
+            $distroName = $distro.Trim()
+            if ($distroName -match "^Ubuntu" -and $distroName -ne $wslName) {
+                $existingUbuntu = $distroName
+                Log "Successfully installed Ubuntu with WSL1: $existingUbuntu"
+                break
+            }
         }
     }
 }
