@@ -29,7 +29,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy the installation script
-COPY doppelganger_install_linux.sh /tmp/doppelganger_install_linux.sh
+COPY installers/doppelganger_install_linux.sh /tmp/doppelganger_install_linux.sh
 
 # Make the script executable
 RUN chmod +x /tmp/doppelganger_install_linux.sh

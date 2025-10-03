@@ -1,10 +1,21 @@
 # Doppelgänger Assistant
 
-Card calculator and Proxmark3 Plugin for writing and/or simulating every card type that Doppelgänger Pro, Stealth, and MFAS support. This project is designed to streamline the card-writing process because every second counts in physical penetration testing. Why waste time digging through your disheveled notes to relearn how to write an iCLASS 2k card or fumble with the syntax for a 37-bit HID card?  If you use doppelganger, let doppelgagner_assistant do the work for you. That way, you can spend more time creating a viable replica access control card.
+A professional GUI application for calculating card data and automating Proxmark3 operations for every card type that Doppelgänger Core, Pro, Stealth, and MFAS support. This tool streamlines the card-writing process for physical penetration testing by providing an intuitive interface with an embedded terminal, eliminating the need to memorize complex Proxmark3 syntax or dig through notes.
+
+![Doppelgänger Assistant GUI](https://github.com/tweathers-sec/doppelganger_assistant/blob/main/img/assistant_gui.png)
+
+## Features
+
+* **Modern GUI Interface**: Intuitive two-column layout with embedded terminal for real-time command execution
+* **Integrated Terminal**: Full-featured terminal emulator with native ANSI color support and scrollback
+* **Card Calculator**: Automatically generates Proxmark3 commands for writing and simulating cards
+* **Direct Execution**: Execute, write, verify, and simulate card operations directly from the GUI
+* **Professional Design**: Clean, modern interface with custom-styled buttons and controls
+* **Cross-Platform**: Available for macOS, Linux, and Windows (via WSL)
 
 ## Doppelgänger Devices
 
-You can purchase Doppelgänger Pro, Stealth, and MFAS from the [Physical Exploitation Store](https://store.physicalexploit.com/). Alternatively, you can build the [community edition](https://github.com/tweathers-sec/doppelganger) (less card reading support).
+You can purchase Doppelgänger Pro, Stealth, and MFAS from the [Physical Exploitation Store](https://store.physicalexploit.com/). For the open-source firmware, check out [Doppelgänger Core](https://github.com/mwgroup-io/Doppelganger_Core).
 
 ## Officially Supported Card Types
 
@@ -26,7 +37,9 @@ Below are the officially supported card types based on Doppelgänger version:
 | HID Corporate 1000 35-bit   | X                 | X   | X       | X    |                               |
 | HID Simplex 36-bit (S12906) |                   | X   | X       | X    |                               |
 | HID H10304 37-bit           | X                 | X   | X       | X    |                               |
+| HID H800002 46-bit          | X                 | X   | X       | X    |                               |
 | HID Corporate 1000 48-bit   |                   | X   | X       | X    |                               |
+| Avigilon 56-bit             | X                 | X   | X       | X    |                               |
 | C910 PIVKey                 |                   |     | X       | X    |                               |
 | MIFARE (Various Types)      |                   |     | X       | X    | UID Only                      |
 
@@ -36,9 +49,31 @@ Supported technologies include:
 * PROX
 * Indala
 * AWID
+* Avigilon
 * EM4102
 * PIV
 * MIFARE
+
+## Project Structure
+
+The Doppelganger Assistant project is organized as follows:
+
+```
+doppelganger_assistant/
+├── src/                           # Go source code
+│   ├── *.go                      # All Go source files
+│   ├── go.mod                    # Go module definition
+│   ├── go.sum                    # Go dependencies
+│   └── Makefile                  # Installation Makefile
+├── installers/                   # Installation scripts
+│   ├── doppelganger_install_linux.sh
+│   ├── doppelganger_install_macos.sh
+│   └── doppelganger_install_windows.ps1
+├── scripts/                      # Utility scripts
+├── build.sh                      # Single-platform build script
+├── build_all.sh                  # Multi-platform build script
+└── Dockerfile                    # Docker container definition
+```
 
 ## Installation
 
@@ -59,7 +94,7 @@ Alternatively, you can use one of the one-liners below to install on [Linux](htt
 Run the following command in the terminal:
 
 ```sh
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/doppelganger_install_macos.sh)"
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/installers/doppelganger_install_macos.sh)"
 ```
 
 #### Manual MacOS Installation
@@ -67,10 +102,10 @@ Run the following command in the terminal:
 Run the following command inside your preferred terminal application:
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/doppelganger_install_macos.sh | sudo bash
+curl -sSL https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/installers/doppelganger_install_macos.sh | sudo bash
 ```
 
-#### Manual MacOS Installation
+#### Alternative MacOS Installation
 
 Download the application (.app) from the [release page](https://github.com/tweathers-sec/doppelganger_assistant/releases) and place it in the `/Applications` directory. You can create a symbolic link to run the application from the terminal or you create an alias in your shell profile.
 
@@ -97,7 +132,7 @@ xattr -cr /Applications/doppelganger_assistant.app
 Run the following command inside your preferred terminal application:
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/doppelganger_install_linux.sh | sudo bash
+curl -sSL https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/installers/doppelganger_install_linux.sh | sudo bash
 ```
 
 #### Manual Linux Installation
@@ -114,8 +149,9 @@ Grab the Doppelganger Assistant and install it:
 
 ```sh
 sudo apt install make
-wget https://github.com/tweathers-sec/doppelganger_assistant/releases/tag/latest/doppelganger_assistant_linux_{amd64/arm64}.tar.xz
+wget https://github.com/tweathers-sec/doppelganger_assistant/releases/latest/download/doppelganger_assistant_linux_{amd64/arm64}.tar.xz
 tar xvf doppelganger_assistant_*
+cd doppelganger_assistant
 sudo make install
 
 # Cleanup the directory, if desired
@@ -139,16 +175,16 @@ This process will install WSL, Doppelganger Assistant, Proxmark3 software, and c
 Open **PowerShell as Administrator** and run the following command.
 
 ```powershell
-powershell -ExecutionPolicy Bypass -Command "Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/refs/heads/main/doppelganger_install_windows.ps1' -OutFile 'C:\doppelganger_assistant_install.ps1'; & 'C:\doppelganger_assistant_install.ps1'"
+powershell -ExecutionPolicy Bypass -Command "Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/refs/heads/main/installers/doppelganger_install_windows.ps1' -OutFile 'C:\doppelganger_assistant_install.ps1'; & 'C:\doppelganger_assistant_install.ps1'"
 ```
 
 Alternatively, you can download the files and run them in this order:
 
 1. wsl_enable.ps1
 2. Reboot the system
-3. doppelganger_install_windows.ps1
+3. installers/doppelganger_install_windows.ps1
 
-#### Manual Installation
+#### Manual WSL Installation
 
 If needed, create an Ubuntu WSL environment. From cmd.exe run:
 
@@ -169,8 +205,9 @@ sudo apt install libgl1 xterm make git
 Grab the Doppelganger Assistant and install it:
 
 ```sh
-wget https://github.com/tweathers-sec/doppelganger_assistant/releases/tag/latest/doppelganger_assistant_linux_{amd64/arm64}.tar.xz
+wget https://github.com/tweathers-sec/doppelganger_assistant/releases/latest/download/doppelganger_assistant_linux_{amd64/arm64}.tar.xz
 tar xvf doppelganger_assistant_*
+cd doppelganger_assistant
 sudo make install
 
 # Cleanup the directory, if desired
@@ -230,17 +267,71 @@ usbipd bind --busid 9-1 // {9-1 Should be your Proxmark3's ID}
 usbipd attach --wsl --busid 9-1 // {9-1 Should be your Proxmark3's ID}
 ```
 
-## Example Usage
+## Development
 
-### Doppelgänger Assistant GUI
+### Building from Source
 
-Don't want to bumble through the commandline? Run the GUI version by double-clicking the launcher or through the commandline:
+To build Doppelganger Assistant from source:
+
+```bash
+# Clone the repository
+git clone https://github.com/tweathers-sec/doppelganger_assistant.git
+cd doppelganger_assistant
+
+# Build for current platform
+./build.sh
+
+# Build for all platforms (requires Docker)
+./build_all.sh
+```
+
+### Project Structure
+
+- **`src/`** - Contains all Go source code and module files
+- **`installers/`** - Platform-specific installation scripts
+- **`scripts/`** - Utility scripts for WSL and Windows setup
+- **`build.sh`** - Single-platform build script
+- **`build_all.sh`** - Multi-platform build script using fyne-cross
+
+### Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes in the `src/` directory
+4. Test your changes with `./build.sh`
+5. Submit a pull request
+
+## Usage
+
+### Launching the GUI
+
+The Doppelgänger Assistant GUI launches by default when you run the application:
+
+```sh
+doppelganger_assistant
+```
+
+Or explicitly launch in GUI mode:
 
 ```sh
 doppelganger_assistant -g
 ```
 
-![Doppelgänger Assistant GUI](https://github.com/tweathers-sec/doppelganger_assistant/blob/main/img/assistant_gui.png)
+### GUI Workflow
+
+1. **Select Card Type**: Choose from iCLASS, Prox, AWID, Indala, Avigilon, EM, PIV, or MIFARE
+2. **Enter Card Data**: Input facility code, card number, bit length, or UID as required
+3. **Choose Operation**:
+   - **Generate**: Creates Proxmark3 commands for manual execution
+   - **Write**: Generates and executes write commands on your Proxmark3
+   - **Verify**: Write and verify the card data
+   - **Simulate**: Simulate the card using your Proxmark3
+4. **Execute**: Click the Execute button to run the operation
+5. **Monitor Output**: View real-time command output in the integrated terminal
+
+The embedded terminal provides full interactive support, allowing you to see exactly what's happening with your Proxmark3 in real-time, with native coloring and scrollback support.
+
+### Video Demo
 
 Below is a quick video demo of the usage:
 
@@ -473,3 +564,83 @@ Executing command: hf 14a sim -t 3 --uid 5AF70D9D
 [+] Using UART port /dev/tty.usbmodem2134301
 
 ```
+
+#### Generating commands for HID H800002 46-bit cards
+
+This command will generate the commands needed to write HID H800002 46-bit card data:
+
+```sh
+doppelganger_assistant -t prox -bl 46 -fc 123 -cn 4567
+
+Handling Prox card... 
+
+Write the following values to a T5577 card: 
+
+lf hid clone -w H800002 --fc 123 --cn 4567 
+```
+
+#### Generating commands for Avigilon 56-bit cards
+
+This command will generate the commands needed to write Avigilon 56-bit card data:
+
+```sh
+doppelganger_assistant -t avigilon -bl 56 -fc 118 -cn 1603
+
+Handling Avigilon card... 
+
+Write the following values to a T5577 card: 
+
+lf hid clone -w Avig56 --fc 118 --cn 1603 
+```
+
+#### Simulating Avigilon cards
+
+Using the Avigilon card data, you can simulate the exact signal with a Proxmark3:
+
+```sh
+doppelganger_assistant -t avigilon -bl 56 -fc 118 -cn 1603 -s
+
+Simulating the Avigilon card on your Proxmark3: 
+
+Executing command: lf hid sim -w Avig56 --fc 118 --cn 1603 
+
+Simulation is in progress... If your Proxmark3 has a battery, you can remove the device and the simulation will continue. 
+
+To end the simulation, press the `pm3 button`.
+```
+
+## Legal Notice
+
+This application is intended for professional penetration testing and authorized security assessments only. Unauthorized or illegal use/possession of this software is the sole responsibility of the user. Mayweather Group LLC, Practical Physical Exploitation, and the creator are not liable for illegal application of this software.
+
+## License
+
+[![License: CC BY-NC-ND 4.0](https://img.shields.io/badge/License-CC%20BY--NC--ND%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-nd/4.0/)
+
+This work is licensed under a [Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License](https://creativecommons.org/licenses/by-nc-nd/4.0/).
+
+**You are free to:**
+* **Share** — copy and redistribute the material in any medium or format
+
+**Under the following terms:**
+* **Attribution** — You must give appropriate credit, provide a link to the license, and indicate if changes were made.
+* **NonCommercial** — You may not use the material for commercial purposes.
+* **NoDerivatives** — If you remix, transform, or build upon the material, you may not distribute the modified material.
+
+See the [LICENSE](LICENSE) file for the full license text.
+
+## Support
+
+For professional support and documentation, visit:
+* [Practical Physical Exploitation Documentation](https://docs.physicalexploit.com/)
+* [GitHub Issues](https://github.com/tweathers-sec/doppelganger_assistant/issues)
+* [Professional Store](https://store.physicalexploit.com/)
+
+## Credits
+
+Developed by Travis Weathers ([@tweathers-sec](https://github.com/tweathers-sec))  
+Copyright © 2025 Mayweather Group, LLC
+
+---
+
+*This software works in conjunction with [Doppelgänger Core](https://github.com/mwgroup-io/Doppelganger_Core) and Doppelgänger hardware devices.*

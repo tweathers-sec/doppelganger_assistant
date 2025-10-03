@@ -10,21 +10,20 @@ import (
 
 func simulateProxmark3Command(command string) (string, error) {
 	fmt.Println(Yellow, "\nExecuting command:", command, Reset)
+	fmt.Println(Green, "\nSimulation is in progress... If your Proxmark3 has a battery, you can remove the device and the simulation will continue.", Reset)
+	fmt.Println(Green, "\nTo end the simulation, press the `pm3 button`.\n", Reset)
+
 	cmd := exec.Command("pm3", "-c", command)
 
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdin
 
-	if err := cmd.Start(); err != nil {
-		return "", fmt.Errorf("error starting command: %w", err)
+	if err := cmd.Run(); err != nil {
+		return "", fmt.Errorf("error running command: %w", err)
 	}
 
-	// Print the simulation in progress message after starting the command
-	fmt.Println(Green, "\nSimulation is in progress... If your Proxmark3 has a battery, you can remove the device and the simulation will continue.", Reset)
-	fmt.Println(Green, "\nTo end the simulation, press the `pm3 button`.\n", Reset)
-
-	// Return immediately after starting the command
-	return "Command started successfully", nil
+	return "Simulation completed", nil
 }
 
 func simulateCardData(cardType string, cardData uint64, bitLength, facilityCode, cardNumber int, hexData, uid string) {
@@ -155,6 +154,8 @@ func simulateCardData(cardType string, cardData uint64, bitLength, facilityCode,
 			command = fmt.Sprintf("lf hid sim -w S12906 --fc %d --cn %d", facilityCode, cardNumber)
 		case 37:
 			command = fmt.Sprintf("lf hid sim -w H10304 --fc %d --cn %d", facilityCode, cardNumber)
+		case 46:
+			command = fmt.Sprintf("lf hid sim -w H800002 --fc %d --cn %d", facilityCode, cardNumber)
 		case 48:
 			command = fmt.Sprintf("lf hid sim -w C1k48s --fc %d --cn %d", facilityCode, cardNumber)
 		}
@@ -182,6 +183,15 @@ func simulateCardData(cardType string, cardData uint64, bitLength, facilityCode,
 		case 29:
 			command = fmt.Sprintf("lf hid sim -w ind29 --fc %d --cn %d", facilityCode, cardNumber)
 		}
+		output, err := simulateProxmark3Command(command)
+		if err != nil {
+			fmt.Println(Red, err, Reset)
+			fmt.Println(output)
+		}
+
+	case "avigilon":
+		fmt.Println(Green, "\nSimulating the Avigilon card on your Proxmark3:", Reset)
+		command = fmt.Sprintf("lf hid sim -w Avig56 --fc %d --cn %d", facilityCode, cardNumber)
 		output, err := simulateProxmark3Command(command)
 		if err != nil {
 			fmt.Println(Red, err, Reset)

@@ -162,6 +162,7 @@ if [ "$skip_doppelganger_install" = false ]; then
 
     # Extract and install Doppelganger Assistant
     tar xvf doppelganger_assistant_*.tar.xz
+    cd doppelganger_assistant
     sudo make install
 
     # Cleanup the directory, if desired

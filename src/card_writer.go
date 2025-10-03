@@ -15,7 +15,7 @@ func writeProxmark3Command(command string) (string, error) {
 	return string(output), nil
 }
 
-func writeCardData(cardType string, cardData uint64, bitLength int, facilityCode int, cardNumber int, hexData string, verify bool, uid string) {
+func writeCardData(cardType string, cardData uint64, bitLength int, facilityCode int, cardNumber int, hexData string, verify bool, formatCodeOrUID string) {
 	if cardType == "iclass" {
 		fmt.Println(Green, "\nConnect your Proxmark3 and place an iCLASS 2k card flat on the antenna. Press Enter to continue...", Reset)
 	} else if cardType == "piv" || cardType == "mifare" {
@@ -27,33 +27,21 @@ func writeCardData(cardType string, cardData uint64, bitLength int, facilityCode
 
 	switch cardType {
 	case "iclass":
-		fmt.Println(Green, "Writing block #6...", Reset)
-		output, err := writeProxmark3Command("hf iclass wrbl --blk 6 -d 030303030003E014 --ki 0")
+		fmt.Println(Green, "\nWriting iCLASS card data using hf iclass encode...\n", Reset)
+		// Use the new hf iclass encode command with the format code
+		formatCode := formatCodeOrUID
+		command := fmt.Sprintf("hf iclass encode -w %s --fc %d --cn %d --ki 0", formatCode, facilityCode, cardNumber)
+		output, err := writeProxmark3Command(command)
 		if err != nil {
-			fmt.Println(Red, err, Reset)
+			fmt.Println(Red, "Error writing to iCLASS card:", err, Reset)
+			fmt.Println(output)
 		} else {
 			fmt.Println(output)
-		}
-		fmt.Println(Green, "Writing block #7...", Reset)
-		output, err = writeProxmark3Command(fmt.Sprintf("hf iclass wrbl --blk 7 -d %016x --ki 0", cardData))
-		if err != nil {
-			fmt.Println(Red, err, Reset)
-		} else {
-			fmt.Println(output)
-		}
-		fmt.Println(Green, "Writing block #8...", Reset)
-		output, err = writeProxmark3Command("hf iclass wrbl --blk 8 -d 0000000000000000 --ki 0")
-		if err != nil {
-			fmt.Println(Red, err, Reset)
-		} else {
-			fmt.Println(output)
-		}
-		fmt.Println(Green, "Writing block #9...", Reset)
-		output, err = writeProxmark3Command("hf iclass wrbl --blk 9 -d 0000000000000000 --ki 0")
-		if err != nil {
-			fmt.Println(Red, err, Reset)
-		} else {
-			fmt.Println(output)
+			if verify {
+				fmt.Println(Green, "\nWrite complete. Verification will now begin.\n", Reset)
+			} else {
+				fmt.Println(Green, "\nWrite complete. Please verify the card data.\n", Reset)
+			}
 		}
 	case "prox":
 		fmt.Println(Green, "\nWriting Prox card data...\n", Reset)
@@ -76,6 +64,8 @@ func writeCardData(cardType string, cardData uint64, bitLength int, facilityCode
 				output, err = writeProxmark3Command(fmt.Sprintf("lf hid clone -w S12906 --fc %d --cn %d", facilityCode, cardNumber))
 			} else if bitLength == 37 {
 				output, err = writeProxmark3Command(fmt.Sprintf("lf hid clone -w H10304 --fc %d --cn %d", facilityCode, cardNumber))
+			} else if bitLength == 46 {
+				output, err = writeProxmark3Command(fmt.Sprintf("lf hid clone -w H800002 --fc %d --cn %d", facilityCode, cardNumber))
 			} else if bitLength == 48 {
 				output, err = writeProxmark3Command(fmt.Sprintf("lf hid clone -w C1k48s --fc %d --cn %d", facilityCode, cardNumber))
 			}
@@ -135,6 +125,26 @@ func writeCardData(cardType string, cardData uint64, bitLength int, facilityCode
 				}
 			}
 		}
+	case "avigilon":
+		fmt.Println(Green, "\nWriting Avigilon card data...\n", Reset)
+		for i := 0; i < 5; i++ {
+			output, err := writeProxmark3Command(fmt.Sprintf("lf hid clone -w Avig56 --fc %d --cn %d", facilityCode, cardNumber))
+			if err != nil {
+				fmt.Println(Red, err, Reset)
+			} else {
+				fmt.Println(output)
+			}
+			time.Sleep(1 * time.Second)
+			if i < 4 {
+				fmt.Printf(Green+"Move card... Write attempt #%d complete..."+Reset+"\n", i+1)
+			} else {
+				if verify {
+					fmt.Println(Green, "\nFinal write attempt complete. Verification will now begin.\n", Reset)
+				} else {
+					fmt.Println(Green, "\nFinal write attempt complete. Please verify the card data.\n", Reset)
+				}
+			}
+		}
 	case "em":
 		fmt.Println(Green, "\nWriting EM card data...\n", Reset)
 		for i := 0; i < 5; i++ {
@@ -157,6 +167,7 @@ func writeCardData(cardType string, cardData uint64, bitLength int, facilityCode
 		}
 	case "piv", "mifare":
 		fmt.Println(Green, "\nWriting the provided UID...\n", Reset)
+		uid := formatCodeOrUID
 		command := fmt.Sprintf("hf mf csetuid -u %s", uid)
 		output, err := writeProxmark3Command(command)
 		if err != nil {

@@ -7,19 +7,22 @@ import (
 	"time"
 )
 
-func verifyCardData(cardType string, facilityCode, cardNumber int, hexData string, uid string) {
+func verifyCardData(cardType string, facilityCode, cardNumber, bitLength int, hexData string, uid string) {
 	var cmd *exec.Cmd
 	fmt.Println(Green, "\nVerifying that the card data was successfully written. Set your card flat on the reader...\n", Reset)
 	time.Sleep(3 * time.Second)
 	switch cardType {
 	case "iclass":
-		cmd = exec.Command("pm3", "-c", "hf iclass dump --ki 0")
+		// Read block 7 to verify the written data
+		cmd = exec.Command("pm3", "-c", "hf iclass rdbl --blk 7 --ki 0")
 	case "prox":
 		cmd = exec.Command("pm3", "-c", "lf hid reader")
 	case "awid":
 		cmd = exec.Command("pm3", "-c", "lf awid reader")
 	case "indala":
 		cmd = exec.Command("pm3", "-c", "lf indala reader")
+	case "avigilon":
+		cmd = exec.Command("pm3", "-c", "lf hid reader")
 	case "em":
 		cmd = exec.Command("pm3", "-c", "lf em 410x reader")
 	case "piv", "mifare":
@@ -39,41 +42,30 @@ func verifyCardData(cardType string, facilityCode, cardNumber int, hexData strin
 	fmt.Println(outputStr)
 
 	if cardType == "iclass" {
-		var jsonFilePath string
+		// Verify block 7 was written correctly
 		lines := strings.Split(outputStr, "\n")
+		var block7Data string
 		for _, line := range lines {
-			if strings.Contains(line, "Saved to json file") {
-				parts := strings.Split(line, "`")
+			// Look for the block 7 data in the output
+			// Format: "[+]  block   7/0x07 : 75 EE 4D F1 32 AF DF 68"
+			if strings.Contains(line, "block") && strings.Contains(line, "7/0x07") {
+				// Extract the hex data after the colon
+				parts := strings.Split(line, ":")
 				if len(parts) > 1 {
-					jsonFilePath = parts[1]
+					block7Data = strings.TrimSpace(parts[1])
 					break
 				}
 			}
 		}
 
-		if jsonFilePath == "" {
-			fmt.Println(Red, "Failed to find the JSON file path in the output.", Reset)
+		if block7Data != "" {
+			fmt.Println(Green, "\nVerification successful: iCLASS card block 7 data read successfully.\n", Reset)
+			fmt.Println(Green, "Block 7 contains:", block7Data, "\n", Reset)
+			fmt.Println(Green, fmt.Sprintf("The card contains the encoded data for Bit Length %d, Facility Code %d, and Card Number %d\n", bitLength, facilityCode, cardNumber), Reset)
 			return
-		}
-
-		cmd = exec.Command("pm3", "-c", fmt.Sprintf("hf iclass view -f %s", jsonFilePath))
-		output, err = cmd.CombinedOutput()
-		if err != nil {
-			fmt.Println(Red, "Error viewing iCLASS data:", err, Reset)
+		} else {
+			fmt.Println(Red, "\nVerification failed: Unable to read block 7 data from the card.\n", Reset)
 			return
-		}
-
-		outputStr = string(output)
-		fmt.Println(outputStr)
-
-		lines = strings.Split(outputStr, "\n")
-		for _, line := range lines {
-			if strings.Contains(line, "HID") {
-				if strings.Contains(line, fmt.Sprintf("FC: %d", facilityCode)) && strings.Contains(line, fmt.Sprintf("CN: %d", cardNumber)) {
-					fmt.Println(Green, "\nVerification successful: Facility Code and Card Number match.\n", Reset)
-					return
-				}
-			}
 		}
 	} else {
 		lines := strings.Split(outputStr, "\n")
@@ -81,6 +73,11 @@ func verifyCardData(cardType string, facilityCode, cardNumber int, hexData strin
 			if cardType == "awid" || cardType == "indala" {
 				if strings.Contains(line, fmt.Sprintf("FC: %d", facilityCode)) && strings.Contains(line, fmt.Sprintf("Card: %d", cardNumber)) {
 					fmt.Println(Green, "\nVerification successful: Facility Code and Card Number match.\n", Reset)
+					return
+				}
+			} else if cardType == "avigilon" {
+				if strings.Contains(line, "[Avig56") && strings.Contains(line, fmt.Sprintf("FC: %d", facilityCode)) && strings.Contains(line, fmt.Sprintf("CN: %d", cardNumber)) {
+					fmt.Println(Green, "\nVerification successful: Avigilon card detected with matching Facility Code and Card Number.\n", Reset)
 					return
 				}
 			} else if cardType == "em" {

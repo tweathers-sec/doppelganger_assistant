@@ -11,7 +11,7 @@ const (
 	Green   = "\033[32m"
 	Yellow  = "\033[33m"
 	Reset   = "\033[0m"
-	Version = "1.0.5"
+	Version = "1.1.0"
 )
 
 type Card struct {
@@ -28,7 +28,7 @@ func main() {
 	bitLength := flag.Int("bl", 0, "Bit length")
 	facilityCode := flag.Int("fc", 0, "Facility code")
 	cardNumber := flag.Int("cn", 0, "Card number")
-	cardType := flag.String("t", "prox", "Card type (iclass, prox, awid, indala, em, piv, mifare)")
+	cardType := flag.String("t", "prox", "Card type (iclass, prox, awid, indala, avigilon, em, piv, mifare)")
 	uid := flag.String("uid", "", "UID for PIV and MIFARE cards (4 x HEX Bytes in the Card_Number column)")
 	hexData := flag.String("hex", "", "Hex data for EM cards")
 	write := flag.Bool("w", false, "Write card data")
@@ -49,9 +49,10 @@ func main() {
 		fmt.Fprintf(os.Stderr, Green+"Supported card types and bit lengths:\n"+Reset)
 		fmt.Fprintf(os.Stderr, "\n")
 		fmt.Fprintf(os.Stderr, "  iclass: 26, 35\n")
-		fmt.Fprintf(os.Stderr, "  prox: 26, 30, 31, 33, 34, 35, 36, 37, 48\n")
+		fmt.Fprintf(os.Stderr, "  prox: 26, 30, 31, 33, 34, 35, 36, 37, 46, 48\n")
 		fmt.Fprintf(os.Stderr, "  awid: 26\n")
 		fmt.Fprintf(os.Stderr, "  indala: 26, 27, 28, 29\n")
+		fmt.Fprintf(os.Stderr, "  avigilon: 56\n")
 		fmt.Fprintf(os.Stderr, "  em: 32\n")
 		fmt.Fprintf(os.Stderr, "  piv: N/A\n")
 		fmt.Fprintf(os.Stderr, "  mifare: N/A\n")
@@ -129,8 +130,8 @@ func main() {
 			}
 			switch *cardType {
 			case "iclass":
-				if *bitLength != 26 && *bitLength != 35 {
-					fmt.Println(Red, "Invalid bit length for iCLASS. Supported bit lengths are 26 and 35.", Reset)
+				if *bitLength != 26 && *bitLength != 30 && *bitLength != 33 && *bitLength != 34 && *bitLength != 35 && *bitLength != 36 && *bitLength != 37 && *bitLength != 46 && *bitLength != 48 {
+					fmt.Println(Red, "Invalid bit length for iCLASS. Supported bit lengths are 26, 30, 33, 34, 35, 36, 37, 46, and 48.", Reset)
 					return
 				}
 			case "indala":
@@ -138,9 +139,14 @@ func main() {
 					fmt.Println(Red, "Invalid bit length for Indala. Supported bit lengths are 26, 27, 28, and 29.", Reset)
 					return
 				}
+			case "avigilon":
+				if *bitLength != 56 {
+					fmt.Println(Red, "Invalid bit length for Avigilon. Supported bit length is 56.", Reset)
+					return
+				}
 			case "prox":
-				if *bitLength != 26 && *bitLength != 30 && *bitLength != 31 && *bitLength != 33 && *bitLength != 34 && *bitLength != 35 && *bitLength != 36 && *bitLength != 37 && *bitLength != 48 {
-					fmt.Println(Red, "Invalid bit length for Prox. Supported bit lengths are 26, 30, 31, 33, 34, 35, 36, 37, and 48.", Reset)
+				if *bitLength != 26 && *bitLength != 30 && *bitLength != 31 && *bitLength != 33 && *bitLength != 34 && *bitLength != 35 && *bitLength != 36 && *bitLength != 37 && *bitLength != 46 && *bitLength != 48 {
+					fmt.Println(Red, "Invalid bit length for Prox. Supported bit lengths are 26, 30, 31, 33, 34, 35, 36, 37, 46, and 48.", Reset)
 					return
 				}
 			case "awid":

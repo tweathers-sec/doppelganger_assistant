@@ -14,6 +14,8 @@ func handleCardType(cardType string, facilityCode, cardNumber, bitLength int, wr
 		handleAWID(facilityCode, cardNumber, bitLength, simulate, write, verify)
 	case "indala":
 		handleIndala(facilityCode, cardNumber, bitLength, simulate, write, verify)
+	case "avigilon":
+		handleAvigilon(facilityCode, cardNumber, bitLength, simulate, write, verify)
 	case "em":
 		handleEM(hexData, simulate, write, verify)
 	case "piv":
@@ -26,30 +28,58 @@ func handleCardType(cardType string, facilityCode, cardNumber, bitLength int, wr
 }
 
 func handleICLASS(facilityCode, cardNumber, bitLength int, simulate, write, verify bool) {
-	var preamble uint64
-	var cardData uint64
-
-	if bitLength != 26 && bitLength != 35 {
-		fmt.Println(Red, "Invalid bit length for iCLASS. Supported bit lengths are 26 and 35.", Reset)
+	// Supported bit lengths: 26, 30, 33, 34, 35, 36, 37, 46, 48
+	validBitLengths := map[int]bool{26: true, 30: true, 33: true, 34: true, 35: true, 36: true, 37: true, 46: true, 48: true}
+	if !validBitLengths[bitLength] {
+		fmt.Println(Red, "Invalid bit length for iCLASS. Supported bit lengths are 26, 30, 33, 34, 35, 36, 37, 46, and 48.", Reset)
 		return
 	}
 
-	if bitLength == 26 {
-		preamble = 0x2004000000
-		cardData = generate26bitHex(facilityCode, cardNumber, preamble, write, simulate)
-	} else if bitLength == 35 {
-		preamble = 0x2800000000
-		cardData = generate35bitHex(facilityCode, cardNumber, preamble, write, simulate)
+	// DISABLED: iClass simulation is temporarily disabled
+	if simulate {
+		fmt.Println(Red, "iCLASS card simulation is currently disabled.", Reset)
+		return
 	}
 
-	if simulate {
-		simulateCardData("iclass", cardData, bitLength, facilityCode, cardNumber, "", "")
-	} else if write {
-		writeCardData("iclass", cardData, bitLength, facilityCode, cardNumber, "", verify, "")
+	// Display the command that will be executed
+	var formatCode string
+	switch bitLength {
+	case 26:
+		formatCode = "H10301"
+	case 30:
+		formatCode = "ATSW30"
+	case 33:
+		formatCode = "D10202"
+	case 34:
+		formatCode = "H10306"
+	case 35:
+		formatCode = "C1k35s"
+	case 36:
+		formatCode = "S12906"
+	case 37:
+		formatCode = "H10304"
+	case 46:
+		formatCode = "H800002"
+	case 48:
+		formatCode = "C1k48s"
+	}
+
+	fmt.Println("")
+	if write {
+		fmt.Println(Green, "The following will be written to an iCLASS 2k card:", Reset)
+	} else {
+		fmt.Println(Green, "Write the following to an iCLASS 2k card:", Reset)
+	}
+	fmt.Println(Green, "", Reset)
+	fmt.Println(Yellow, fmt.Sprintf("hf iclass encode -w %s --fc %d --cn %d --ki 0", formatCode, facilityCode, cardNumber), Reset)
+	fmt.Println(Green, "", Reset)
+
+	if write {
+		writeCardData("iclass", 0, bitLength, facilityCode, cardNumber, "", verify, formatCode)
 	}
 
 	if verify {
-		verifyCardData("iclass", facilityCode, cardNumber, "", "")
+		verifyCardData("iclass", facilityCode, cardNumber, bitLength, "", "")
 	}
 }
 
@@ -83,6 +113,8 @@ func handleProx(facilityCode, cardNumber, bitLength int, simulate, write, verify
 			fmt.Println(Yellow, fmt.Sprintf("lf hid clone -w S12906 --fc %d --cn %d", facilityCode, cardNumber), Reset)
 		case 37:
 			fmt.Println(Yellow, fmt.Sprintf("lf hid clone -w H10304 --fc %d --cn %d", facilityCode, cardNumber), Reset)
+		case 46:
+			fmt.Println(Yellow, fmt.Sprintf("lf hid clone -w H800002 --fc %d --cn %d", facilityCode, cardNumber), Reset)
 		case 48:
 			fmt.Println(Yellow, fmt.Sprintf("lf hid clone -w C1k48s --fc %d --cn %d", facilityCode, cardNumber), Reset)
 		default:
@@ -95,7 +127,7 @@ func handleProx(facilityCode, cardNumber, bitLength int, simulate, write, verify
 		}
 
 		if verify {
-			verifyCardData("prox", facilityCode, cardNumber, "", "")
+			verifyCardData("prox", facilityCode, cardNumber, bitLength, "", "")
 		}
 	}
 }
@@ -123,7 +155,7 @@ func handleAWID(facilityCode, cardNumber, bitLength int, simulate, write, verify
 		}
 
 		if verify {
-			verifyCardData("awid", facilityCode, cardNumber, "", "")
+			verifyCardData("awid", facilityCode, cardNumber, bitLength, "", "")
 		}
 	}
 }
@@ -150,7 +182,7 @@ func handleIndala(facilityCode, cardNumber, bitLength int, simulate, write, veri
 		}
 
 		if verify {
-			verifyCardData("indala", facilityCode, cardNumber, "", "")
+			verifyCardData("indala", facilityCode, cardNumber, bitLength, "", "")
 		}
 	}
 }
@@ -174,7 +206,7 @@ func handleEM(hexData string, simulate, write, verify bool) {
 		}
 
 		if verify {
-			verifyCardData("em", 0, 0, hexData, "")
+			verifyCardData("em", 0, 0, 0, hexData, "")
 		}
 	}
 }
@@ -198,7 +230,7 @@ func handlePIV(uid string, simulate bool, write, verify bool) {
 		}
 
 		if verify {
-			verifyCardData("piv", 0, 0, "", uid)
+			verifyCardData("piv", 0, 0, 0, "", uid)
 		}
 	}
 }
@@ -222,7 +254,37 @@ func handleMIFARE(uid string, simulate bool, write, verify bool) {
 		}
 
 		if verify {
-			verifyCardData("mifare", 0, 0, "", uid)
+			verifyCardData("mifare", 0, 0, 0, "", uid)
+		}
+	}
+}
+
+func handleAvigilon(facilityCode, cardNumber, bitLength int, simulate, write, verify bool) {
+	if simulate {
+		simulateCardData("avigilon", 0, bitLength, facilityCode, cardNumber, "", "")
+	} else {
+		fmt.Println(Green, "\nHandling Avigilon card...", Reset)
+		if write {
+			fmt.Println(Green, "\nThe following will be written to a T5577 card:", Reset)
+		} else {
+			fmt.Println(Green, "\nWrite the following values to a T5577 card:", Reset)
+		}
+
+		fmt.Println(Green, "", Reset)
+
+		if bitLength == 56 {
+			fmt.Println(Yellow, fmt.Sprintf("lf hid clone -w Avig56 --fc %d --cn %d", facilityCode, cardNumber), Reset)
+		} else {
+			fmt.Println(Red, "Unsupported bit length for Avigilon card. Supported bit length is 56.", Reset)
+			return
+		}
+
+		if write {
+			writeCardData("avigilon", 0, bitLength, facilityCode, cardNumber, "", verify, "")
+		}
+
+		if verify {
+			verifyCardData("avigilon", facilityCode, cardNumber, bitLength, "", "")
 		}
 	}
 }
