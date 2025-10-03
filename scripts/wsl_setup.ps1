@@ -249,61 +249,8 @@ if (-not (CommandExists "usbipd")) {
     Log "usbipd is already installed."
 }
 
-# Check if Virtual Machine Platform is enabled
-Log "Checking if Virtual Machine Platform is enabled..."
-$vmFeature = Get-WindowsOptionalFeature -Online -FeatureName VirtualMachinePlatform
-if ($vmFeature.State -ne "Enabled") {
-    Write-Host "`n*************************************************************" -ForegroundColor Red
-    Write-Host "*                                                           *" -ForegroundColor Red
-    Write-Host "*         VIRTUAL MACHINE PLATFORM IS NOT ENABLED           *" -ForegroundColor Red
-    Write-Host "*                                                           *" -ForegroundColor Red
-    Write-Host "*************************************************************`n" -ForegroundColor Red
-    Write-Host "The Virtual Machine Platform feature is required for WSL2 but is not enabled." -ForegroundColor Yellow
-    Write-Host "This typically means a system reboot is required." -ForegroundColor Yellow
-    Write-Host "`nPlease follow these steps:" -ForegroundColor Yellow
-    Write-Host "1. Reboot your computer" -ForegroundColor Yellow
-    Write-Host "2. After reboot, run this command again:" -ForegroundColor Yellow
-    Write-Host "   powershell -ExecutionPolicy Bypass -Command `"Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/installers/doppelganger_install_windows.ps1' -OutFile '`$env:TEMP\doppelganger_assistant_install.ps1'; & '`$env:TEMP\doppelganger_assistant_install.ps1'`"" -ForegroundColor Cyan
-    Write-Host "`nIf the problem persists after reboot:" -ForegroundColor Yellow
-    Write-Host "- Ensure virtualization is enabled in your BIOS/UEFI settings" -ForegroundColor Yellow
-    Write-Host "- Check that Hyper-V is not conflicting with WSL" -ForegroundColor Yellow
-    Write-Host "`nPress any key to exit..."
-    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
-    Log "Virtual Machine Platform is not enabled. User instructed to reboot."
-    exit 1
-}
-Log "Virtual Machine Platform is enabled."
-
-# Check if virtualization is actually working at the hardware level
-Log "Checking if hardware virtualization is available..."
-$hvPresent = (Get-ComputerInfo -Property HyperVisorPresent).HyperVisorPresent
-$vmPlatform = (Get-ComputerInfo -Property HyperVRequirementVMMonitorModeExtensions).HyperVRequirementVMMonitorModeExtensions
-
-if (-not $hvPresent -or -not $vmPlatform) {
-    Write-Host "`n*************************************************************" -ForegroundColor Red
-    Write-Host "*                                                           *" -ForegroundColor Red
-    Write-Host "*      HARDWARE VIRTUALIZATION IS NOT AVAILABLE             *" -ForegroundColor Red
-    Write-Host "*                                                           *" -ForegroundColor Red
-    Write-Host "*************************************************************`n" -ForegroundColor Red
-    Write-Host "WSL2 requires hardware virtualization support, but it's not available." -ForegroundColor Yellow
-    Write-Host "`nPossible causes:" -ForegroundColor Yellow
-    Write-Host "1. Virtualization is disabled in BIOS/UEFI settings" -ForegroundColor Yellow
-    Write-Host "   - Look for settings like: VT-x, AMD-V, SVM, Virtualization Technology" -ForegroundColor Yellow
-    Write-Host "   - Enable these settings and reboot" -ForegroundColor Yellow
-    Write-Host "2. Running in a virtual machine without nested virtualization" -ForegroundColor Yellow
-    Write-Host "   - If using VMware, enable 'Virtualize Intel VT-x/EPT or AMD-V/RVI'" -ForegroundColor Yellow
-    Write-Host "   - If using Hyper-V, use: Set-VMProcessor -VMName <name> -ExposeVirtualizationExtensions `$true" -ForegroundColor Yellow
-    Write-Host "   - If using VirtualBox, nested virtualization support is limited" -ForegroundColor Yellow
-    Write-Host "3. Your CPU doesn't support virtualization (unlikely for modern systems)" -ForegroundColor Yellow
-    Write-Host "`nCurrent status:" -ForegroundColor Cyan
-    Write-Host "  Hypervisor Present: $hvPresent" -ForegroundColor Cyan
-    Write-Host "  VM Extensions: $vmPlatform" -ForegroundColor Cyan
-    Write-Host "`nPress any key to exit..."
-    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
-    Log "Hardware virtualization is not available. HypervisorPresent: $hvPresent, VMExtensions: $vmPlatform"
-    exit 1
-}
-Log "Hardware virtualization is available."
+# Note: Skipping virtualization checks to allow installation in nested VM environments
+Log "Proceeding with WSL installation..."
 
 # Check if the WSL distribution already exists
 $wslList = wsl.exe -l -q
