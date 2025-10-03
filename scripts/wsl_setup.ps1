@@ -321,18 +321,15 @@ if (-not $existingUbuntu) {
         # Import the rootfs directly as our custom distribution name
         if (-Not (Test-Path -Path $wslInstallationPath)) { mkdir $wslInstallationPath }
         
-        # Try WSL2 first, fallback to WSL1 if it fails
-        Log "Attempting to import as WSL2..."
-        $importOutput = wsl.exe --import $wslName $wslInstallationPath $rootfsFile --version 2 2>&1
+        # Import as WSL2 (required for USB passthrough)
+        Log "Importing as WSL2 (required for USB device access)..."
+        wsl.exe --import $wslName $wslInstallationPath $rootfsFile --version 2
         
         if ($LASTEXITCODE -ne 0) {
-            Log "WSL2 import failed, trying WSL1..."
-            wsl.exe --import $wslName $wslInstallationPath $rootfsFile --version 1
-        } else {
-            Log "Successfully imported as WSL2"
+            throw "WSL2 import failed. Please ensure nested virtualization is enabled in your VM settings."
         }
         
-        Log "Ubuntu imported successfully as $wslName"
+        Log "Ubuntu imported successfully as $wslName (WSL2)"
         
         # Clean up downloaded rootfs
         Remove-Item $rootfsFile -Force
@@ -355,19 +352,17 @@ if ($existingUbuntu) {
     Log "Exporting $existingUbuntu..."
     wsl.exe --export $existingUbuntu $tempTar
     
-    Log "Importing as $wslName..."
+    Log "Importing as $wslName (WSL2)..."
     if (-Not (Test-Path -Path $wslInstallationPath)) { mkdir $wslInstallationPath }
     
-    # Try WSL2 first, fallback to WSL1 if it fails
-    Log "Attempting to import as WSL2..."
-    $importOutput = wsl.exe --import $wslName $wslInstallationPath $tempTar --version 2 2>&1
+    # Import as WSL2 (required for USB passthrough)
+    wsl.exe --import $wslName $wslInstallationPath $tempTar --version 2
     
     if ($LASTEXITCODE -ne 0) {
-        Log "WSL2 import failed, trying WSL1..."
-        wsl.exe --import $wslName $wslInstallationPath $tempTar --version 1
-    } else {
-        Log "Successfully imported as WSL2"
+        throw "WSL2 import failed. Please ensure nested virtualization is enabled in your VM settings."
     }
+    
+    Log "Successfully imported as WSL2"
     
     Log "Cleaning up..."
     wsl.exe --unregister $existingUbuntu
