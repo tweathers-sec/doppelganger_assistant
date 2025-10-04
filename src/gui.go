@@ -262,7 +262,7 @@ func runGUI() {
 	// WSL2 locale fix: Set proper locale to prevent Fyne parsing errors
 	wsl2Detected := isWSL2()
 	if wsl2Detected {
-		fmt.Println("[DEBUG] WSL2 detected!")
+		fmt.Println("[DEBUG] WSL2 detected - applying locale fixes")
 		// Check if locale is set, if not set to en_US.UTF-8
 		if os.Getenv("LANG") == "" || os.Getenv("LANG") == "C" {
 			os.Setenv("LANG", "en_US.UTF-8")
@@ -272,8 +272,6 @@ func runGUI() {
 		}
 		// Fallback: disable locale detection entirely if issues persist
 		os.Setenv("FYNE_THEME", "dark") // Force theme to avoid locale-based defaults
-	} else {
-		fmt.Println("[DEBUG] Not WSL2 - using integrated terminal")
 	}
 
 	a := app.New()
@@ -445,71 +443,7 @@ func runGUI() {
 			args = append(args, "-s")
 		}
 
-		// WSL2 workaround: Use xterm for external terminal execution
-		if isWSL2() {
-			if logFile != nil {
-				fmt.Fprintf(logFile, "WSL2 detected, launching xterm\n")
-			}
-
-			go func() {
-				if logFile != nil {
-					fmt.Fprintf(logFile, "Inside xterm goroutine\n")
-				}
-
-				// Get the path of the currently running executable
-				execPath, err := os.Executable()
-				if err != nil {
-					errMsg := fmt.Sprintf("Error: %v\n", err)
-					currentOutput.Append(errMsg)
-					if logFile != nil {
-						fmt.Fprintf(logFile, errMsg)
-					}
-					return
-				}
-
-				// Build the full command string for xterm
-				cmdStr := fmt.Sprintf("%s %s; read -p 'Press Enter to close...'", execPath, strings.Join(args, " "))
-
-				msg := fmt.Sprintf("\n=== Launching External Terminal (WSL2) ===\n")
-				currentOutput.Append(msg)
-				if logFile != nil {
-					fmt.Fprintf(logFile, msg)
-				}
-
-				msg = fmt.Sprintf("Command: %s\n\n", cmdStr)
-				currentOutput.Append(msg)
-				if logFile != nil {
-					fmt.Fprintf(logFile, msg)
-				}
-
-				// Launch xterm with the command
-				cmd := exec.Command("xterm", "-hold", "-e", "bash", "-c", cmdStr)
-				cmd.Env = os.Environ()
-
-				if logFile != nil {
-					fmt.Fprintf(logFile, "About to start xterm command\n")
-				}
-
-				if err := cmd.Start(); err != nil {
-					errMsg := fmt.Sprintf("Error launching xterm: %v\n", err)
-					currentOutput.Append(errMsg)
-					currentOutput.Append("Make sure xterm is installed: sudo apt install xterm\n")
-					if logFile != nil {
-						fmt.Fprintf(logFile, errMsg)
-					}
-					return
-				}
-
-				msg = "External terminal launched. Check the xterm window.\n"
-				currentOutput.Append(msg)
-				if logFile != nil {
-					fmt.Fprintf(logFile, msg)
-				}
-			}()
-			return
-		}
-
-		// For macOS and Linux: Use integrated terminal (original behavior)
+		// Use integrated terminal for all platforms (macOS, Linux, and WSL2)
 		go func() {
 			currentOutput.Append("\n=== Starting Command ===\n")
 
