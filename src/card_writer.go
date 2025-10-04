@@ -2,12 +2,13 @@ package main
 
 import (
 	"fmt"
+	"os/exec"
 	"strings"
 	"time"
 )
 
 func writeProxmark3Command(command string) (string, error) {
-	cmd := newPM3Cmd("-c", command)
+	cmd := exec.Command("pm3", "-c", command)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return string(output), fmt.Errorf("error writing to card: %w. Output: %s", err, output)
@@ -18,7 +19,7 @@ func writeProxmark3Command(command string) (string, error) {
 // waitForProxmark3 attempts to check if Proxmark3 is available
 func waitForProxmark3(maxRetries int) bool {
 	for i := 0; i < maxRetries; i++ {
-		cmd := newPM3Cmd("-c", "hw status")
+		cmd := exec.Command("pm3", "-c", "hw status")
 		output, err := cmd.CombinedOutput()
 		if err == nil && !strings.Contains(string(output), "cannot communicate") {
 			return true
@@ -32,19 +33,7 @@ func waitForProxmark3(maxRetries int) bool {
 }
 
 func writeCardData(cardType string, cardData uint64, bitLength int, facilityCode int, cardNumber int, hexData string, verify bool, formatCodeOrUID string) {
-	if cardType == "iclass" {
-		fmt.Println(Green, "\nConnect your Proxmark3 and place an iCLASS 2k card flat on the antenna. Press Enter to continue...", Reset)
-	} else if cardType == "piv" || cardType == "mifare" {
-		fmt.Println(Green, "\nConnect your Proxmark3 and place a UID rewritable (S50) card flat on the antenna. Press Enter to continue...", Reset)
-	} else {
-		fmt.Println(Green, "\nConnect your Proxmark3 and a T5577 card flat on the antenna. The card write command will run five (5) times.\n\nIMPORTANT: Move the card slowly across the Proxmark3 after each write and flip the card over and continue.\nPress Enter to continue...", Reset)
-	}
-
-	// Only wait for user input if running in interactive terminal mode
-	// Skips the prompt when running as GUI subprocess
-	if isInteractive() {
-		fmt.Scanln()
-	}
+	// Remove interactive prompts to avoid blocking in GUI/WSL environments
 
 	switch cardType {
 	case "iclass":
@@ -67,11 +56,7 @@ func writeCardData(cardType string, cardData uint64, bitLength int, facilityCode
 	case "prox":
 		fmt.Println(Green, "\nWriting Prox card data...\n", Reset)
 
-		// Check if Proxmark3 is available before starting
-		if !waitForProxmark3(3) {
-			fmt.Println(Red, "Proxmark3 is not responding. Please check your USB connection.", Reset)
-			return
-		}
+		// Proceed without readiness gate to match macOS/Linux behavior
 
 		for i := 0; i < 5; i++ {
 			var output string

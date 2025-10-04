@@ -4,29 +4,28 @@ import (
 	"fmt"
 	"os/exec"
 	"strings"
-	"time"
 )
 
 func verifyCardData(cardType string, facilityCode, cardNumber, bitLength int, hexData string, uid string) {
 	var cmd *exec.Cmd
 	fmt.Println(Green, "\nVerifying that the card data was successfully written. Set your card flat on the reader...\n", Reset)
-	time.Sleep(3 * time.Second)
+	// Proceed without readiness gate to match macOS/Linux behavior
 	switch cardType {
 	case "iclass":
 		// Read block 7 to verify the written data
-		cmd = newPM3Cmd("-c", "hf iclass rdbl --blk 7 --ki 0")
+		cmd = exec.Command("pm3", "-c", "hf iclass rdbl --blk 7 --ki 0")
 	case "prox":
-		cmd = newPM3Cmd("-c", "lf hid reader")
+		cmd = exec.Command("pm3", "-c", "lf hid reader")
 	case "awid":
-		cmd = newPM3Cmd("-c", "lf awid reader")
+		cmd = exec.Command("pm3", "-c", "lf awid reader")
 	case "indala":
-		cmd = newPM3Cmd("-c", "lf indala reader")
+		cmd = exec.Command("pm3", "-c", "lf indala reader")
 	case "avigilon":
-		cmd = newPM3Cmd("-c", "lf hid reader")
+		cmd = exec.Command("pm3", "-c", "lf hid reader")
 	case "em":
-		cmd = newPM3Cmd("-c", "lf em 410x reader")
+		cmd = exec.Command("pm3", "-c", "lf em 410x reader")
 	case "piv", "mifare":
-		cmd = newPM3Cmd("-c", "hf mf info")
+		cmd = exec.Command("pm3", "-c", "hf mf info")
 	default:
 		fmt.Println(Red, "Unsupported card type for verification.", Reset)
 		return
