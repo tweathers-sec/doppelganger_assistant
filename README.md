@@ -265,6 +265,53 @@ usbipd bind --busid 9-1 // {9-1 Should be your Proxmark3's ID}
 usbipd attach --wsl --busid 9-1 // {9-1 Should be your Proxmark3's ID}
 ```
 
+## Uninstallation
+
+### Uninstalling from Windows (WSL)
+
+#### Automated Uninstall (Recommended)
+
+Download and run the uninstaller directly from GitHub:
+
+```powershell
+powershell -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/scripts/uninstall.ps1 | iex"
+```
+
+#### Manual Uninstall
+
+If you have Doppelganger Assistant installed, run the uninstall script:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File C:\doppelganger_assistant\uninstall.ps1
+```
+
+The uninstaller will:
+- Stop and unregister WSL distributions (Kali-doppelganger_assistant or Ubuntu-doppelganger_assistant)
+- Remove all files from `C:\doppelganger_assistant`
+- Delete the desktop shortcut
+- Optionally uninstall usbipd
+
+**Note:** The script automatically relocates itself to a temporary directory to ensure clean removal of the installation directory.
+
+### Uninstalling from macOS
+
+To uninstall from macOS:
+
+```bash
+sudo rm -rf /Applications/doppelganger_assistant.app
+sudo rm /usr/local/bin/doppelganger_assistant
+```
+
+### Uninstalling from Linux
+
+To uninstall from Linux:
+
+```bash
+sudo rm /usr/local/bin/doppelganger_assistant
+sudo rm /usr/share/applications/doppelganger_assistant.desktop
+sudo rm /usr/share/pixmaps/doppelganger_assistant.png
+```
+
 ## Development
 
 ### Building from Source
