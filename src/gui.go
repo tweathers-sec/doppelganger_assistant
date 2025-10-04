@@ -7,10 +7,8 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
-	"runtime"
 	"strings"
 	"sync"
-	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -46,13 +44,12 @@ func newOutputDisplay() *outputDisplay {
 }
 
 func (o *outputDisplay) Append(text string) {
-	clean := stripANSI(text)
-
+	// Don't strip ANSI codes - they provide color
 	o.mu.Lock()
 	defer o.mu.Unlock()
 
 	current, _ := o.str.Get()
-	o.str.Set(current + clean) // Binding handles thread safety
+	o.str.Set(current + text) // Binding handles thread safety
 }
 
 func (o *outputDisplay) Clear() {
@@ -66,20 +63,6 @@ func (o *outputDisplay) Clear() {
 func stripANSI(str string) string {
 	ansiRegex := regexp.MustCompile(`\x1b\[[0-9;]*[a-zA-Z]`)
 	return ansiRegex.ReplaceAllString(str, "")
-}
-
-// isWSL2 detects if we're running in WSL2 environment
-func isWSL2() bool {
-	if runtime.GOOS != "linux" {
-		return false
-	}
-	// Check for WSL-specific markers
-	data, err := os.ReadFile("/proc/version")
-	if err != nil {
-		return false
-	}
-	return strings.Contains(strings.ToLower(string(data)), "microsoft") ||
-		strings.Contains(strings.ToLower(string(data)), "wsl")
 }
 
 // Fixed width layout
@@ -259,21 +242,6 @@ func runGUI() {
 	// which is safe in this context but triggers warnings
 	os.Setenv("FYNE_DISABLE_CALL_CHECKING", "1")
 
-	// WSL2 locale fix: Set proper locale to prevent Fyne parsing errors
-	wsl2Detected := isWSL2()
-	if wsl2Detected {
-		fmt.Println("[DEBUG] WSL2 detected - applying locale fixes")
-		// Check if locale is set, if not set to en_US.UTF-8
-		if os.Getenv("LANG") == "" || os.Getenv("LANG") == "C" {
-			os.Setenv("LANG", "en_US.UTF-8")
-		}
-		if os.Getenv("LC_ALL") == "" {
-			os.Setenv("LC_ALL", "en_US.UTF-8")
-		}
-		// Fallback: disable locale detection entirely if issues persist
-		os.Setenv("FYNE_THEME", "dark") // Force theme to avoid locale-based defaults
-	}
-
 	a := app.New()
 	w := a.NewWindow("Doppelgänger Assistant")
 
@@ -377,13 +345,6 @@ func runGUI() {
 
 	// Execute command function
 	executeCommand := func() {
-		// Debug logging to file for WSL2 troubleshooting
-		logFile, _ := os.OpenFile("/tmp/doppelganger_debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-		if logFile != nil {
-			fmt.Fprintf(logFile, "\n[%s] Execute button clicked\n", time.Now().Format("15:04:05"))
-			defer logFile.Close()
-		}
-
 		cardTypeMap := map[string]string{
 			"PROX":     "prox",
 			"iCLASS":   "iclass",
@@ -403,11 +364,6 @@ func runGUI() {
 		uidValue := uid.Text
 		actionValue := action.Selected
 
-		if logFile != nil {
-			fmt.Fprintf(logFile, "Card Type: %s, Action: %s, FC: %s, CN: %s\n",
-				cardTypeValue, actionValue, facilityCodeValue, cardNumberValue)
-		}
-
 		cardTypeCmd := cardTypeMap[cardTypeValue]
 
 		// Build command arguments
@@ -417,19 +373,19 @@ func runGUI() {
 		switch cardTypeCmd {
 		case "prox", "iclass", "awid", "indala", "avigilon":
 			if facilityCodeValue == "" || cardNumberValue == "" {
-				currentOutput.Append("Error: Facility Code and Card Number are required\n")
+				currentOutput.Append(fmt.Sprintf("%sError: Facility Code and Card Number are required%s\n", Red, Reset))
 				return
 			}
 			args = append(args, "-bl", bitLengthValue, "-fc", facilityCodeValue, "-cn", cardNumberValue)
 		case "em":
 			if hexDataValue == "" {
-				currentOutput.Append("Error: Hex Data is required\n")
+				currentOutput.Append(fmt.Sprintf("%sError: Hex Data is required%s\n", Red, Reset))
 				return
 			}
 			args = append(args, "--hex", hexDataValue)
 		case "mifare", "piv":
 			if uidValue == "" {
-				currentOutput.Append("Error: UID is required\n")
+				currentOutput.Append(fmt.Sprintf("%sError: UID is required%s\n", Red, Reset))
 				return
 			}
 			args = append(args, "--uid", uidValue)
@@ -443,91 +399,69 @@ func runGUI() {
 			args = append(args, "-s")
 		}
 
-		// Use integrated terminal for all platforms (macOS, Linux, and WSL2)
+		// Execute command in current process
 		go func() {
-			currentOutput.Append("\n=== Starting Command ===\n")
+			// First check Proxmark3 status for all actions except "Generate Command"
+			if actionValue != "Generate Command" {
+				currentOutput.Append("Checking Proxmark3 status...\n")
+				if ok, msg := checkProxmark3(); !ok {
+					currentOutput.Append(fmt.Sprintf("%sError: %s%s\n", Red, msg, Reset))
+					return
+				}
+			}
 
-			// Get the path of the currently running executable
+			// Build command
 			execPath, err := os.Executable()
 			if err != nil {
-				currentOutput.Append(fmt.Sprintf("Error getting executable path: %v\n", err))
+				currentOutput.Append(fmt.Sprintf("%sError getting executable path: %v%s\n", Red, err, Reset))
 				return
 			}
 
-			currentOutput.Append(fmt.Sprintf("Executing: %s %s\n\n", execPath, strings.Join(args, " ")))
+			// Show command being executed
+			cmdStr := execPath + " " + strings.Join(args, " ")
+			currentOutput.Append(fmt.Sprintf("Executing: %s\n\n", cmdStr))
 
+			// Execute command
 			cmd := exec.Command(execPath, args...)
 			cmd.Env = os.Environ()
 
-			// Use pipes for stdout/stderr
+			// Set up pipes for real-time output
 			stdout, err := cmd.StdoutPipe()
 			if err != nil {
-				currentOutput.Append(fmt.Sprintf("Error creating stdout pipe: %v\n", err))
+				currentOutput.Append(fmt.Sprintf("%sError setting up output pipe: %v%s\n", Red, err, Reset))
 				return
 			}
-
 			stderr, err := cmd.StderrPipe()
 			if err != nil {
-				currentOutput.Append(fmt.Sprintf("Error creating stderr pipe: %v\n", err))
+				currentOutput.Append(fmt.Sprintf("%sError setting up error pipe: %v%s\n", Red, err, Reset))
 				return
 			}
 
-			// Start the command
+			// Start command
 			if err := cmd.Start(); err != nil {
-				currentOutput.Append(fmt.Sprintf("Error starting command: %v\n", err))
+				currentOutput.Append(fmt.Sprintf("%sError starting command: %v%s\n", Red, err, Reset))
 				return
 			}
 
-			currentOutput.Append("Command process started, reading output...\n")
-
-			// Use channels to coordinate goroutine completion
-			done := make(chan bool, 2)
-
-			// Read stdout in real-time
+			// Read output in real-time
 			go func() {
 				scanner := bufio.NewScanner(stdout)
-				scanner.Buffer(make([]byte, 64*1024), 1024*1024) // Increase buffer size
-				lineCount := 0
 				for scanner.Scan() {
-					line := scanner.Text()
-					currentOutput.Append(line + "\n")
-					lineCount++
+					currentOutput.Append(scanner.Text() + "\n")
 				}
-				if err := scanner.Err(); err != nil {
-					currentOutput.Append(fmt.Sprintf("Error reading stdout: %v\n", err))
-				}
-				currentOutput.Append(fmt.Sprintf("[DEBUG] Read %d lines from stdout\n", lineCount))
-				done <- true
 			}()
 
-			// Read stderr in real-time
 			go func() {
 				scanner := bufio.NewScanner(stderr)
-				scanner.Buffer(make([]byte, 64*1024), 1024*1024) // Increase buffer size
-				lineCount := 0
 				for scanner.Scan() {
-					line := scanner.Text()
-					currentOutput.Append(line + "\n")
-					lineCount++
+					currentOutput.Append(scanner.Text() + "\n")
 				}
-				if err := scanner.Err(); err != nil {
-					currentOutput.Append(fmt.Sprintf("Error reading stderr: %v\n", err))
-				}
-				currentOutput.Append(fmt.Sprintf("[DEBUG] Read %d lines from stderr\n", lineCount))
-				done <- true
 			}()
 
 			// Wait for command to complete
-			exitErr := cmd.Wait()
-
-			// Wait for both reader goroutines to finish
-			<-done
-			<-done
-
-			if exitErr != nil {
-				currentOutput.Append(fmt.Sprintf("\n=== Command Error: %v ===\n", exitErr))
-			} else {
-				currentOutput.Append("\n=== Command Completed Successfully ===\n")
+			if err := cmd.Wait(); err != nil {
+				currentOutput.Append(fmt.Sprintf("%sCommand failed: %v%s\n", Red, err, Reset))
+				return
 			}
 		}()
 	}
@@ -597,18 +531,22 @@ func runGUI() {
 
 	// Add dark grey background with orange border to output area
 	outputBg := canvas.NewRectangle(color.RGBA{R: 24, G: 26, B: 27, A: 255})
-	outputBg.CornerRadius = 8
+	outputBg.CornerRadius = 5
 
 	// Orange border - subtle
 	outputBorder := canvas.NewRectangle(color.RGBA{R: 0, G: 0, B: 0, A: 0}) // Transparent fill
 	outputBorder.StrokeColor = color.RGBA{R: 226, G: 88, B: 34, A: 80}      // Orange with lower opacity
 	outputBorder.StrokeWidth = 1
-	outputBorder.CornerRadius = 8
+	outputBorder.CornerRadius = 5
+
+	// Create scrollable output area
+	outputScroll := container.NewScroll(output)
+	outputScroll.SetMinSize(fyne.NewSize(800, 400))
 
 	outputWithBg := container.NewStack(
 		outputBorder,
 		outputBg,
-		container.NewPadded(output),
+		container.NewPadded(outputScroll),
 	)
 
 	rightColumn := container.NewBorder(

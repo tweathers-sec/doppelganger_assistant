@@ -33,7 +33,7 @@ func waitForProxmark3(maxRetries int) bool {
 }
 
 func writeCardData(cardType string, cardData uint64, bitLength int, facilityCode int, cardNumber int, hexData string, verify bool, formatCodeOrUID string) {
-	// Remove interactive prompts to avoid blocking in GUI/WSL environments
+	// Remove interactive prompts to avoid blocking in GUI environments
 
 	switch cardType {
 	case "iclass":
@@ -56,7 +56,6 @@ func writeCardData(cardType string, cardData uint64, bitLength int, facilityCode
 	case "prox":
 		fmt.Println(Green, "\nWriting Prox card data...\n", Reset)
 
-		// Proceed without readiness gate to match macOS/Linux behavior
 
 		for i := 0; i < 5; i++ {
 			var output string

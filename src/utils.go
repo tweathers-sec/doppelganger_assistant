@@ -41,7 +41,3 @@ func isInteractive() bool {
 	return term.IsTerminal(int(os.Stdin.Fd()))
 }
 
-// flushOutput forces stdout to flush, critical for WSL2 subprocess output
-func flushOutput() {
-	os.Stdout.Sync()
-}

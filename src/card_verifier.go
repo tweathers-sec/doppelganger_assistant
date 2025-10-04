@@ -9,7 +9,6 @@ import (
 func verifyCardData(cardType string, facilityCode, cardNumber, bitLength int, hexData string, uid string) {
 	var cmd *exec.Cmd
 	fmt.Println(Green, "\nVerifying that the card data was successfully written. Set your card flat on the reader...\n", Reset)
-	// Proceed without readiness gate to match macOS/Linux behavior
 	switch cardType {
 	case "iclass":
 		// Read block 7 to verify the written data

@@ -92,14 +92,12 @@ func handleProx(facilityCode, cardNumber, bitLength int, simulate, write, verify
 		simulateCardData("prox", 0, bitLength, facilityCode, cardNumber, "", "")
 	} else {
 		fmt.Println(Green, "\nHandling Prox card...", Reset)
-		flushOutput()
-		
+
 		if write {
 			fmt.Println(Green, "\nThe following will be written to a T5577 card:", Reset)
 		} else {
 			fmt.Println(Green, "\nWrite the following values to a T5577 card:", Reset)
 		}
-		flushOutput()
 
 		fmt.Println(Green, "", Reset)
 
@@ -126,10 +124,8 @@ func handleProx(facilityCode, cardNumber, bitLength int, simulate, write, verify
 			fmt.Println(Yellow, fmt.Sprintf("lf hid clone -w C1k48s --fc %d --cn %d", facilityCode, cardNumber), Reset)
 		default:
 			fmt.Println(Red, "Unsupported bit length for Prox card.", Reset)
-			flushOutput()
 			return
 		}
-		flushOutput()
 
 		if write {
 			writeCardData("prox", 0, bitLength, facilityCode, cardNumber, "", verify, "")
