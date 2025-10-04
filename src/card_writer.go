@@ -2,13 +2,12 @@ package main
 
 import (
 	"fmt"
-	"os/exec"
 	"strings"
 	"time"
 )
 
 func writeProxmark3Command(command string) (string, error) {
-	cmd := exec.Command("pm3", "-c", command)
+	cmd := newPM3Cmd("-c", command)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return string(output), fmt.Errorf("error writing to card: %w. Output: %s", err, output)
@@ -19,7 +18,7 @@ func writeProxmark3Command(command string) (string, error) {
 // waitForProxmark3 attempts to check if Proxmark3 is available
 func waitForProxmark3(maxRetries int) bool {
 	for i := 0; i < maxRetries; i++ {
-		cmd := exec.Command("pm3", "-c", "hw status")
+		cmd := newPM3Cmd("-c", "hw status")
 		output, err := cmd.CombinedOutput()
 		if err == nil && !strings.Contains(string(output), "cannot communicate") {
 			return true

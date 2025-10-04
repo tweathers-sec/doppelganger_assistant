@@ -14,19 +14,19 @@ func verifyCardData(cardType string, facilityCode, cardNumber, bitLength int, he
 	switch cardType {
 	case "iclass":
 		// Read block 7 to verify the written data
-		cmd = exec.Command("pm3", "-c", "hf iclass rdbl --blk 7 --ki 0")
+		cmd = newPM3Cmd("-c", "hf iclass rdbl --blk 7 --ki 0")
 	case "prox":
-		cmd = exec.Command("pm3", "-c", "lf hid reader")
+		cmd = newPM3Cmd("-c", "lf hid reader")
 	case "awid":
-		cmd = exec.Command("pm3", "-c", "lf awid reader")
+		cmd = newPM3Cmd("-c", "lf awid reader")
 	case "indala":
-		cmd = exec.Command("pm3", "-c", "lf indala reader")
+		cmd = newPM3Cmd("-c", "lf indala reader")
 	case "avigilon":
-		cmd = exec.Command("pm3", "-c", "lf hid reader")
+		cmd = newPM3Cmd("-c", "lf hid reader")
 	case "em":
-		cmd = exec.Command("pm3", "-c", "lf em 410x reader")
+		cmd = newPM3Cmd("-c", "lf em 410x reader")
 	case "piv", "mifare":
-		cmd = exec.Command("pm3", "-c", "hf mf info")
+		cmd = newPM3Cmd("-c", "hf mf info")
 	default:
 		fmt.Println(Red, "Unsupported card type for verification.", Reset)
 		return

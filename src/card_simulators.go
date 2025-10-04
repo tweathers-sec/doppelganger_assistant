@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"time"
 )
@@ -14,7 +13,7 @@ func simulateProxmark3Command(command string) (string, error) {
 	fmt.Println(Green, "\nSimulation is in progress... If your Proxmark3 has a battery, you can remove the device and the simulation will continue.", Reset)
 	fmt.Println(Green, "\nTo end the simulation, press the `pm3 button`.\n", Reset)
 
-	cmd := exec.Command("pm3", "-c", command)
+	cmd := newPM3Cmd("-c", command)
 
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
