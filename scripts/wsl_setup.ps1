@@ -288,18 +288,15 @@ if (-not $existingDistro) {
     Write-Host "   - Latest Ubuntu LTS with modern packages" -ForegroundColor Gray
     Write-Host "   - Best compatibility with most tools" -ForegroundColor Gray
     Write-Host ""
-    Write-Host "2) Debian 12 (Bookworm) - Stable Alternative" -ForegroundColor Cyan
-    Write-Host "   - Official Debian stable release" -ForegroundColor Gray
-    Write-Host "   - Different base, may help isolate issues" -ForegroundColor Gray
-    Write-Host ""
-    Write-Host "3) Kali Linux 2025.3 - Security Focused" -ForegroundColor Magenta
-    Write-Host "   - Built for penetration testing" -ForegroundColor Gray
+    Write-Host "2) Kali Linux 2025.3 - Security Focused" -ForegroundColor Magenta
+    Write-Host "   - Built for penetration testing (Debian-based)" -ForegroundColor Gray
     Write-Host "   - Pre-installed security tools" -ForegroundColor Gray
+    Write-Host "   - Official WSL-optimized image" -ForegroundColor Gray
     Write-Host ""
     
     do {
-        $distroChoice = Read-Host "Enter your choice (1, 2, or 3)"
-    } while ($distroChoice -ne "1" -and $distroChoice -ne "2" -and $distroChoice -ne "3")
+        $distroChoice = Read-Host "Enter your choice (1 or 2)"
+    } while ($distroChoice -ne "1" -and $distroChoice -ne "2")
     
     # Create staging directory
     if (-Not (Test-Path -Path "$basePath\staging")) { mkdir "$basePath\staging" }
@@ -322,21 +319,6 @@ if (-not $existingDistro) {
             $rootfsUrl = "https://cloud-images.ubuntu.com/wsl/releases/noble/current/ubuntu-noble-wsl-amd64-24.04lts.rootfs.tar.gz"
             $rootfsFile = "$basePath\staging\ubuntu.rootfs.tar.gz"
             $distroName = "Ubuntu 24.04 (Noble)"
-        }
-    } elseif ($distroChoice -eq "2") {
-        Log "Installing Debian 12 (Bookworm) via direct rootfs import..."
-        if ($processorArch -eq "ARM64") {
-            # ARM64 for Apple Silicon or Snapdragon processors
-            Log "Using ARM64 rootfs (Debian 12 Bookworm)"
-            $rootfsUrl = "https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-generic-arm64.tar.xz"
-            $rootfsFile = "$basePath\staging\debian.rootfs.tar.xz"
-            $distroName = "Debian 12 (Bookworm)"
-        } else {
-            # AMD64/x86_64 for Intel/AMD processors (most common)
-            Log "Using AMD64 rootfs (Debian 12 Bookworm)"
-            $rootfsUrl = "https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-generic-amd64.tar.xz"
-            $rootfsFile = "$basePath\staging\debian.rootfs.tar.xz"
-            $distroName = "Debian 12 (Bookworm)"
         }
     } else {
         Log "Installing Kali Linux 2025.3 via direct rootfs import..."
