@@ -1,9 +1,13 @@
-# Define the distribution name, installation path, and other static values
-$wslName = "Ubuntu-doppelganger_assistant"
+# Define the installation path and other static values
 $basePath = "C:\doppelganger_assistant"
 $wslInstallationPath = "$basePath\wsl"
 $username = "doppelganger"
 $installAllSoftware = $true
+
+# Possible WSL distribution names (will be set based on user choice)
+$kaliWslName = "Kali-doppelganger_assistant"
+$ubuntuWslName = "Ubuntu-doppelganger_assistant"
+$wslName = $null  # Will be set after user selects distribution
 
 # Use WSL's built-in Ubuntu installation instead of manual rootfs download
 # This works for both AMD64 and ARM64 architectures
@@ -251,9 +255,18 @@ if (-not (CommandExists "usbipd")) {
 # Note: Skipping virtualization checks to allow installation in nested VM environments
 Log "Proceeding with WSL installation..."
 
-# Check if the target WSL distribution already exists
+# Check if any Doppelganger WSL distribution already exists
 $wslList = wsl.exe -l -q
-if ($wslList -contains $wslName) {
+$existingKali = $wslList -contains $kaliWslName
+$existingUbuntu = $wslList -contains $ubuntuWslName
+
+if ($existingKali -or $existingUbuntu) {
+    # Determine which one exists
+    if ($existingKali) {
+        $wslName = $kaliWslName
+    } else {
+        $wslName = $ubuntuWslName
+    }
     Write-Host "`n========================================" -ForegroundColor Cyan
     Write-Host "  Existing Installation Detected" -ForegroundColor Cyan
     Write-Host "========================================" -ForegroundColor Cyan
@@ -323,118 +336,110 @@ if ($wslList -contains $wslName) {
     }
 }
 
-# Check if target WSL distribution already exists
-Log "Checking for existing $wslName distribution..."
-$allDistros = wsl.exe -l -q
-$existingDistro = $false
-foreach ($distro in $allDistros) {
-    $distroName = $distro.Trim()
-    if ($distroName -eq $wslName) {
-        $existingDistro = $true
-        Log "Found existing $wslName distribution"
-        break
+# No existing Doppelganger installation found, prompt user to select and install
+Log "No existing Doppelganger Assistant installation found."
+Log "Proceeding with fresh installation..."
+
+# Prompt user to select distribution
+Write-Host "`n========================================" -ForegroundColor Cyan
+Write-Host "  Select Linux Distribution for WSL2" -ForegroundColor Cyan
+Write-Host "========================================" -ForegroundColor Cyan
+Write-Host ""
+Write-Host "1) Kali Linux 2025.3 - Recommended" -ForegroundColor Magenta
+Write-Host "   - Built for penetration testing (Debian-based)" -ForegroundColor Gray
+Write-Host "   - Pre-installed security tools" -ForegroundColor Gray
+Write-Host "   - Perfect for Doppelganger Assistant" -ForegroundColor Gray
+Write-Host ""
+Write-Host "2) Ubuntu 24.04 LTS (Noble) - Alternative" -ForegroundColor Green
+Write-Host "   - Latest Ubuntu LTS with modern packages" -ForegroundColor Gray
+Write-Host "   - General purpose Linux distribution" -ForegroundColor Gray
+Write-Host ""
+
+do {
+    $distroChoice = Read-Host "Enter your choice (1 or 2)"
+} while ($distroChoice -ne "1" -and $distroChoice -ne "2")
+
+# Create staging directory
+if (-Not (Test-Path -Path "$basePath\staging")) { mkdir "$basePath\staging" }
+
+# Detect actual processor architecture using environment variable (most reliable)
+$processorArch = $env:PROCESSOR_ARCHITECTURE
+Log "Detected processor architecture: $processorArch"
+
+if ($distroChoice -eq "1") {
+    Log "Installing Kali Linux 2025.3 via direct rootfs import..."
+    $wslName = $kaliWslName  # Set WSL name for Kali
+    if ($processorArch -eq "ARM64") {
+        # ARM64 for Apple Silicon or Snapdragon processors
+        Log "Using ARM64 rootfs (Kali Linux 2025.3)"
+        $rootfsUrl = "https://kali.download/wsl-images/current/kali-linux-2025.3-wsl-rootfs-arm64.wsl"
+        $rootfsFile = "$basePath\staging\kali.rootfs.wsl"
+        $distroName = "Kali Linux 2025.3"
+    } else {
+        # AMD64/x86_64 for Intel/AMD processors (most common)
+        Log "Using AMD64 rootfs (Kali Linux 2025.3)"
+        $rootfsUrl = "https://kali.download/wsl-images/current/kali-linux-2025.3-wsl-rootfs-amd64.wsl"
+        $rootfsFile = "$basePath\staging\kali.rootfs.wsl"
+        $distroName = "Kali Linux 2025.3"
+    }
+} else {
+    Log "Installing Ubuntu 24.04 (Noble) via direct rootfs import..."
+    $wslName = $ubuntuWslName  # Set WSL name for Ubuntu
+    if ($processorArch -eq "ARM64") {
+        # ARM64 for Apple Silicon or Snapdragon processors
+        Log "Using ARM64 rootfs (Ubuntu 24.04 Noble)"
+        $rootfsUrl = "https://cloud-images.ubuntu.com/wsl/releases/noble/current/ubuntu-noble-wsl-arm64-24.04lts.rootfs.tar.gz"
+        $rootfsFile = "$basePath\staging\ubuntu.rootfs.tar.gz"
+        $distroName = "Ubuntu 24.04 (Noble)"
+    } else {
+        # AMD64/x86_64 for Intel/AMD processors (most common)
+        Log "Using AMD64 rootfs (Ubuntu 24.04 Noble)"
+        $rootfsUrl = "https://cloud-images.ubuntu.com/wsl/releases/noble/current/ubuntu-noble-wsl-amd64-24.04lts.rootfs.tar.gz"
+        $rootfsFile = "$basePath\staging\ubuntu.rootfs.tar.gz"
+        $distroName = "Ubuntu 24.04 (Noble)"
     }
 }
 
-# If target distribution doesn't exist, prompt user and install
-if (-not $existingDistro) {
-    # Prompt user to select distribution
-    Write-Host "`n========================================" -ForegroundColor Cyan
-    Write-Host "  Select Linux Distribution for WSL2" -ForegroundColor Cyan
-    Write-Host "========================================" -ForegroundColor Cyan
-    Write-Host ""
-    Write-Host "1) Kali Linux 2025.3 - Recommended" -ForegroundColor Magenta
-    Write-Host "   - Built for penetration testing (Debian-based)" -ForegroundColor Gray
-    Write-Host "   - Pre-installed security tools" -ForegroundColor Gray
-    Write-Host "   - Perfect for Doppelganger Assistant" -ForegroundColor Gray
-    Write-Host ""
-    Write-Host "2) Ubuntu 24.04 LTS (Noble) - Alternative" -ForegroundColor Green
-    Write-Host "   - Latest Ubuntu LTS with modern packages" -ForegroundColor Gray
-    Write-Host "   - General purpose Linux distribution" -ForegroundColor Gray
-    Write-Host ""
-    
-    do {
-        $distroChoice = Read-Host "Enter your choice (1 or 2)"
-    } while ($distroChoice -ne "1" -and $distroChoice -ne "2")
-    
-    # Create staging directory
-    if (-Not (Test-Path -Path "$basePath\staging")) { mkdir "$basePath\staging" }
-    
-    # Detect actual processor architecture using environment variable (most reliable)
-    $processorArch = $env:PROCESSOR_ARCHITECTURE
-    Log "Detected processor architecture: $processorArch"
-    
-    if ($distroChoice -eq "1") {
-        Log "Installing Kali Linux 2025.3 via direct rootfs import..."
-        if ($processorArch -eq "ARM64") {
-            # ARM64 for Apple Silicon or Snapdragon processors
-            Log "Using ARM64 rootfs (Kali Linux 2025.3)"
-            $rootfsUrl = "https://kali.download/wsl-images/current/kali-linux-2025.3-wsl-rootfs-arm64.wsl"
-            $rootfsFile = "$basePath\staging\kali.rootfs.wsl"
-            $distroName = "Kali Linux 2025.3"
-        } else {
-            # AMD64/x86_64 for Intel/AMD processors (most common)
-            Log "Using AMD64 rootfs (Kali Linux 2025.3)"
-            $rootfsUrl = "https://kali.download/wsl-images/current/kali-linux-2025.3-wsl-rootfs-amd64.wsl"
-            $rootfsFile = "$basePath\staging\kali.rootfs.wsl"
-            $distroName = "Kali Linux 2025.3"
-        }
+Log "WSL distribution will be installed as: $wslName"
+
+Log "Downloading $distroName rootfs from $rootfsUrl..."
+Log "This may take several minutes..."
+
+try {
+    # Use aria2 for faster download if available, otherwise use Invoke-WebRequest
+    if (Test-Path "$basePath\aria2\aria2c.exe") {
+        & "$basePath\aria2\aria2c.exe" -x 16 -s 16 -d "$basePath\staging" -o ([System.IO.Path]::GetFileName($rootfsFile)) $rootfsUrl
     } else {
-        Log "Installing Ubuntu 24.04 (Noble) via direct rootfs import..."
-        if ($processorArch -eq "ARM64") {
-            # ARM64 for Apple Silicon or Snapdragon processors
-            Log "Using ARM64 rootfs (Ubuntu 24.04 Noble)"
-            $rootfsUrl = "https://cloud-images.ubuntu.com/wsl/releases/noble/current/ubuntu-noble-wsl-arm64-24.04lts.rootfs.tar.gz"
-            $rootfsFile = "$basePath\staging\ubuntu.rootfs.tar.gz"
-            $distroName = "Ubuntu 24.04 (Noble)"
-        } else {
-            # AMD64/x86_64 for Intel/AMD processors (most common)
-            Log "Using AMD64 rootfs (Ubuntu 24.04 Noble)"
-            $rootfsUrl = "https://cloud-images.ubuntu.com/wsl/releases/noble/current/ubuntu-noble-wsl-amd64-24.04lts.rootfs.tar.gz"
-            $rootfsFile = "$basePath\staging\ubuntu.rootfs.tar.gz"
-            $distroName = "Ubuntu 24.04 (Noble)"
-        }
+        Invoke-WebRequest -Uri $rootfsUrl -OutFile $rootfsFile -UseBasicParsing
     }
     
-    Log "Downloading $distroName rootfs from $rootfsUrl..."
-    Log "This may take several minutes..."
-    
-    try {
-        # Use aria2 for faster download if available, otherwise use Invoke-WebRequest
-        if (Test-Path "$basePath\aria2\aria2c.exe") {
-            & "$basePath\aria2\aria2c.exe" -x 16 -s 16 -d "$basePath\staging" -o ([System.IO.Path]::GetFileName($rootfsFile)) $rootfsUrl
-        } else {
-            Invoke-WebRequest -Uri $rootfsUrl -OutFile $rootfsFile -UseBasicParsing
-        }
-        
-        if (-Not (Test-Path $rootfsFile)) {
-            throw "Failed to download $distroName rootfs"
-        }
-        
-        Log "Download complete. Importing $distroName distribution..."
-        
-        # Import the rootfs directly as our custom distribution name
-        if (-Not (Test-Path -Path $wslInstallationPath)) { mkdir $wslInstallationPath }
-        
-        # Import as WSL2 (required for USB passthrough)
-        Log "Importing as WSL2 (required for USB device access)..."
-        wsl.exe --import $wslName $wslInstallationPath $rootfsFile --version 2
-        
-        if ($LASTEXITCODE -ne 0) {
-            throw "WSL2 import failed. Please ensure nested virtualization is enabled in your VM settings."
-        }
-        
-        Log "$distroName imported successfully as $wslName (WSL2)"
-        
-        # Clean up downloaded rootfs
-        Remove-Item $rootfsFile -Force
-        
-        # Mark that we directly imported (skip the export/import step later)
-        $directImport = $true
-    } catch {
-        Log "ERROR: Failed to download or import $distroName rootfs: $_"
-        throw "$distroName installation failed"
+    if (-Not (Test-Path $rootfsFile)) {
+        throw "Failed to download $distroName rootfs"
     }
+    
+    Log "Download complete. Importing $distroName distribution..."
+    
+    # Import the rootfs directly as our custom distribution name
+    if (-Not (Test-Path -Path $wslInstallationPath)) { mkdir $wslInstallationPath }
+    
+    # Import as WSL2 (required for USB passthrough)
+    Log "Importing as WSL2 (required for USB device access)..."
+    wsl.exe --import $wslName $wslInstallationPath $rootfsFile --version 2
+    
+    if ($LASTEXITCODE -ne 0) {
+        throw "WSL2 import failed. Please ensure nested virtualization is enabled in your VM settings."
+    }
+    
+    Log "$distroName imported successfully as $wslName (WSL2)"
+    
+    # Clean up downloaded rootfs
+    Remove-Item $rootfsFile -Force
+    
+    # Mark that we directly imported (skip the export/import step later)
+    $directImport = $true
+} catch {
+    Log "ERROR: Failed to download or import $distroName rootfs: $_"
+    throw "$distroName installation failed"
 }
 
 # Verify direct import succeeded

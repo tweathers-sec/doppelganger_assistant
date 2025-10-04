@@ -21,20 +21,47 @@ function Log {
     Add-Content -Path $logFile -Value $logMessage
 }
 
+# Function to detect which Doppelganger WSL distribution is installed
+function Get-DoppelgangerDistro {
+    $wslList = wsl -l -q
+    $kaliName = "Kali-doppelganger_assistant"
+    $ubuntuName = "Ubuntu-doppelganger_assistant"
+    
+    if ($wslList -match $kaliName) {
+        return $kaliName
+    } elseif ($wslList -match $ubuntuName) {
+        return $ubuntuName
+    } else {
+        return $null
+    }
+}
+
 # Function to check if WSL is running
 function IsWSLRunning {
+    $distroName = Get-DoppelgangerDistro
+    if ($null -eq $distroName) {
+        return $false
+    }
     $wslOutput = wsl -l -q
-    return $wslOutput -match "Ubuntu-doppelganger_assistant"
+    return $wslOutput -match $distroName
 }
 
 # Function to start WSL if not running
 function StartWSLIfNotRunning {
+    $distroName = Get-DoppelgangerDistro
+    if ($null -eq $distroName) {
+        Log "ERROR: No Doppelganger Assistant WSL distribution found!"
+        Log "Please run the installer first."
+        Read-Host "Press Enter to exit"
+        exit 1
+    }
+    
     if (-not (IsWSLRunning)) {
-        Log "WSL is not running. Starting WSL..."
-        & wsl -d "Ubuntu-doppelganger_assistant" --exec echo "WSL started"
+        Log "WSL is not running. Starting $distroName..."
+        & wsl -d $distroName --exec echo "WSL started"
         Log "WSL started."
     } else {
-        Log "WSL is already running."
+        Log "$distroName is already running."
     }
 }
 
@@ -87,8 +114,14 @@ function AttachUSBDeviceToWSL {
 
 # Function to launch Doppelganger Assistant in WSL and close the terminal
 function LaunchDoppelgangerAssistant {
-    Log "Launching Doppelganger Assistant in WSL..."
-    $wslCommand = "wsl -d Ubuntu-doppelganger_assistant -e bash -c 'doppelganger_assistant'"
+    $distroName = Get-DoppelgangerDistro
+    if ($null -eq $distroName) {
+        Log "ERROR: No Doppelganger Assistant WSL distribution found!"
+        return
+    }
+    
+    Log "Launching Doppelganger Assistant in $distroName..."
+    $wslCommand = "wsl -d $distroName -e bash -c 'doppelganger_assistant'"
     
     # Use Start-Process with -WindowStyle Hidden to launch the command without showing a window
     Start-Process powershell -ArgumentList "-WindowStyle", "Hidden", "-Command", $wslCommand -WindowStyle Hidden

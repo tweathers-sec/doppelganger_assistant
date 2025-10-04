@@ -14,7 +14,8 @@ function Log {
 
 # Define paths
 $basePath = "C:\doppelganger_assistant"
-$wslName = "Ubuntu-doppelganger_assistant"
+$kaliWslName = "Kali-doppelganger_assistant"
+$ubuntuWslName = "Ubuntu-doppelganger_assistant"
 $shortcutPath = [System.IO.Path]::Combine([System.Environment]::GetFolderPath("Desktop"), "Launch Doppelganger Assistant.lnk")
 
 # Function to check if a command exists
@@ -31,14 +32,26 @@ Log "Stopping WSL..."
 wsl --shutdown
 Log "WSL stopped."
 
-# Uninstall WSL distribution
+# Uninstall all Doppelganger WSL distributions
 $wslDistributions = wsl.exe -l -q
-if ($wslDistributions -contains $wslName) {
-    Log "Unregistering WSL distribution $wslName..."
-    wsl.exe --unregister $wslName
-    Log "WSL distribution $wslName unregistered."
-} else {
-    Log "WSL distribution $wslName not found. Available distributions: $wslDistributions"
+$removed = $false
+
+if ($wslDistributions -contains $kaliWslName) {
+    Log "Unregistering WSL distribution $kaliWslName..."
+    wsl.exe --unregister $kaliWslName
+    Log "WSL distribution $kaliWslName unregistered."
+    $removed = $true
+}
+
+if ($wslDistributions -contains $ubuntuWslName) {
+    Log "Unregistering WSL distribution $ubuntuWslName..."
+    wsl.exe --unregister $ubuntuWslName
+    Log "WSL distribution $ubuntuWslName unregistered."
+    $removed = $true
+}
+
+if (-not $removed) {
+    Log "No Doppelganger WSL distributions found. Available distributions: $wslDistributions"
 }
 
 # Ensure no processes are using the directory
