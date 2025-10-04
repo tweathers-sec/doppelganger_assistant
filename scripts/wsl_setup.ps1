@@ -256,9 +256,17 @@ if (-not (CommandExists "usbipd")) {
 Log "Proceeding with WSL installation..."
 
 # Check if any Doppelganger WSL distribution already exists
-$wslList = wsl.exe -l -q
-$existingKali = $wslList -contains $kaliWslName
-$existingUbuntu = $wslList -contains $ubuntuWslName
+$wslList = wsl.exe -l -q | ForEach-Object { $_.Trim() -replace "`0", "" }
+$existingKali = $false
+$existingUbuntu = $false
+
+foreach ($distro in $wslList) {
+    if ($distro -eq $kaliWslName) {
+        $existingKali = $true
+    } elseif ($distro -eq $ubuntuWslName) {
+        $existingUbuntu = $true
+    }
+}
 
 if ($existingKali -or $existingUbuntu) {
     # Determine which one exists

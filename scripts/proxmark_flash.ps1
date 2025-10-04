@@ -23,17 +23,18 @@ function CommandExists {
 
 # Function to detect which Doppelganger WSL distribution is installed
 function Get-DoppelgangerDistro {
-    $wslList = wsl -l -q
+    $wslList = wsl.exe -l -q | ForEach-Object { $_.Trim() -replace "`0", "" }
     $kaliName = "Kali-doppelganger_assistant"
     $ubuntuName = "Ubuntu-doppelganger_assistant"
     
-    if ($wslList -match $kaliName) {
-        return $kaliName
-    } elseif ($wslList -match $ubuntuName) {
-        return $ubuntuName
-    } else {
-        return $null
+    foreach ($distro in $wslList) {
+        if ($distro -eq $kaliName) {
+            return $kaliName
+        } elseif ($distro -eq $ubuntuName) {
+            return $ubuntuName
+        }
     }
+    return $null
 }
 
 # Function to check if WSL is running

@@ -1,3 +1,11 @@
+# Doppelganger Assistant Uninstaller
+# 
+# To run this script:
+#   powershell -ExecutionPolicy Bypass -File C:\doppelganger_assistant\uninstall.ps1
+#
+# Or download and run directly from GitHub:
+#   powershell -ExecutionPolicy Bypass -Command "Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/scripts/uninstall.ps1' -OutFile 'C:\doppelganger_uninstall.ps1'; & 'C:\doppelganger_uninstall.ps1'"
+
 # Log file path
 $logFile = "C:\doppelganger_uninstall.log"
 
@@ -33,25 +41,26 @@ wsl --shutdown
 Log "WSL stopped."
 
 # Uninstall all Doppelganger WSL distributions
-$wslDistributions = wsl.exe -l -q
+$wslDistributions = wsl.exe -l -q | ForEach-Object { $_.Trim() -replace "`0", "" }
 $removed = $false
 
-if ($wslDistributions -contains $kaliWslName) {
-    Log "Unregistering WSL distribution $kaliWslName..."
-    wsl.exe --unregister $kaliWslName
-    Log "WSL distribution $kaliWslName unregistered."
-    $removed = $true
-}
-
-if ($wslDistributions -contains $ubuntuWslName) {
-    Log "Unregistering WSL distribution $ubuntuWslName..."
-    wsl.exe --unregister $ubuntuWslName
-    Log "WSL distribution $ubuntuWslName unregistered."
-    $removed = $true
+foreach ($distro in $wslDistributions) {
+    if ($distro -eq $kaliWslName) {
+        Log "Unregistering WSL distribution $kaliWslName..."
+        wsl.exe --unregister $kaliWslName
+        Log "WSL distribution $kaliWslName unregistered."
+        $removed = $true
+    } elseif ($distro -eq $ubuntuWslName) {
+        Log "Unregistering WSL distribution $ubuntuWslName..."
+        wsl.exe --unregister $ubuntuWslName
+        Log "WSL distribution $ubuntuWslName unregistered."
+        $removed = $true
+    }
 }
 
 if (-not $removed) {
-    Log "No Doppelganger WSL distributions found. Available distributions: $wslDistributions"
+    Log "No Doppelganger WSL distributions found. Available distributions:"
+    $wslDistributions | ForEach-Object { Log "  - $_" }
 }
 
 # Ensure no processes are using the directory
@@ -90,8 +99,5 @@ if (CommandExists "winget") {
 } else {
     Log "winget not found. Please uninstall usbipd manually."
 }
-
-# One-liner to run this script by downloading from GitHub
-# powershell -ExecutionPolicy Bypass -Command "Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/scripts/uninstall.ps1' -OutFile 'C:\doppelganger_uninstall.ps1'; & 'C:\doppelganger_uninstall.ps1'"
 
 Log "Uninstallation complete."
