@@ -1,23 +1,85 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"image/color"
 	"os"
 	"os/exec"
+	"regexp"
+	"runtime"
 	"strings"
+	"sync"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	"github.com/creack/pty"
-	"github.com/fyne-io/terminal"
 )
+
+// Simple cross-platform output display using data binding
+type outputDisplay struct {
+	widget.Entry
+	str binding.String
+	mu  sync.Mutex
+}
+
+func newOutputDisplay() *outputDisplay {
+	str := binding.NewString()
+	str.Set("")
+
+	o := &outputDisplay{
+		str: str,
+	}
+	o.ExtendBaseWidget(o)
+	o.MultiLine = true
+	o.Wrapping = fyne.TextWrapWord
+	o.Bind(str) // Bind to data source - thread-safe updates!
+
+	return o
+}
+
+func (o *outputDisplay) Append(text string) {
+	clean := stripANSI(text)
+
+	o.mu.Lock()
+	defer o.mu.Unlock()
+
+	current, _ := o.str.Get()
+	o.str.Set(current + clean) // Binding handles thread safety
+}
+
+func (o *outputDisplay) Clear() {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+
+	o.str.Set("") // Binding handles thread safety
+}
+
+// Strip ANSI escape codes
+func stripANSI(str string) string {
+	ansiRegex := regexp.MustCompile(`\x1b\[[0-9;]*[a-zA-Z]`)
+	return ansiRegex.ReplaceAllString(str, "")
+}
+
+// isWSL2 detects if we're running in WSL2 environment
+func isWSL2() bool {
+	if runtime.GOOS != "linux" {
+		return false
+	}
+	// Check for WSL-specific markers
+	data, err := os.ReadFile("/proc/version")
+	if err != nil {
+		return false
+	}
+	return strings.Contains(strings.ToLower(string(data)), "microsoft") ||
+		strings.Contains(strings.ToLower(string(data)), "wsl")
+}
 
 // Fixed width layout
 type fixedWidthLayout struct {
@@ -196,6 +258,19 @@ func runGUI() {
 	// which is safe in this context but triggers warnings
 	os.Setenv("FYNE_DISABLE_CALL_CHECKING", "1")
 
+	// WSL2 locale fix: Set proper locale to prevent Fyne parsing errors
+	if isWSL2() {
+		// Check if locale is set, if not set to en_US.UTF-8
+		if os.Getenv("LANG") == "" || os.Getenv("LANG") == "C" {
+			os.Setenv("LANG", "en_US.UTF-8")
+		}
+		if os.Getenv("LC_ALL") == "" {
+			os.Setenv("LC_ALL", "en_US.UTF-8")
+		}
+		// Fallback: disable locale detection entirely if issues persist
+		os.Setenv("FYNE_THEME", "dark") // Force theme to avoid locale-based defaults
+	}
+
 	a := app.New()
 	w := a.NewWindow("Doppelgänger Assistant")
 
@@ -293,9 +368,9 @@ func runGUI() {
 
 	cardType.OnChanged = updateDataBlocks
 
-	// Create terminal widget
-	term := terminal.New()
-	var currentTerm *terminal.Terminal = term
+	// Create output display
+	output := newOutputDisplay()
+	var currentOutput *outputDisplay = output
 
 	// Execute command function
 	executeCommand := func() {
@@ -327,19 +402,19 @@ func runGUI() {
 		switch cardTypeCmd {
 		case "prox", "iclass", "awid", "indala", "avigilon":
 			if facilityCodeValue == "" || cardNumberValue == "" {
-				currentTerm.Write([]byte("Error: Facility Code and Card Number are required\n"))
+				currentOutput.Append("Error: Facility Code and Card Number are required\n")
 				return
 			}
 			args = append(args, "-bl", bitLengthValue, "-fc", facilityCodeValue, "-cn", cardNumberValue)
 		case "em":
 			if hexDataValue == "" {
-				currentTerm.Write([]byte("Error: Hex Data is required\n"))
+				currentOutput.Append("Error: Hex Data is required\n")
 				return
 			}
 			args = append(args, "--hex", hexDataValue)
 		case "mifare", "piv":
 			if uidValue == "" {
-				currentTerm.Write([]byte("Error: UID is required\n"))
+				currentOutput.Append("Error: UID is required\n")
 				return
 			}
 			args = append(args, "--uid", uidValue)
@@ -353,42 +428,123 @@ func runGUI() {
 			args = append(args, "-s")
 		}
 
-		// Run command with PTY in terminal
-		go func() {
-			// Recover from any panics in the terminal widget
-			defer func() {
-				if r := recover(); r != nil {
-					errMsg := fmt.Sprintf("\n\n[Terminal Error] The terminal widget encountered an error: %v\nThe command may have completed successfully. Check your Proxmark3 device.\n", r)
-					// Try to write error to terminal if possible
-					defer func() { recover() }() // Catch any panic from this write too
-					currentTerm.Write([]byte(errMsg))
+		// WSL2 workaround: Use xterm for external terminal execution
+		if isWSL2() {
+			go func() {
+				// Get the path of the currently running executable
+				execPath, err := os.Executable()
+				if err != nil {
+					currentOutput.Append(fmt.Sprintf("Error: %v\n", err))
+					return
 				}
+
+				// Build the full command string for xterm
+				cmdStr := fmt.Sprintf("%s %s; read -p 'Press Enter to close...'", execPath, strings.Join(args, " "))
+
+				currentOutput.Append(fmt.Sprintf("\n=== Launching External Terminal (WSL2) ===\n"))
+				currentOutput.Append(fmt.Sprintf("Command: %s\n\n", cmdStr))
+
+				// Launch xterm with the command
+				cmd := exec.Command("xterm", "-hold", "-e", "bash", "-c", cmdStr)
+				cmd.Env = os.Environ()
+
+				if err := cmd.Start(); err != nil {
+					currentOutput.Append(fmt.Sprintf("Error launching xterm: %v\n", err))
+					currentOutput.Append("Make sure xterm is installed: sudo apt install xterm\n")
+					return
+				}
+
+				currentOutput.Append("External terminal launched. Check the xterm window.\n")
 			}()
+			return
+		}
+
+		// For macOS and Linux: Use integrated terminal (original behavior)
+		go func() {
+			currentOutput.Append("\n=== Starting Command ===\n")
 
 			// Get the path of the currently running executable
 			execPath, err := os.Executable()
 			if err != nil {
-				errMsg := fmt.Sprintf("Error getting executable path: %v\n", err)
-				currentTerm.Write([]byte(errMsg))
+				currentOutput.Append(fmt.Sprintf("Error getting executable path: %v\n", err))
 				return
 			}
+
+			currentOutput.Append(fmt.Sprintf("Executing: %s %s\n\n", execPath, strings.Join(args, " ")))
 
 			cmd := exec.Command(execPath, args...)
+			cmd.Env = os.Environ()
 
-			// Start the command with a pty
-			ptmx, err := pty.Start(cmd)
+			// Use pipes for stdout/stderr
+			stdout, err := cmd.StdoutPipe()
 			if err != nil {
-				errMsg := fmt.Sprintf("Error starting command: %v\n", err)
-				currentTerm.Write([]byte(errMsg))
+				currentOutput.Append(fmt.Sprintf("Error creating stdout pipe: %v\n", err))
 				return
 			}
-			defer ptmx.Close()
 
-			// Connect the PTY to the terminal
-			currentTerm.RunWithConnection(ptmx, ptmx)
+			stderr, err := cmd.StderrPipe()
+			if err != nil {
+				currentOutput.Append(fmt.Sprintf("Error creating stderr pipe: %v\n", err))
+				return
+			}
+
+			// Start the command
+			if err := cmd.Start(); err != nil {
+				currentOutput.Append(fmt.Sprintf("Error starting command: %v\n", err))
+				return
+			}
+
+			currentOutput.Append("Command process started, reading output...\n")
+
+			// Use channels to coordinate goroutine completion
+			done := make(chan bool, 2)
+
+			// Read stdout in real-time
+			go func() {
+				scanner := bufio.NewScanner(stdout)
+				scanner.Buffer(make([]byte, 64*1024), 1024*1024) // Increase buffer size
+				lineCount := 0
+				for scanner.Scan() {
+					line := scanner.Text()
+					currentOutput.Append(line + "\n")
+					lineCount++
+				}
+				if err := scanner.Err(); err != nil {
+					currentOutput.Append(fmt.Sprintf("Error reading stdout: %v\n", err))
+				}
+				currentOutput.Append(fmt.Sprintf("[DEBUG] Read %d lines from stdout\n", lineCount))
+				done <- true
+			}()
+
+			// Read stderr in real-time
+			go func() {
+				scanner := bufio.NewScanner(stderr)
+				scanner.Buffer(make([]byte, 64*1024), 1024*1024) // Increase buffer size
+				lineCount := 0
+				for scanner.Scan() {
+					line := scanner.Text()
+					currentOutput.Append(line + "\n")
+					lineCount++
+				}
+				if err := scanner.Err(); err != nil {
+					currentOutput.Append(fmt.Sprintf("Error reading stderr: %v\n", err))
+				}
+				currentOutput.Append(fmt.Sprintf("[DEBUG] Read %d lines from stderr\n", lineCount))
+				done <- true
+			}()
 
 			// Wait for command to complete
-			cmd.Wait()
+			exitErr := cmd.Wait()
+
+			// Wait for both reader goroutines to finish
+			<-done
+			<-done
+
+			if exitErr != nil {
+				currentOutput.Append(fmt.Sprintf("\n=== Command Error: %v ===\n", exitErr))
+			} else {
+				currentOutput.Append("\n=== Command Completed Successfully ===\n")
+			}
 		}()
 	}
 
@@ -405,34 +561,12 @@ func runGUI() {
 		updateDataBlocks(cardTypes[0])
 	})
 
-	// Right column - Terminal with clear button
-	terminalLabel := canvas.NewText("TERMINAL OUTPUT", color.RGBA{R: 169, G: 182, B: 201, A: 255})
-	terminalLabel.TextSize = 11
+	// Right column - Output display with clear button
+	outputLabel := canvas.NewText("OUTPUT", color.RGBA{R: 169, G: 182, B: 201, A: 255})
+	outputLabel.TextSize = 11
 
-	// Terminal container that we can update
-	terminalContainer := container.NewMax(term)
-
-	// Copy terminal output - Note: Terminal widget doesn't support programmatic content access
-	// Users can manually select text in the terminal and use Cmd+C/Ctrl+C to copy
-
-	clearTerminal := newOutlinedButton("CLEAR TERMINAL", func() {
-		// Recover from any crashes during terminal clear
-		defer func() {
-			if r := recover(); r != nil {
-				// Silently recover - terminal may be in bad state
-			}
-		}()
-
-		// Stop any running process and clear terminal
-		if currentTerm != nil {
-			currentTerm.Exit()
-		}
-		// Create a fresh terminal instance
-		newTerm := terminal.New()
-		currentTerm = newTerm
-		// Replace the terminal in the container
-		terminalContainer.Objects = []fyne.CanvasObject{newTerm}
-		terminalContainer.Refresh()
+	clearOutput := newOutlinedButton("CLEAR OUTPUT", func() {
+		currentOutput.Clear()
 	})
 
 	// Make buttons less tall by constraining their size
@@ -470,33 +604,33 @@ func runGUI() {
 		container.NewPadded(versionText),
 	)
 
-	// Terminal header with clear button
-	terminalHeader := container.NewBorder(
+	// Output header with clear button
+	outputHeader := container.NewBorder(
 		nil, nil,
-		container.NewPadded(terminalLabel),
-		container.NewPadded(clearTerminal),
+		container.NewPadded(outputLabel),
+		container.NewPadded(clearOutput),
 	)
 
-	// Add dark grey background with orange border to terminal area
-	terminalBg := canvas.NewRectangle(color.RGBA{R: 24, G: 26, B: 27, A: 255})
-	terminalBg.CornerRadius = 8
+	// Add dark grey background with orange border to output area
+	outputBg := canvas.NewRectangle(color.RGBA{R: 24, G: 26, B: 27, A: 255})
+	outputBg.CornerRadius = 8
 
 	// Orange border - subtle
-	terminalBorder := canvas.NewRectangle(color.RGBA{R: 0, G: 0, B: 0, A: 0}) // Transparent fill
-	terminalBorder.StrokeColor = color.RGBA{R: 226, G: 88, B: 34, A: 80}      // Orange with lower opacity
-	terminalBorder.StrokeWidth = 1
-	terminalBorder.CornerRadius = 8
+	outputBorder := canvas.NewRectangle(color.RGBA{R: 0, G: 0, B: 0, A: 0}) // Transparent fill
+	outputBorder.StrokeColor = color.RGBA{R: 226, G: 88, B: 34, A: 80}      // Orange with lower opacity
+	outputBorder.StrokeWidth = 1
+	outputBorder.CornerRadius = 8
 
-	terminalWithBg := container.NewStack(
-		terminalBorder,
-		terminalBg,
-		container.NewPadded(terminalContainer),
+	outputWithBg := container.NewStack(
+		outputBorder,
+		outputBg,
+		container.NewPadded(output),
 	)
 
 	rightColumn := container.NewBorder(
-		terminalHeader,
+		outputHeader,
 		nil, nil, nil,
-		terminalWithBg,
+		outputWithBg,
 	)
 
 	// Main content with two columns - left side fixed width, not resizable

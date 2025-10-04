@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 )
 
 func handleCardType(cardType string, facilityCode, cardNumber, bitLength int, write, verify bool, uid, hexData string, simulate bool) {
@@ -32,12 +33,14 @@ func handleICLASS(facilityCode, cardNumber, bitLength int, simulate, write, veri
 	validBitLengths := map[int]bool{26: true, 30: true, 33: true, 34: true, 35: true, 36: true, 37: true, 46: true, 48: true}
 	if !validBitLengths[bitLength] {
 		fmt.Println(Red, "Invalid bit length for iCLASS. Supported bit lengths are 26, 30, 33, 34, 35, 36, 37, 46, and 48.", Reset)
+		os.Stdout.Sync()
 		return
 	}
 
 	// DISABLED: iClass simulation is temporarily disabled
 	if simulate {
 		fmt.Println(Red, "iCLASS card simulation is currently disabled.", Reset)
+		os.Stdout.Sync()
 		return
 	}
 
@@ -73,6 +76,7 @@ func handleICLASS(facilityCode, cardNumber, bitLength int, simulate, write, veri
 	fmt.Println(Green, "", Reset)
 	fmt.Println(Yellow, fmt.Sprintf("hf iclass encode -w %s --fc %d --cn %d --ki 0", formatCode, facilityCode, cardNumber), Reset)
 	fmt.Println(Green, "", Reset)
+	os.Stdout.Sync() // Force flush output for WSL2 compatibility
 
 	if write {
 		writeCardData("iclass", 0, bitLength, facilityCode, cardNumber, "", verify, formatCode)
@@ -88,11 +92,14 @@ func handleProx(facilityCode, cardNumber, bitLength int, simulate, write, verify
 		simulateCardData("prox", 0, bitLength, facilityCode, cardNumber, "", "")
 	} else {
 		fmt.Println(Green, "\nHandling Prox card...", Reset)
+		flushOutput()
+		
 		if write {
 			fmt.Println(Green, "\nThe following will be written to a T5577 card:", Reset)
 		} else {
 			fmt.Println(Green, "\nWrite the following values to a T5577 card:", Reset)
 		}
+		flushOutput()
 
 		fmt.Println(Green, "", Reset)
 
@@ -119,8 +126,10 @@ func handleProx(facilityCode, cardNumber, bitLength int, simulate, write, verify
 			fmt.Println(Yellow, fmt.Sprintf("lf hid clone -w C1k48s --fc %d --cn %d", facilityCode, cardNumber), Reset)
 		default:
 			fmt.Println(Red, "Unsupported bit length for Prox card.", Reset)
+			flushOutput()
 			return
 		}
+		flushOutput()
 
 		if write {
 			writeCardData("prox", 0, bitLength, facilityCode, cardNumber, "", verify, "")

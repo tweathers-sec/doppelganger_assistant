@@ -19,6 +19,18 @@ prompt_reinstall() {
 sudo apt update
 sudo apt upgrade -y
 
+# Fix locale for GUI applications (critical for Fyne in WSL2)
+echo "Setting up locale..."
+sudo apt install -y locales
+sudo locale-gen en_US.UTF-8
+sudo update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
+
+# Add locale to shell profile if not already present
+if ! grep -q "export LANG=en_US.UTF-8" ~/.bashrc; then
+    echo "export LANG=en_US.UTF-8" >> ~/.bashrc
+    echo "export LC_ALL=en_US.UTF-8" >> ~/.bashrc
+fi
+
 # Check if doppelganger_assistant is installed
 if command_exists doppelganger_assistant; then
     if ! prompt_reinstall "Doppelganger Assistant"; then

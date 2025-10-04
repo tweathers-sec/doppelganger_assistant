@@ -2,8 +2,11 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"strings"
+
+	"golang.org/x/term"
 )
 
 func bitCount(intType uint64) int {
@@ -30,4 +33,15 @@ func checkProxmark3Version() bool {
 
 	fmt.Println(Red, "Proxmark3 Iceman fork not detected. Please use the Iceman fork.", Reset)
 	return false
+}
+
+// isInteractive checks if stdin is connected to a terminal
+// Returns true for CLI usage, false for GUI subprocess usage
+func isInteractive() bool {
+	return term.IsTerminal(int(os.Stdin.Fd()))
+}
+
+// flushOutput forces stdout to flush, critical for WSL2 subprocess output
+func flushOutput() {
+	os.Stdout.Sync()
 }

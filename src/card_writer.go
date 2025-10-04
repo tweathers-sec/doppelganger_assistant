@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os/exec"
+	"strings"
 	"time"
 )
 
@@ -15,6 +16,22 @@ func writeProxmark3Command(command string) (string, error) {
 	return string(output), nil
 }
 
+// waitForProxmark3 attempts to check if Proxmark3 is available
+func waitForProxmark3(maxRetries int) bool {
+	for i := 0; i < maxRetries; i++ {
+		cmd := exec.Command("pm3", "-c", "hw status")
+		output, err := cmd.CombinedOutput()
+		if err == nil && !strings.Contains(string(output), "cannot communicate") {
+			return true
+		}
+		if i < maxRetries-1 {
+			fmt.Printf("Waiting for Proxmark3 to be ready... (attempt %d/%d)\n", i+1, maxRetries)
+			time.Sleep(2 * time.Second)
+		}
+	}
+	return false
+}
+
 func writeCardData(cardType string, cardData uint64, bitLength int, facilityCode int, cardNumber int, hexData string, verify bool, formatCodeOrUID string) {
 	if cardType == "iclass" {
 		fmt.Println(Green, "\nConnect your Proxmark3 and place an iCLASS 2k card flat on the antenna. Press Enter to continue...", Reset)
@@ -23,7 +40,12 @@ func writeCardData(cardType string, cardData uint64, bitLength int, facilityCode
 	} else {
 		fmt.Println(Green, "\nConnect your Proxmark3 and a T5577 card flat on the antenna. The card write command will run five (5) times.\n\nIMPORTANT: Move the card slowly across the Proxmark3 after each write and flip the card over and continue.\nPress Enter to continue...", Reset)
 	}
-	fmt.Scanln()
+
+	// Only wait for user input if running in interactive terminal mode
+	// Skips the prompt when running as GUI subprocess
+	if isInteractive() {
+		fmt.Scanln()
+	}
 
 	switch cardType {
 	case "iclass":
@@ -45,6 +67,13 @@ func writeCardData(cardType string, cardData uint64, bitLength int, facilityCode
 		}
 	case "prox":
 		fmt.Println(Green, "\nWriting Prox card data...\n", Reset)
+
+		// Check if Proxmark3 is available before starting
+		if !waitForProxmark3(3) {
+			fmt.Println(Red, "Proxmark3 is not responding. Please check your USB connection.", Reset)
+			return
+		}
+
 		for i := 0; i < 5; i++ {
 			var output string
 			var err error
