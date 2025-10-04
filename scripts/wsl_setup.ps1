@@ -279,29 +279,83 @@ foreach ($distro in $allDistros) {
 
 # If no Ubuntu exists, install it by importing a rootfs directly
 if (-not $existingUbuntu) {
-    Log "No existing Ubuntu distribution found. Installing Ubuntu 24.04 (Noble) via direct rootfs import..."
+    # Prompt user to select distribution
+    Write-Host "`n========================================" -ForegroundColor Cyan
+    Write-Host "  Select Linux Distribution for WSL2" -ForegroundColor Cyan
+    Write-Host "========================================" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "1) Ubuntu 24.04 LTS (Noble) - Recommended" -ForegroundColor Green
+    Write-Host "   - Latest Ubuntu LTS with modern packages" -ForegroundColor Gray
+    Write-Host "   - Best compatibility with most tools" -ForegroundColor Gray
+    Write-Host ""
+    Write-Host "2) Debian 12 (Bookworm) - Stable Alternative" -ForegroundColor Cyan
+    Write-Host "   - Official Debian stable release" -ForegroundColor Gray
+    Write-Host "   - Different base, may help isolate issues" -ForegroundColor Gray
+    Write-Host ""
+    Write-Host "3) Kali Linux 2025.3 - Security Focused" -ForegroundColor Magenta
+    Write-Host "   - Built for penetration testing" -ForegroundColor Gray
+    Write-Host "   - Pre-installed security tools" -ForegroundColor Gray
+    Write-Host ""
+    
+    do {
+        $distroChoice = Read-Host "Enter your choice (1, 2, or 3)"
+    } while ($distroChoice -ne "1" -and $distroChoice -ne "2" -and $distroChoice -ne "3")
     
     # Create staging directory
     if (-Not (Test-Path -Path "$basePath\staging")) { mkdir "$basePath\staging" }
     
-    # Download Ubuntu rootfs directly
     # Detect actual processor architecture using environment variable (most reliable)
     $processorArch = $env:PROCESSOR_ARCHITECTURE
     Log "Detected processor architecture: $processorArch"
     
-    if ($processorArch -eq "ARM64") {
-        # ARM64 for Apple Silicon or Snapdragon processors
-        Log "Using ARM64 rootfs (Ubuntu 24.04 Noble)"
-        $rootfsUrl = "https://cloud-images.ubuntu.com/wsl/releases/noble/current/ubuntu-noble-wsl-arm64-24.04lts.rootfs.tar.gz"
-        $rootfsFile = "$basePath\staging\ubuntu.rootfs.tar.gz"
+    if ($distroChoice -eq "1") {
+        Log "Installing Ubuntu 24.04 (Noble) via direct rootfs import..."
+        if ($processorArch -eq "ARM64") {
+            # ARM64 for Apple Silicon or Snapdragon processors
+            Log "Using ARM64 rootfs (Ubuntu 24.04 Noble)"
+            $rootfsUrl = "https://cloud-images.ubuntu.com/wsl/releases/noble/current/ubuntu-noble-wsl-arm64-24.04lts.rootfs.tar.gz"
+            $rootfsFile = "$basePath\staging\ubuntu.rootfs.tar.gz"
+            $distroName = "Ubuntu 24.04 (Noble)"
+        } else {
+            # AMD64/x86_64 for Intel/AMD processors (most common)
+            Log "Using AMD64 rootfs (Ubuntu 24.04 Noble)"
+            $rootfsUrl = "https://cloud-images.ubuntu.com/wsl/releases/noble/current/ubuntu-noble-wsl-amd64-24.04lts.rootfs.tar.gz"
+            $rootfsFile = "$basePath\staging\ubuntu.rootfs.tar.gz"
+            $distroName = "Ubuntu 24.04 (Noble)"
+        }
+    } elseif ($distroChoice -eq "2") {
+        Log "Installing Debian 12 (Bookworm) via direct rootfs import..."
+        if ($processorArch -eq "ARM64") {
+            # ARM64 for Apple Silicon or Snapdragon processors
+            Log "Using ARM64 rootfs (Debian 12 Bookworm)"
+            $rootfsUrl = "https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-generic-arm64.tar.xz"
+            $rootfsFile = "$basePath\staging\debian.rootfs.tar.xz"
+            $distroName = "Debian 12 (Bookworm)"
+        } else {
+            # AMD64/x86_64 for Intel/AMD processors (most common)
+            Log "Using AMD64 rootfs (Debian 12 Bookworm)"
+            $rootfsUrl = "https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-generic-amd64.tar.xz"
+            $rootfsFile = "$basePath\staging\debian.rootfs.tar.xz"
+            $distroName = "Debian 12 (Bookworm)"
+        }
     } else {
-        # AMD64/x86_64 for Intel/AMD processors (most common)
-        Log "Using AMD64 rootfs (Ubuntu 24.04 Noble)"
-        $rootfsUrl = "https://cloud-images.ubuntu.com/wsl/releases/noble/current/ubuntu-noble-wsl-amd64-24.04lts.rootfs.tar.gz"
-        $rootfsFile = "$basePath\staging\ubuntu.rootfs.tar.gz"
+        Log "Installing Kali Linux 2025.3 via direct rootfs import..."
+        if ($processorArch -eq "ARM64") {
+            # ARM64 for Apple Silicon or Snapdragon processors
+            Log "Using ARM64 rootfs (Kali Linux 2025.3)"
+            $rootfsUrl = "https://kali.download/wsl-images/current/kali-linux-2025.3-wsl-rootfs-arm64.wsl"
+            $rootfsFile = "$basePath\staging\kali.rootfs.wsl"
+            $distroName = "Kali Linux 2025.3"
+        } else {
+            # AMD64/x86_64 for Intel/AMD processors (most common)
+            Log "Using AMD64 rootfs (Kali Linux 2025.3)"
+            $rootfsUrl = "https://kali.download/wsl-images/current/kali-linux-2025.3-wsl-rootfs-amd64.wsl"
+            $rootfsFile = "$basePath\staging\kali.rootfs.wsl"
+            $distroName = "Kali Linux 2025.3"
+        }
     }
     
-    Log "Downloading Ubuntu rootfs from $rootfsUrl..."
+    Log "Downloading $distroName rootfs from $rootfsUrl..."
     Log "This may take several minutes..."
     
     try {
@@ -313,10 +367,10 @@ if (-not $existingUbuntu) {
         }
         
         if (-Not (Test-Path $rootfsFile)) {
-            throw "Failed to download Ubuntu rootfs"
+            throw "Failed to download $distroName rootfs"
         }
         
-        Log "Download complete. Importing Ubuntu distribution..."
+        Log "Download complete. Importing $distroName distribution..."
         
         # Import the rootfs directly as our custom distribution name
         if (-Not (Test-Path -Path $wslInstallationPath)) { mkdir $wslInstallationPath }
@@ -329,7 +383,7 @@ if (-not $existingUbuntu) {
             throw "WSL2 import failed. Please ensure nested virtualization is enabled in your VM settings."
         }
         
-        Log "Ubuntu 24.04 (Noble) imported successfully as $wslName (WSL2)"
+        Log "$distroName imported successfully as $wslName (WSL2)"
         
         # Clean up downloaded rootfs
         Remove-Item $rootfsFile -Force
@@ -369,7 +423,7 @@ if ($existingUbuntu) {
     Remove-Item $tempTar -Force
 } elseif (-not $directImport) {
     # Only throw error if we didn't successfully do a direct import
-    Log "ERROR: Could not find or install Ubuntu distribution."
+    Log "ERROR: Could not find or install Linux distribution."
     $allDistrosDebug = wsl.exe -l -v
     Log "Available distributions (detailed):"
     Log "$allDistrosDebug"
@@ -381,10 +435,10 @@ if ($existingUbuntu) {
     
     Write-Host "`n*************************************************************" -ForegroundColor Red
     Write-Host "*                                                           *" -ForegroundColor Red
-    Write-Host "*        UBUNTU DISTRIBUTION INSTALLATION FAILED            *" -ForegroundColor Red
+    Write-Host "*        LINUX DISTRIBUTION INSTALLATION FAILED             *" -ForegroundColor Red
     Write-Host "*                                                           *" -ForegroundColor Red
     Write-Host "*************************************************************`n" -ForegroundColor Red
-    Write-Host "Ubuntu could not be installed via WSL." -ForegroundColor Yellow
+    Write-Host "Linux distribution could not be installed via WSL." -ForegroundColor Yellow
     Write-Host "`nPossible solutions:" -ForegroundColor Yellow
     Write-Host "1. Ensure WSL is properly installed: wsl --status" -ForegroundColor Yellow
     Write-Host "2. Try manually installing Ubuntu: wsl --install -d Ubuntu" -ForegroundColor Yellow
@@ -393,9 +447,9 @@ if ($existingUbuntu) {
     Write-Host "`nIf in a VM, ensure nested virtualization is enabled or WSL1 is available." -ForegroundColor Yellow
     Write-Host "`nPress any key to exit..."
     $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
-    throw "Ubuntu distribution not found after installation."
+    throw "Linux distribution not found after installation."
 } else {
-    Log "Ubuntu distribution directly imported as $wslName"
+    Log "Linux distribution directly imported as $wslName"
 }
 
 # Ensure WSL is initialized
