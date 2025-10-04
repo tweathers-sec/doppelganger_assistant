@@ -254,13 +254,72 @@ Log "Proceeding with WSL installation..."
 # Check if the target WSL distribution already exists
 $wslList = wsl.exe -l -q
 if ($wslList -contains $wslName) {
-    $response = Read-Host "$wslName already exists. Do you want to reinstall it? (y/n)"
-    if ($response -ne 'y') {
-        Log "Skipping reinstallation."
+    Write-Host "`n========================================" -ForegroundColor Cyan
+    Write-Host "  Existing Installation Detected" -ForegroundColor Cyan
+    Write-Host "========================================" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "$wslName already exists. What would you like to do?" -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "1) Update Application & Proxmark3 (keep WSL base)" -ForegroundColor Green
+    Write-Host "   - Downloads latest Doppelganger Assistant" -ForegroundColor Gray
+    Write-Host "   - Updates Proxmark3 repo and rebuilds" -ForegroundColor Gray
+    Write-Host "   - Quick update, preserves your settings" -ForegroundColor Gray
+    Write-Host ""
+    Write-Host "2) Full reinstall (removes and recreates WSL)" -ForegroundColor Red
+    Write-Host "   - Complete fresh installation" -ForegroundColor Gray
+    Write-Host "   - Will lose any customizations" -ForegroundColor Gray
+    Write-Host ""
+    Write-Host "3) Exit (do nothing)" -ForegroundColor Gray
+    Write-Host ""
+    
+    do {
+        $response = Read-Host "Enter your choice (1, 2, or 3)"
+    } while ($response -ne "1" -and $response -ne "2" -and $response -ne "3")
+    
+    if ($response -eq "1") {
+        # Update only - skip to app installation
+        Log "Updating Doppelganger Assistant and Proxmark3 in existing WSL container..."
+        
+        # Download latest installation script
+        Log "Downloading latest installation script..."
+        $installScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/scripts/wsl_doppelganger_install.sh"
+        $installScriptPath = "$basePath\wsl_doppelganger_install.sh"
+        if (-Not (Test-Path -Path $basePath)) { mkdir $basePath }
+        Invoke-WebRequest -Uri $installScriptUrl -OutFile $installScriptPath
+        
+        # Get username from WSL
+        $username = wsl -d $wslName bash -c "whoami"
+        $username = $username.Trim()
+        Log "Detected WSL user: $username"
+        
+        # Run the installation script in update mode
+        $wslInstallScriptPath = $installScriptPath -replace "\\", "/"
+        $wslInstallScriptPath = $wslInstallScriptPath -replace "C:", "/mnt/c"
+        
+        Log "Running installation script to update Doppelganger Assistant and Proxmark3..."
+        Log "This will:"
+        Log "  - Download latest Doppelganger Assistant binary"
+        Log "  - Pull latest Proxmark3 repository changes"
+        Log "  - Rebuild Proxmark3 from source"
+        Log ""
+        wsl -d $wslName -u $username bash -ic "bash $wslInstallScriptPath --update"
+        
+        Log "Update complete!"
+        Write-Host "`n========================================" -ForegroundColor Green
+        Write-Host "  Update Complete!" -ForegroundColor Green
+        Write-Host "========================================" -ForegroundColor Green
+        Write-Host ""
+        Write-Host "Launch Doppelganger Assistant with:" -ForegroundColor Cyan
+        Write-Host "  wsl -d $wslName" -ForegroundColor Yellow
+        Write-Host "  doppelganger_assistant" -ForegroundColor Yellow
+        Write-Host ""
         exit
-    } else {
-        Log "Unregistering existing $wslName..."
+    } elseif ($response -eq "2") {
+        Log "Unregistering existing $wslName for full reinstall..."
         wsl.exe --unregister $wslName
+    } else {
+        Log "Exiting without changes."
+        exit
     }
 }
 
@@ -284,14 +343,14 @@ if (-not $existingDistro) {
     Write-Host "  Select Linux Distribution for WSL2" -ForegroundColor Cyan
     Write-Host "========================================" -ForegroundColor Cyan
     Write-Host ""
-    Write-Host "1) Ubuntu 24.04 LTS (Noble) - Recommended" -ForegroundColor Green
-    Write-Host "   - Latest Ubuntu LTS with modern packages" -ForegroundColor Gray
-    Write-Host "   - Best compatibility with most tools" -ForegroundColor Gray
-    Write-Host ""
-    Write-Host "2) Kali Linux 2025.3 - Security Focused" -ForegroundColor Magenta
+    Write-Host "1) Kali Linux 2025.3 - Recommended" -ForegroundColor Magenta
     Write-Host "   - Built for penetration testing (Debian-based)" -ForegroundColor Gray
     Write-Host "   - Pre-installed security tools" -ForegroundColor Gray
-    Write-Host "   - Official WSL-optimized image" -ForegroundColor Gray
+    Write-Host "   - Perfect for Doppelganger Assistant" -ForegroundColor Gray
+    Write-Host ""
+    Write-Host "2) Ubuntu 24.04 LTS (Noble) - Alternative" -ForegroundColor Green
+    Write-Host "   - Latest Ubuntu LTS with modern packages" -ForegroundColor Gray
+    Write-Host "   - General purpose Linux distribution" -ForegroundColor Gray
     Write-Host ""
     
     do {
@@ -306,21 +365,6 @@ if (-not $existingDistro) {
     Log "Detected processor architecture: $processorArch"
     
     if ($distroChoice -eq "1") {
-        Log "Installing Ubuntu 24.04 (Noble) via direct rootfs import..."
-        if ($processorArch -eq "ARM64") {
-            # ARM64 for Apple Silicon or Snapdragon processors
-            Log "Using ARM64 rootfs (Ubuntu 24.04 Noble)"
-            $rootfsUrl = "https://cloud-images.ubuntu.com/wsl/releases/noble/current/ubuntu-noble-wsl-arm64-24.04lts.rootfs.tar.gz"
-            $rootfsFile = "$basePath\staging\ubuntu.rootfs.tar.gz"
-            $distroName = "Ubuntu 24.04 (Noble)"
-        } else {
-            # AMD64/x86_64 for Intel/AMD processors (most common)
-            Log "Using AMD64 rootfs (Ubuntu 24.04 Noble)"
-            $rootfsUrl = "https://cloud-images.ubuntu.com/wsl/releases/noble/current/ubuntu-noble-wsl-amd64-24.04lts.rootfs.tar.gz"
-            $rootfsFile = "$basePath\staging\ubuntu.rootfs.tar.gz"
-            $distroName = "Ubuntu 24.04 (Noble)"
-        }
-    } else {
         Log "Installing Kali Linux 2025.3 via direct rootfs import..."
         if ($processorArch -eq "ARM64") {
             # ARM64 for Apple Silicon or Snapdragon processors
@@ -334,6 +378,21 @@ if (-not $existingDistro) {
             $rootfsUrl = "https://kali.download/wsl-images/current/kali-linux-2025.3-wsl-rootfs-amd64.wsl"
             $rootfsFile = "$basePath\staging\kali.rootfs.wsl"
             $distroName = "Kali Linux 2025.3"
+        }
+    } else {
+        Log "Installing Ubuntu 24.04 (Noble) via direct rootfs import..."
+        if ($processorArch -eq "ARM64") {
+            # ARM64 for Apple Silicon or Snapdragon processors
+            Log "Using ARM64 rootfs (Ubuntu 24.04 Noble)"
+            $rootfsUrl = "https://cloud-images.ubuntu.com/wsl/releases/noble/current/ubuntu-noble-wsl-arm64-24.04lts.rootfs.tar.gz"
+            $rootfsFile = "$basePath\staging\ubuntu.rootfs.tar.gz"
+            $distroName = "Ubuntu 24.04 (Noble)"
+        } else {
+            # AMD64/x86_64 for Intel/AMD processors (most common)
+            Log "Using AMD64 rootfs (Ubuntu 24.04 Noble)"
+            $rootfsUrl = "https://cloud-images.ubuntu.com/wsl/releases/noble/current/ubuntu-noble-wsl-amd64-24.04lts.rootfs.tar.gz"
+            $rootfsFile = "$basePath\staging\ubuntu.rootfs.tar.gz"
+            $distroName = "Ubuntu 24.04 (Noble)"
         }
     }
     

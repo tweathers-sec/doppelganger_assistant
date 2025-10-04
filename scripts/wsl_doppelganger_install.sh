@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Check if running in update mode (non-interactive)
+UPDATE_MODE=${1:-""}
+
 # Function to check if a command exists
 command_exists() {
     command -v "$1" &> /dev/null
@@ -7,6 +10,12 @@ command_exists() {
 
 # Function to prompt for reinstallation
 prompt_reinstall() {
+    # If in update mode, always update
+    if [ "$UPDATE_MODE" = "--update" ]; then
+        echo "Update mode: Updating $1..."
+        return 0
+    fi
+    
     read -p "$1 is already installed. Do you want to reinstall it? (y/n): " choice
     case "$choice" in
         y|Y ) return 0;;
@@ -16,6 +25,7 @@ prompt_reinstall() {
 }
 
 # Update and upgrade system packages
+echo "Updating system packages..."
 sudo apt update
 sudo apt upgrade -y
 
@@ -71,6 +81,7 @@ fi
 
 # Install dependencies for Proxmark3
 if [ -z "$skip_proxmark_install" ]; then
+    echo "Installing/Updating Proxmark3..."
     sudo apt install --no-install-recommends -y git ca-certificates build-essential pkg-config \
     libreadline-dev gcc-arm-none-eabi libnewlib-dev qtbase5-dev \
     libbz2-dev liblz4-dev libbluetooth-dev libpython3-dev libssl-dev libgd-dev
@@ -79,9 +90,16 @@ if [ -z "$skip_proxmark_install" ]; then
     mkdir -p ~/src
     cd ~/src
     
-    # Clone the Proxmark3 repository
+    # Clone or update the Proxmark3 repository
     if [ ! -d "proxmark3" ]; then
+        echo "Cloning Proxmark3 repository..."
         git clone https://github.com/RfidResearchGroup/proxmark3.git
+    else
+        echo "Updating existing Proxmark3 repository..."
+        cd proxmark3
+        git fetch origin
+        git pull origin master
+        cd ~/src
     fi
 
     cd proxmark3
@@ -91,6 +109,22 @@ if [ -z "$skip_proxmark_install" ]; then
     sed -i 's/#PLATFORM_EXTRAS=BTADDON/PLATFORM_EXTRAS=BTADDON/' Makefile.platform
 
     # Compile and install Proxmark3 software
+    echo "Building Proxmark3... (this may take several minutes)"
     make clean && make -j$(nproc)
+    echo "Installing Proxmark3..."
     sudo make install PREFIX=/usr/local
+    
+    echo "Proxmark3 installation/update complete!"
 fi
+
+echo ""
+echo "========================================="
+echo "  Installation Complete!"
+echo "========================================="
+echo ""
+echo "To launch Doppelganger Assistant:"
+echo "  doppelganger_assistant"
+echo ""
+echo "To use Proxmark3:"
+echo "  pm3"
+echo ""
