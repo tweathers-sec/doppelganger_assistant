@@ -10,6 +10,7 @@ import (
 	"runtime"
 	"strings"
 	"sync"
+	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -259,7 +260,9 @@ func runGUI() {
 	os.Setenv("FYNE_DISABLE_CALL_CHECKING", "1")
 
 	// WSL2 locale fix: Set proper locale to prevent Fyne parsing errors
-	if isWSL2() {
+	wsl2Detected := isWSL2()
+	if wsl2Detected {
+		fmt.Println("[DEBUG] WSL2 detected!")
 		// Check if locale is set, if not set to en_US.UTF-8
 		if os.Getenv("LANG") == "" || os.Getenv("LANG") == "C" {
 			os.Setenv("LANG", "en_US.UTF-8")
@@ -269,6 +272,8 @@ func runGUI() {
 		}
 		// Fallback: disable locale detection entirely if issues persist
 		os.Setenv("FYNE_THEME", "dark") // Force theme to avoid locale-based defaults
+	} else {
+		fmt.Println("[DEBUG] Not WSL2 - using integrated terminal")
 	}
 
 	a := app.New()
@@ -374,6 +379,13 @@ func runGUI() {
 
 	// Execute command function
 	executeCommand := func() {
+		// Debug logging to file for WSL2 troubleshooting
+		logFile, _ := os.OpenFile("/tmp/doppelganger_debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if logFile != nil {
+			fmt.Fprintf(logFile, "\n[%s] Execute button clicked\n", time.Now().Format("15:04:05"))
+			defer logFile.Close()
+		}
+
 		cardTypeMap := map[string]string{
 			"PROX":     "prox",
 			"iCLASS":   "iclass",
@@ -392,6 +404,11 @@ func runGUI() {
 		hexDataValue := hexData.Text
 		uidValue := uid.Text
 		actionValue := action.Selected
+
+		if logFile != nil {
+			fmt.Fprintf(logFile, "Card Type: %s, Action: %s, FC: %s, CN: %s\n",
+				cardTypeValue, actionValue, facilityCodeValue, cardNumberValue)
+		}
 
 		cardTypeCmd := cardTypeMap[cardTypeValue]
 
@@ -430,31 +447,64 @@ func runGUI() {
 
 		// WSL2 workaround: Use xterm for external terminal execution
 		if isWSL2() {
+			if logFile != nil {
+				fmt.Fprintf(logFile, "WSL2 detected, launching xterm\n")
+			}
+
 			go func() {
+				if logFile != nil {
+					fmt.Fprintf(logFile, "Inside xterm goroutine\n")
+				}
+
 				// Get the path of the currently running executable
 				execPath, err := os.Executable()
 				if err != nil {
-					currentOutput.Append(fmt.Sprintf("Error: %v\n", err))
+					errMsg := fmt.Sprintf("Error: %v\n", err)
+					currentOutput.Append(errMsg)
+					if logFile != nil {
+						fmt.Fprintf(logFile, errMsg)
+					}
 					return
 				}
 
 				// Build the full command string for xterm
 				cmdStr := fmt.Sprintf("%s %s; read -p 'Press Enter to close...'", execPath, strings.Join(args, " "))
 
-				currentOutput.Append(fmt.Sprintf("\n=== Launching External Terminal (WSL2) ===\n"))
-				currentOutput.Append(fmt.Sprintf("Command: %s\n\n", cmdStr))
+				msg := fmt.Sprintf("\n=== Launching External Terminal (WSL2) ===\n")
+				currentOutput.Append(msg)
+				if logFile != nil {
+					fmt.Fprintf(logFile, msg)
+				}
+
+				msg = fmt.Sprintf("Command: %s\n\n", cmdStr)
+				currentOutput.Append(msg)
+				if logFile != nil {
+					fmt.Fprintf(logFile, msg)
+				}
 
 				// Launch xterm with the command
 				cmd := exec.Command("xterm", "-hold", "-e", "bash", "-c", cmdStr)
 				cmd.Env = os.Environ()
 
+				if logFile != nil {
+					fmt.Fprintf(logFile, "About to start xterm command\n")
+				}
+
 				if err := cmd.Start(); err != nil {
-					currentOutput.Append(fmt.Sprintf("Error launching xterm: %v\n", err))
+					errMsg := fmt.Sprintf("Error launching xterm: %v\n", err)
+					currentOutput.Append(errMsg)
 					currentOutput.Append("Make sure xterm is installed: sudo apt install xterm\n")
+					if logFile != nil {
+						fmt.Fprintf(logFile, errMsg)
+					}
 					return
 				}
 
-				currentOutput.Append("External terminal launched. Check the xterm window.\n")
+				msg = "External terminal launched. Check the xterm window.\n"
+				currentOutput.Append(msg)
+				if logFile != nil {
+					fmt.Fprintf(logFile, msg)
+				}
 			}()
 			return
 		}
