@@ -106,7 +106,7 @@ if (Test-Path -Path $shortcutPath) {
 # Uninstall usbipd
 if (CommandExists "winget") {
     Log "Uninstalling usbipd..."
-    $uninstallOutput = Start-Process winget -ArgumentList "uninstall --exact dorssel.usbipd-win" -Wait -PassThru
+    $uninstallOutput = Start-Process winget -ArgumentList "uninstall --exact usbipd" -Wait -PassThru
     if ($uninstallOutput.ExitCode -ne 0) {
         Log "Error uninstalling usbipd. Exit code: $($uninstallOutput.ExitCode)"
     } else {
