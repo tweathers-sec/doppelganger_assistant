@@ -264,21 +264,21 @@ if ($wslList -contains $wslName) {
     }
 }
 
-# Check if a base Ubuntu distribution already exists
-Log "Checking for existing Ubuntu distributions..."
-$existingUbuntu = $null
+# Check if target WSL distribution already exists
+Log "Checking for existing $wslName distribution..."
 $allDistros = wsl.exe -l -q
+$existingDistro = $false
 foreach ($distro in $allDistros) {
     $distroName = $distro.Trim()
-    if ($distroName -match "^Ubuntu" -and $distroName -ne $wslName) {
-        $existingUbuntu = $distroName
-        Log "Found existing Ubuntu distribution: $existingUbuntu"
+    if ($distroName -eq $wslName) {
+        $existingDistro = $true
+        Log "Found existing $wslName distribution"
         break
     }
 }
 
-# If no Ubuntu exists, install it by importing a rootfs directly
-if (-not $existingUbuntu) {
+# If target distribution doesn't exist, prompt user and install
+if (-not $existingDistro) {
     # Prompt user to select distribution
     Write-Host "`n========================================" -ForegroundColor Cyan
     Write-Host "  Select Linux Distribution for WSL2" -ForegroundColor Cyan
@@ -391,37 +391,13 @@ if (-not $existingUbuntu) {
         # Mark that we directly imported (skip the export/import step later)
         $directImport = $true
     } catch {
-        Log "ERROR: Failed to download or import Ubuntu rootfs: $_"
-        throw "Ubuntu installation failed"
+        Log "ERROR: Failed to download or import $distroName rootfs: $_"
+        throw "$distroName installation failed"
     }
 }
 
-# Handle existing Ubuntu distribution or verify direct import succeeded
-if ($existingUbuntu) {
-    Log "Using existing Ubuntu distribution: $existingUbuntu"
-    # Export and re-import with custom name
-    if (-Not (Test-Path -Path "$basePath\staging")) { mkdir "$basePath\staging" }
-    $tempTar = "$basePath\staging\ubuntu-temp.tar"
-    
-    Log "Exporting $existingUbuntu..."
-    wsl.exe --export $existingUbuntu $tempTar
-    
-    Log "Importing as $wslName (WSL2)..."
-    if (-Not (Test-Path -Path $wslInstallationPath)) { mkdir $wslInstallationPath }
-    
-    # Import as WSL2 (required for USB passthrough)
-    wsl.exe --import $wslName $wslInstallationPath $tempTar --version 2
-    
-    if ($LASTEXITCODE -ne 0) {
-        throw "WSL2 import failed. Please ensure nested virtualization is enabled in your VM settings."
-    }
-    
-    Log "Successfully imported as WSL2"
-    
-    Log "Cleaning up..."
-    wsl.exe --unregister $existingUbuntu
-    Remove-Item $tempTar -Force
-} elseif (-not $directImport) {
+# Verify direct import succeeded
+if (-not $directImport) {
     # Only throw error if we didn't successfully do a direct import
     Log "ERROR: Could not find or install Linux distribution."
     $allDistrosDebug = wsl.exe -l -v
@@ -441,9 +417,9 @@ if ($existingUbuntu) {
     Write-Host "Linux distribution could not be installed via WSL." -ForegroundColor Yellow
     Write-Host "`nPossible solutions:" -ForegroundColor Yellow
     Write-Host "1. Ensure WSL is properly installed: wsl --status" -ForegroundColor Yellow
-    Write-Host "2. Try manually installing Ubuntu: wsl --install -d Ubuntu" -ForegroundColor Yellow
-    Write-Host "3. Check Windows Updates for WSL updates" -ForegroundColor Yellow
-    Write-Host "4. Reboot and try again" -ForegroundColor Yellow
+    Write-Host "2. Check Windows Updates for WSL updates" -ForegroundColor Yellow
+    Write-Host "3. Reboot and try again" -ForegroundColor Yellow
+    Write-Host "4. Try running the installer again and select a different distribution" -ForegroundColor Yellow
     Write-Host "`nIf in a VM, ensure nested virtualization is enabled or WSL1 is available." -ForegroundColor Yellow
     Write-Host "`nPress any key to exit..."
     $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
@@ -460,7 +436,7 @@ wsl -d $wslName -e echo "WSL initialized"
 Start-Sleep -Seconds 10
 
 # Create a user setup script with Unix line endings
-$ubuntuUserScriptPath = [System.IO.Path]::Combine($env:TEMP, "ubuntu_user_setup.sh")
+$userSetupScriptPath = [System.IO.Path]::Combine($env:TEMP, "wsl_user_setup.sh")
 $createUserScript = @"
 #!/bin/bash
 username=$username
@@ -481,16 +457,16 @@ echo '[user]' | tee -a /etc/wsl.conf
 echo 'default=$username' | tee -a /etc/wsl.conf
 "@
 $createUserScript = $createUserScript -replace "`r`n", "`n"
-Set-Content -Path $ubuntuUserScriptPath -Value $createUserScript -NoNewline -Encoding Ascii
+Set-Content -Path $userSetupScriptPath -Value $createUserScript -NoNewline -Encoding Ascii
 
 # Correct path conversion for WSL
-$wslUbuntuUserScriptPath = $ubuntuUserScriptPath -replace "\\", "/"
-$wslUbuntuUserScriptPath = $wslUbuntuUserScriptPath -replace "C:", "/mnt/c"
+$wslUserSetupScriptPath = $userSetupScriptPath -replace "\\", "/"
+$wslUserSetupScriptPath = $wslUserSetupScriptPath -replace "C:", "/mnt/c"
 
 # Update the system and create the user
 Log "Updating system and creating user..."
-wsl -d $wslName -u root bash -ic "apt update && apt upgrade -y && bash $wslUbuntuUserScriptPath"
-Remove-Item $ubuntuUserScriptPath
+wsl -d $wslName -u root bash -ic "apt update && apt upgrade -y && bash $wslUserSetupScriptPath"
+Remove-Item $userSetupScriptPath
 
 # Ensure WSL Distro is restarted when first used with user account
 wsl --terminate $wslName
@@ -542,4 +518,4 @@ chmod 0440 /etc/sudoers.d/\$username
     wsl -d $wslName -u $username bash -ic "bash $wslInstallScriptPath"
 }
 
-Log "Doppelganger_assistant WSL and Ubuntu setup is complete."
+Log "Doppelganger_assistant WSL setup is complete."
