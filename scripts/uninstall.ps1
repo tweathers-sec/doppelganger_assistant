@@ -1,10 +1,26 @@
 # Doppelganger Assistant Uninstaller
 # 
 # To run this script:
-#   powershell -ExecutionPolicy Bypass -File C:\doppelganger_assistant\uninstall.ps1
+#   powershell -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/scripts/uninstall.ps1 | iex"
 #
-# Or download and run directly from GitHub:
-#   powershell -ExecutionPolicy Bypass -Command "Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/scripts/uninstall.ps1' -OutFile 'C:\doppelganger_uninstall.ps1'; & 'C:\doppelganger_uninstall.ps1'"
+# Or if already installed:
+#   powershell -ExecutionPolicy Bypass -File C:\doppelganger_assistant\uninstall.ps1
+
+# Check if running from install directory - if so, copy to temp and re-execute
+$scriptPath = $MyInvocation.MyCommand.Path
+$basePath = "C:\doppelganger_assistant"
+
+if ($scriptPath -and $scriptPath.StartsWith($basePath)) {
+    Write-Host "Relocating script to temp directory to enable cleanup..." -ForegroundColor Yellow
+    $tempScript = "$env:TEMP\doppelganger_uninstall_temp.ps1"
+    Copy-Item -Path $scriptPath -Destination $tempScript -Force
+    
+    # Re-execute from temp location
+    Start-Process powershell -ArgumentList "-ExecutionPolicy Bypass -File `"$tempScript`"" -Wait -NoNewWindow
+    
+    # Exit this instance
+    exit
+}
 
 # Log file path
 $logFile = "C:\doppelganger_uninstall.log"
@@ -101,3 +117,10 @@ if (CommandExists "winget") {
 }
 
 Log "Uninstallation complete."
+
+# Clean up temp script if this was relocated
+if ($scriptPath -and $scriptPath.Contains("\Temp\")) {
+    Log "Cleaning up temporary script..."
+    Start-Sleep -Seconds 2
+    Remove-Item -Path $scriptPath -Force -ErrorAction SilentlyContinue
+}
