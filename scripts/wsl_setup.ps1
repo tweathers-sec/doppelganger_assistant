@@ -279,7 +279,7 @@ foreach ($distro in $allDistros) {
 
 # If no Ubuntu exists, install it by importing a rootfs directly
 if (-not $existingUbuntu) {
-    Log "No existing Ubuntu distribution found. Installing via direct rootfs import..."
+    Log "No existing Ubuntu distribution found. Installing Ubuntu 24.04 (Noble) via direct rootfs import..."
     
     # Create staging directory
     if (-Not (Test-Path -Path "$basePath\staging")) { mkdir "$basePath\staging" }
@@ -291,13 +291,13 @@ if (-not $existingUbuntu) {
     
     if ($processorArch -eq "ARM64") {
         # ARM64 for Apple Silicon or Snapdragon processors
-        Log "Using ARM64 rootfs"
-        $rootfsUrl = "https://cloud-images.ubuntu.com/wsl/jammy/current/ubuntu-jammy-wsl-arm64-ubuntu22.04lts.rootfs.tar.gz"
+        Log "Using ARM64 rootfs (Ubuntu 24.04 Noble)"
+        $rootfsUrl = "https://cloud-images.ubuntu.com/wsl/releases/noble/current/ubuntu-noble-wsl-arm64-24.04lts.rootfs.tar.gz"
         $rootfsFile = "$basePath\staging\ubuntu.rootfs.tar.gz"
     } else {
         # AMD64/x86_64 for Intel/AMD processors (most common)
-        Log "Using AMD64 rootfs"
-        $rootfsUrl = "https://cloud-images.ubuntu.com/wsl/jammy/current/ubuntu-jammy-wsl-amd64-ubuntu22.04lts.rootfs.tar.gz"
+        Log "Using AMD64 rootfs (Ubuntu 24.04 Noble)"
+        $rootfsUrl = "https://cloud-images.ubuntu.com/wsl/releases/noble/current/ubuntu-noble-wsl-amd64-24.04lts.rootfs.tar.gz"
         $rootfsFile = "$basePath\staging\ubuntu.rootfs.tar.gz"
     }
     
@@ -329,7 +329,7 @@ if (-not $existingUbuntu) {
             throw "WSL2 import failed. Please ensure nested virtualization is enabled in your VM settings."
         }
         
-        Log "Ubuntu imported successfully as $wslName (WSL2)"
+        Log "Ubuntu 24.04 (Noble) imported successfully as $wslName (WSL2)"
         
         # Clean up downloaded rootfs
         Remove-Item $rootfsFile -Force
