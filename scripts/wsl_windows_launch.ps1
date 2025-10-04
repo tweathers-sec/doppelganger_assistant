@@ -122,7 +122,7 @@ function LaunchDoppelgangerAssistant {
     }
     
     Log "Launching Doppelganger Assistant in $distroName..."
-    $wslCommand = "wsl -d $distroName -e bash -c 'doppelganger_assistant'"
+    $wslCommand = "wsl -d $distroName --exec doppelganger_assistant"
     
     # Use Start-Process with -WindowStyle Hidden to launch the command without showing a window
     Start-Process powershell -ArgumentList "-WindowStyle", "Hidden", "-Command", $wslCommand -WindowStyle Hidden
