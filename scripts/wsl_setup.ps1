@@ -217,7 +217,7 @@ if (Is-WingetInstalled) {
 if (-not (CommandExists "usbipd")) {
     Log "Installing usbipd..."
     try {
-        $installOutput = Start-Process winget -ArgumentList "install --exact dorssel.usbipd-win" -Wait -PassThru -ErrorAction Stop
+        $installOutput = Start-Process winget -ArgumentList "install --exact --silent --accept-source-agreements --accept-package-agreements dorssel.usbipd-win" -Wait -PassThru -ErrorAction Stop
         if ($installOutput.ExitCode -ne 0) {
             throw "Winget installation failed with exit code: $($installOutput.ExitCode)"
         }
