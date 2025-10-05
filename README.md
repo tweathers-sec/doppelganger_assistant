@@ -1,16 +1,18 @@
 # Doppelgänger Assistant
 
-A professional GUI application for calculating card data and automating Proxmark3 operations for every card type that Doppelgänger Core, Pro, Stealth, and MFAS support. This tool streamlines the card-writing process for physical penetration testing by providing an intuitive interface with an embedded terminal, eliminating the need to memorize complex Proxmark3 syntax or dig through notes.
+A professional GUI application for calculating card data and automating Proxmark3 operations for every card type that Doppelgänger Core, Pro, Stealth, and MFAS support. This tool streamlines the card-writing process for physical penetration testing by providing an intuitive interface with dual output displays, visual separators, and one-click clipboard copying, eliminating the need to memorize complex Proxmark3 syntax or dig through notes.
 
 ![Doppelgänger Assistant GUI](https://github.com/tweathers-sec/doppelganger_assistant/blob/main/img/assistant_gui.png)
 
 ## Features
 
-* **Modern GUI Interface**: Intuitive two-column layout with embedded terminal for real-time command execution
-* **Integrated Terminal**: Full-featured terminal emulator with native ANSI color support and scrollback
-* **Card Calculator**: Automatically generates Proxmark3 commands for writing and simulating cards
-* **Direct Execution**: Execute, write, verify, and simulate card operations directly from the GUI
-* **Professional Design**: Clean, modern interface with custom-styled buttons and controls
+* **Modern GUI Interface**: Intuitive two-column layout with dedicated status and command output displays
+* **Real-Time Output**: Dual output panels with color-coded status messages and detailed command results
+* **Visual Separators**: Clear visual spacers between multiple write attempts for easy result tracking
+* **Copy to Clipboard**: One-click button to copy all command output for documentation and reporting
+* **Card Operations**: Automatically generates and executes Proxmark3 commands for writing, verifying, and simulating cards
+* **Direct Execution**: Execute write, verify, and simulate operations directly from the GUI with your Proxmark3
+* **Professional Design**: Clean, modern interface with custom-styled buttons, rounded borders, and cohesive color scheme
 * **Cross-Platform**: Available for macOS, Linux, and Windows (via WSL)
 
 ## Doppelgänger Devices
@@ -364,17 +366,21 @@ doppelganger_assistant -g
 
 ### GUI Workflow
 
-1. **Select Card Type**: Choose from iCLASS, Prox, AWID, Indala, Avigilon, EM, PIV, or MIFARE
-2. **Enter Card Data**: Input facility code, card number, bit length, or UID as required
-3. **Choose Operation**:
-   - **Generate**: Creates Proxmark3 commands for manual execution
-   - **Write**: Generates and executes write commands on your Proxmark3
-   - **Verify**: Write and verify the card data
-   - **Simulate**: Simulate the card using your Proxmark3
-4. **Execute**: Click the Execute button to run the operation
-5. **Monitor Output**: View real-time command output in the integrated terminal
+1. **Select Card Type**: Choose from PROX, iCLASS, AWID, Indala, Avigilon, EM4100, PIV, or MIFARE
+2. **Choose Bit Length**: Select the appropriate bit length for your card type (automatically filtered based on card type)
+3. **Enter Card Data**: Input facility code, card number, hex data, or UID as required for the selected card type
+4. **Choose Action**:
+   - **Generate Only**: Displays Proxmark3 commands for manual execution without writing
+   - **Write & Verify**: Writes card data to a blank card and verifies the result
+   - **Simulate Card**: Simulates the card using your Proxmark3 device
+5. **Execute**: Click the EXECUTE button to run the operation
+6. **Monitor Output**: 
+   - **Status Output** (top panel): Color-coded status messages with operation progress
+   - **Command Output** (bottom panel): Detailed Proxmark3 command results with visual separators
+7. **Copy Results**: Click COPY OUTPUT to copy all command results to your clipboard
+8. **Reset**: Click RESET to clear all fields and start over
 
-The embedded terminal provides full interactive support, allowing you to see exactly what's happening with your Proxmark3 in real-time, with native coloring and scrollback support.
+The dual output panels provide clear separation between status updates and command results, with visual spacers (e.g., `|----------- WRITE #1 -----------|`) making it easy to distinguish between multiple write attempts or verification steps.
 
 ### Video Demo
 
@@ -386,207 +392,45 @@ Below is a quick video demo of the usage:
 
 #### Generating commands for writing iCLASS cards
 
-This command will generate the commands needed to write captured iCLASS (Legacy/SE/Seos) card data to an iCLASS 2k card:
+This command will generate the command needed to encode iCLASS (Legacy/SE/Seos) card data to an iCLASS 2k card:
 
 ```sh
- doppelganger_assistant -t iclass -bl 26 -fc 123 -cn 4567    
+doppelganger_assistant -t iclass -bl 26 -fc 123 -cn 4567
 
- Write the following values to an iCLASS 2k card: 
-  
- hf iclass wrbl --blk 6 -d 030303030003E014 --ki 0 
- hf iclass wrbl --blk 7 -d 0000000006f623ae --ki 0 
- hf iclass wrbl --blk 8 -d 0000000000000000 --ki 0 
- hf iclass wrbl --blk 9 -d 0000000000000000 --ki 0 
+[>>] Writing to iCLASS 2k card...
+[>>] Command: hf iclass encode -w H10301 --fc 123 --cn 4567 --ki 0
 ```
 
-#### Generating commands, writing card data, and verification of data
+#### Writing iCLASS card data with verification
 
-By adding the —w (write) and —v (verify) flags, the application will use your PM3 installation to write and verify the card data.
+By adding the `-w` (write) and `-v` (verify) flags, the application will use your Proxmark3 to write and verify the card data:
 
 ```sh
-doppelganger_assistant -t iclass -bl 26 -fc 123 -cn 4567 -w -v   
+doppelganger_assistant -t iclass -bl 26 -fc 123 -cn 4567 -w -v
 
- The following will be written to an iCLASS 2k card: 
-  
- hf iclass wrbl --blk 6 -d 030303030003E014 --ki 0 
- hf iclass wrbl --blk 7 -d 0000000006f623ae --ki 0 
- hf iclass wrbl --blk 8 -d 0000000000000000 --ki 0 
- hf iclass wrbl --blk 9 -d 0000000000000000 --ki 0 
-  
- 
-Connect your Proxmark3 and place an iCLASS 2k card flat on the antenna. Press Enter to continue... 
+|----------- WRITE -----------|
+[..] Encoding iCLASS card data...
+[>>] Command: hf iclass encode -w H10301 --fc 123 --cn 4567 --ki 0
 
- Writing block #6... 
-[=] Session log /Users/tweathers/.proxmark3/logs/log_20240614013815.txt
-[+] loaded `/Users/tweathers/.proxmark3/preferences.json`
-[+] execute command from commandline: hf iclass wrbl --blk 6 -d 030303030003E014 --ki 0
-
+[=] Session log /Users/user/.proxmark3/logs/log_20250105120000.txt
+[+] loaded `/Users/user/.proxmark3/preferences.json`
+[+] execute command from commandline: hf iclass encode -w H10301 --fc 123 --cn 4567 --ki 0
 [+] Using UART port /dev/tty.usbmodem101
 [+] Communicating with PM3 over USB-CDC
-[usb|script] pm3 --> hf iclass wrbl --blk 6 -d 030303030003E014 --ki 0
-[+] Using key[0] AE A6 84 A6 DA B2 32 78 
-[+] Wrote block 6 / 0x06 ( ok )
+[+] Encoding successful
 
+[OK] Write complete - starting verification
 
- Writing block #7... 
-[=] Session log /Users/tweathers/.proxmark3/logs/log_20240614013818.txt
-[+] loaded `/Users/tweathers/.proxmark3/preferences.json`
-[+] execute command from commandline: hf iclass wrbl --blk 7 -d 0000000006f623ae --ki 0
+|----------- VERIFICATION -----------|
+[..] Verifying card data - place card flat on reader...
 
-[+] Using UART port /dev/tty.usbmodem101
-[+] Communicating with PM3 over USB-CDC
-[usb|script] pm3 --> hf iclass wrbl --blk 7 -d 0000000006f623ae --ki 0
-[+] Using key[0] AE A6 84 A6 DA B2 32 78 
-[+] Wrote block 7 / 0x07 ( ok )
+[=] Session log /Users/user/.proxmark3/logs/log_20250105120005.txt
+[+] execute command from commandline: hf iclass rdbl --blk 7 --ki 0
+[+] Using key[0] AE A6 84 A6 DA B2 32 78
+[+] block   7/0x07 : 00 00 00 00 06 F6 23 AE
 
-
- Writing block #8... 
-[=] Session log /Users/tweathers/.proxmark3/logs/log_20240614013820.txt
-[+] loaded `/Users/tweathers/.proxmark3/preferences.json`
-[+] execute command from commandline: hf iclass wrbl --blk 8 -d 0000000000000000 --ki 0
-
-[+] Using UART port /dev/tty.usbmodem101
-[+] Communicating with PM3 over USB-CDC
-[usb|script] pm3 --> hf iclass wrbl --blk 8 -d 0000000000000000 --ki 0
-[+] Using key[0] AE A6 84 A6 DA B2 32 78 
-[+] Wrote block 8 / 0x08 ( ok )
-
-
- Writing block #9... 
-[=] Session log /Users/tweathers/.proxmark3/logs/log_20240614013821.txt
-[+] loaded `/Users/tweathers/.proxmark3/preferences.json`
-[+] execute command from commandline: hf iclass wrbl --blk 9 -d 0000000000000000 --ki 0
-
-[+] Using UART port /dev/tty.usbmodem101
-[+] Communicating with PM3 over USB-CDC
-[usb|script] pm3 --> hf iclass wrbl --blk 9 -d 0000000000000000 --ki 0
-[+] Using key[0] AE A6 84 A6 DA B2 32 78 
-[+] Wrote block 9 / 0x09 ( ok )
-
-Verifying that the card data was successfully written. Set your card flat on the reader...
- 
-[=] Session log /Users/tweathers/.proxmark3/logs/log_20240614013825.txt
-[+] loaded `/Users/tweathers/.proxmark3/preferences.json`
-[+] execute command from commandline: hf iclass dump --ki 0
-
-[+] Using UART port /dev/tty.usbmodem101
-[+] Communicating with PM3 over USB-CDC
-[usb|script] pm3 --> hf iclass dump --ki 0
-[+] Using AA1 (debit) key[0] AE A6 84 A6 DA B2 32 78 
-[=] Card has at least 2 application areas. AA1 limit 18 (0x12) AA2 limit 31 (0x1F)
-.
-
-[=] --------------------------- Tag memory ----------------------------
-
-[=]  block#  | data                    | ascii    |lck| info
-[=] ---------+-------------------------+----------+---+----------------
-[=]   0/0x00 | 28 66 8B 15 FE FF 12 E0 | (f... |   | CSN 
-[=]   1/0x01 | 12 FF FF FF 7F 1F FF 3C | ...< |   | Config
-[=]   2/0x02 | FF FF FF FF D9 FF FF FF |  |   | E-purse
-[=]   3/0x03 | 84 3F 76 67 55 B8 DB CE | .?vgU |   | Debit
-[=]   4/0x04 | FF FF FF FF FF FF FF FF |  |   | Credit
-[=]   5/0x05 | FF FF FF FF FF FF FF FF |  |   | AIA
-[=]   6/0x06 | 03 03 03 03 00 03 E0 14 | ....... |   | User / HID CFG 
-[=]   7/0x07 | 00 00 00 00 06 F6 23 AE | .....# |   | User / Cred 
-[=]   8/0x08 | 00 00 00 00 00 00 00 00 | ........ |   | User / Cred 
-[=]   9/0x09 | 00 00 00 00 00 00 00 00 | ........ |   | User / Cred 
-[=]  10/0x0A | FF FF FF FF FF FF FF FF |  |   | User
-[=]  11/0x0B | FF FF FF FF FF FF FF FF |  |   | User
-[=]  12/0x0C | FF FF FF FF FF FF FF FF |  |   | User
-[=]  13/0x0D | FF FF FF FF FF FF FF FF |  |   | User
-[=]  14/0x0E | FF FF FF FF FF FF FF FF |  |   | User
-[=]  15/0x0F | FF FF FF FF FF FF FF FF |  |   | User
-[=]  16/0x10 | FF FF FF FF FF FF FF FF |  |   | User
-[=]  17/0x11 | FF FF FF FF FF FF FF FF |  |   | User
-[=]  18/0x12 | FF FF FF FF FF FF FF FF |  |   | User
-[=] ---------+-------------------------+----------+---+----------------
-[?] yellow = legacy credential
-
-[+] saving dump file - 19 blocks read
-[+] Saved 152 bytes to binary file `/Users/tweathers/hf-iclass-28668B15FEFF12E0-dump-008.bin`
-[+] Saved to json file `/Users/tweathers/hf-iclass-28668B15FEFF12E0-dump-008.json`
-[?] Try `hf iclass decrypt -f` to decrypt dump file
-[?] Try `hf iclass view -f` to view dump file
-
-
-[=] Session log /Users/tweathers/.proxmark3/logs/log_20240614013827.txt
-[+] loaded `/Users/tweathers/.proxmark3/preferences.json`
-[+] execute command from commandline: hf iclass view -f /Users/tweathers/hf-iclass-28668B15FEFF12E0-dump-008.json
-
-[+] Using UART port /dev/tty.usbmodem101
-[+] Communicating with PM3 over USB-CDC
-[usb|script] pm3 --> hf iclass view -f /Users/tweathers/hf-iclass-28668B15FEFF12E0-dump-008.json
-[+] loaded `/Users/tweathers/hf-iclass-28668B15FEFF12E0-dump-008.json`
-
-[=] --------------------------- Card ---------------------------
-[+]     CSN... 28 66 8B 15 FE FF 12 E0  uid
-[+]  Config... 12 FF FF FF 7F 1F FF 3C  card configuration
-[+] E-purse... FF FF FF FF D9 FF FF FF  card challenge, CC
-[+]      Kd... 84 3F 76 67 55 B8 DB CE  debit key
-[+]      Kc... FF FF FF FF FF FF FF FF  credit key ( hidden )
-[+]     AIA... FF FF FF FF FF FF FF FF  application issuer area
-[=] -------------------- Card configuration --------------------
-[=]     Raw... 12 FF FF FF 7F 1F FF 3C 
-[=]            12 (  18 ).............  app limit
-[=]               FFFF ( 65535 )......  OTP
-[=]                     FF............  block write lock
-[=]                        7F.........  chip
-[=]                           1F......  mem
-[=]                              FF...  EAS
-[=]                                 3C  fuses
-[=]   Fuses:
-[+]     mode......... Application (locked)
-[+]     coding....... ISO 14443-2 B / 15693
-[+]     crypt........ Secured page, keys not locked
-[=]     RA........... Read access not enabled
-[=]     PROD0/1...... Default production fuses
-[=] -------------------------- Memory --------------------------
-[=]  2 KBits/2 App Areas ( 256 bytes )
-[=]     1 books / 1 pages
-[=]  First book / first page configuration
-[=]     Config | 0 - 5 ( 0x00 - 0x05 ) - 6 blocks 
-[=]     AA1    | 6 - 18 ( 0x06 - 0x12 ) - 13 blocks
-[=]     AA2    | 19 - 31 ( 0x13 - 0x1F ) - 18 blocks
-[=] ------------------------- KeyAccess ------------------------
-[=]  * Kd, Debit key, AA1    Kc, Credit key, AA2 *
-[=]     Read AA1..... debit
-[=]     Write AA1.... debit
-[=]     Read AA2..... credit
-[=]     Write AA2.... credit
-[=]     Debit........ debit or credit
-[=]     Credit....... credit
-
-[=] --------------------------- Tag memory ----------------------------
-
-[=]  block#  | data                    | ascii    |lck| info
-[=] ---------+-------------------------+----------+---+----------------
-[=]   0/0x00 | 28 66 8B 15 FE FF 12 E0 | (f... |   | CSN 
-[=]   ......
-[=]   6/0x06 | 03 03 03 03 00 03 E0 14 | ....... |   | User / HID CFG 
-[=]   7/0x07 | 00 00 00 00 06 F6 23 AE | .....# |   | User / Cred 
-[=]   8/0x08 | 00 00 00 00 00 00 00 00 | ........ |   | User / Cred 
-[=]   9/0x09 | 00 00 00 00 00 00 00 00 | ........ |   | User / Cred 
-[=]  10/0x0A | FF FF FF FF FF FF FF FF |  |   | User
-[=]  11/0x0B | FF FF FF FF FF FF FF FF |  |   | User
-[=]  12/0x0C | FF FF FF FF FF FF FF FF |  |   | User
-[=]  13/0x0D | FF FF FF FF FF FF FF FF |  |   | User
-[=]  14/0x0E | FF FF FF FF FF FF FF FF |  |   | User
-[=]  15/0x0F | FF FF FF FF FF FF FF FF |  |   | User
-[=]  16/0x10 | FF FF FF FF FF FF FF FF |  |   | User
-[=]  17/0x11 | FF FF FF FF FF FF FF FF |  |   | User
-[=]  18/0x12 | FF FF FF FF FF FF FF FF |  |   | User
-[=] ---------+-------------------------+----------+---+----------------
-[?] yellow = legacy credential
-
-[=] Block 7 decoder
-[+] Binary..................... 110111101100010001110101110
-[=] Wiegand decode
-[+] [H10301  ] HID H10301 26-bit                FC: 123  CN: 4567  parity ( ok )
-[+] [ind26   ] Indala 26-bit                    FC: 1969  CN: 471  parity ( ok )
-[=] found 2 matching formats
-
- 
-Verification successful: Facility Code and Card Number match.
+[OK] Verification successful - Block 7: 00 00 00 00 06 F6 23 AE
+[OK] Card contains: 26-bit, FC: 123, CN: 4567
 ```
 
 #### Simulating PIV/MF Cards
@@ -610,32 +454,49 @@ Executing command: hf 14a sim -t 3 --uid 5AF70D9D
 
 ```
 
-#### Generating commands for HID H800002 46-bit cards
+#### Writing HID Prox cards with multiple attempts
 
-This command will generate the commands needed to write HID H800002 46-bit card data:
+LF cards (Prox, AWID, Indala, Avigilon, EM) automatically perform 5 write attempts with visual separators:
 
 ```sh
-doppelganger_assistant -t prox -bl 46 -fc 123 -cn 4567
+doppelganger_assistant -t prox -bl 46 -fc 123 -cn 4567 -w
 
-Handling Prox card... 
+[..] Writing Prox card (5 attempts)...
 
-Write the following values to a T5577 card: 
+|----------- WRITE #1 -----------|
+[+] Using UART port /dev/tty.usbmodem101
+[+] Communicating with PM3 over USB-CDC
+[+] Wrote block successfully
+[..] Move card slowly... Write attempt #1 complete
 
-lf hid clone -w H800002 --fc 123 --cn 4567 
+|----------- WRITE #2 -----------|
+[+] Using UART port /dev/tty.usbmodem101
+[+] Communicating with PM3 over USB-CDC
+[+] Wrote block successfully
+[..] Move card slowly... Write attempt #2 complete
+
+|----------- WRITE #3 -----------|
+... (continues for all 5 attempts)
+
+[OK] All 5 write attempts complete
 ```
 
-#### Generating commands for Avigilon 56-bit cards
+#### Writing Avigilon 56-bit cards
 
-This command will generate the commands needed to write Avigilon 56-bit card data:
+Avigilon cards are written with 5 attempts like other LF cards:
 
 ```sh
-doppelganger_assistant -t avigilon -bl 56 -fc 118 -cn 1603
+doppelganger_assistant -t avigilon -bl 56 -fc 118 -cn 1603 -w
 
-Handling Avigilon card... 
+[..] Writing Avigilon card (5 attempts)...
 
-Write the following values to a T5577 card: 
+|----------- WRITE #1 -----------|
+[+] Using UART port /dev/tty.usbmodem101
+[+] Communicating with PM3 over USB-CDC
+lf hid clone -w Avig56 --fc 118 --cn 1603
+[..] Move card slowly... Write attempt #1 complete
 
-lf hid clone -w Avig56 --fc 118 --cn 1603 
+... (continues for all 5 attempts)
 ```
 
 #### Simulating Avigilon cards
