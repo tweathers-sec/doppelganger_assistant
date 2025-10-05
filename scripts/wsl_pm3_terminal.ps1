@@ -105,25 +105,36 @@ function AttachUSBDeviceToWSL {
     }
 }
 
-# Function to create a generic PM3 .ico if it doesn't exist (no PNG fallback)
+# Function to download/update PM3 icon with cache busting
 function Ensure-Pm3Icon {
     param(
         [string]$IconPath
     )
 
-    if (-not (Test-Path $IconPath)) {
-        try {
-            $dir = Split-Path -Path $IconPath -Parent
-            if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
+    try {
+        $dir = Split-Path -Path $IconPath -Parent
+        if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
 
-            # Download the official PM3 icon from repo if missing
-            $pm3IconUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/img/doppelganger_pm3.ico"
-            Invoke-WebRequest -Uri $pm3IconUrl -OutFile $IconPath -ErrorAction Stop
-            Log "Downloaded PM3 icon to $IconPath"
+        # Download the official PM3 icon from repo (with cache busting)
+        # Add timestamp to prevent GitHub CDN caching and force fresh download
+        $timestamp = [int][double]::Parse((Get-Date -UFormat %s))
+        $pm3IconUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/img/doppelganger_pm3.ico?t=$timestamp"
+        
+        # Remove old icon if it exists to force Windows to reload it
+        if (Test-Path $IconPath) {
+            Remove-Item $IconPath -Force
+            Log "Removed old PM3 icon to ensure fresh download"
         }
-        catch {
-            Log "WARNING: Failed to download PM3 icon: $_"
-        }
+        
+        Invoke-WebRequest -Uri $pm3IconUrl -OutFile $IconPath -ErrorAction Stop
+        Log "Downloaded latest PM3 icon to $IconPath"
+        
+        # Force Windows to clear icon cache for this file
+        # This helps Windows Terminal pick up the new icon
+        Start-Sleep -Milliseconds 500
+    }
+    catch {
+        Log "WARNING: Failed to download PM3 icon: $_"
     }
 }
 
@@ -141,36 +152,43 @@ function EnsureWindowsTerminalProfile {
         try {
             $settings = Get-Content $settingsPath -Raw | ConvertFrom-Json
             
-            # Check if Proxmark3 profile already exists
+            # Check if Proxmark3 profile already exists and remove it to force refresh
             $pm3ProfileExists = $false
+            $updatedProfiles = @()
             foreach ($profile in $settings.profiles.list) {
                 if ($profile.name -eq "Proxmark3 Terminal") {
                     $pm3ProfileExists = $true
-                    Log "Windows Terminal Proxmark3 profile already exists."
-                    break
+                    Log "Found existing Proxmark3 profile. Removing to update icon..."
+                    # Skip adding this profile to force recreation with new icon
+                }
+                else {
+                    $updatedProfiles += $profile
                 }
             }
             
-            # Create profile if it doesn't exist
-            if (-not $pm3ProfileExists) {
-                Log "Creating Windows Terminal Proxmark3 profile with Iceman icon..."
-                
-                $newProfile = @{
-                    name              = "Proxmark3 Terminal"
-                    commandline       = "wsl.exe -d $distroName --exec bash -c 'pm3'"
-                    icon              = $iconPath
-                    startingDirectory = "~"
-                    guid              = "{" + [guid]::NewGuid().ToString() + "}"
-                    hidden            = $false
-                }
-                
-                # Add the new profile to the list
-                $settings.profiles.list += $newProfile
-                
-                # Save updated settings
-                $settings | ConvertTo-Json -Depth 10 | Set-Content $settingsPath -Encoding UTF8
-                Log "Proxmark3 profile created successfully."
+            # Update the profile list (removing old PM3 profile if it existed)
+            if ($pm3ProfileExists) {
+                $settings.profiles.list = $updatedProfiles
             }
+            
+            # Always create/recreate the profile to ensure fresh icon
+            Log "Creating Windows Terminal Proxmark3 profile with updated icon..."
+            
+            $newProfile = @{
+                name              = "Proxmark3 Terminal"
+                commandline       = "wsl.exe -d $distroName --exec bash -c 'pm3'"
+                icon              = $iconPath
+                startingDirectory = "~"
+                guid              = "{" + [guid]::NewGuid().ToString() + "}"
+                hidden            = $false
+            }
+            
+            # Add the new profile to the list
+            $settings.profiles.list += $newProfile
+            
+            # Save updated settings
+            $settings | ConvertTo-Json -Depth 10 | Set-Content $settingsPath -Encoding UTF8
+            Log "Proxmark3 profile created/updated successfully with fresh icon."
         }
         catch {
             Log "Warning: Could not modify Windows Terminal settings: $_"
