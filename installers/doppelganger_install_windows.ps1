@@ -122,7 +122,8 @@ if (Test-Path -Path $basePath) {
             Log "Running existing uninstaller script..."
             powershell -ExecutionPolicy Bypass -File "$basePath\uninstall.ps1" -SkipUsbipdPrompt
             Start-Sleep -Seconds 2
-        } else {
+        }
+        else {
             Log "Uninstaller not found. Downloading and running uninstaller..."
             $tempUninstallPath = "$env:TEMP\doppelganger_uninstall_temp.ps1"
             try {
@@ -130,7 +131,8 @@ if (Test-Path -Path $basePath) {
                 powershell -ExecutionPolicy Bypass -File $tempUninstallPath -SkipUsbipdPrompt
                 Start-Sleep -Seconds 2
                 Remove-Item -Path $tempUninstallPath -Force -ErrorAction SilentlyContinue
-            } catch {
+            }
+            catch {
                 Log "Failed to download uninstaller. Performing manual cleanup..."
                 # Fallback to manual cleanup
                 wsl --shutdown

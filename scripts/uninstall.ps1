@@ -127,14 +127,16 @@ if (-not $SkipUsbipdPrompt) {
             else {
                 Log "usbipd uninstalled."
             }
-        } else {
+        }
+        else {
             Log "Skipping usbipd uninstallation."
         }
     }
     else {
         Log "winget not found. If you want to uninstall usbipd, please do so manually."
     }
-} else {
+}
+else {
     Log "Skipping usbipd uninstallation (update mode)."
 }
 

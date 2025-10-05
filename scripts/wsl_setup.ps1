@@ -354,13 +354,8 @@ Write-Host "  Select Linux Distribution for WSL2" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "1) Kali Linux 2025.3 - Recommended" -ForegroundColor Magenta
-Write-Host "   - Built for penetration testing (Debian-based)" -ForegroundColor Gray
-Write-Host "   - Pre-installed security tools" -ForegroundColor Gray
-Write-Host "   - Perfect for Doppelganger Assistant" -ForegroundColor Gray
 Write-Host ""
 Write-Host "2) Ubuntu 24.04 LTS (Noble) - Alternative" -ForegroundColor Green
-Write-Host "   - Latest Ubuntu LTS with modern packages" -ForegroundColor Gray
-Write-Host "   - General purpose Linux distribution" -ForegroundColor Gray
 Write-Host ""
 
 do {
