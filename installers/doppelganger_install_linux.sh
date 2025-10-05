@@ -191,9 +191,11 @@ refresh_desktop_integration() {
     case "$desktop_env" in
         *"XFCE"*)
             echo "Applying XFCE-specific desktop refresh..."
-            # Restart XFCE panel to refresh menu
+            # Restart XFCE panel to refresh menu (silently, in background)
             if command -v xfce4-panel &> /dev/null; then
-                xfce4-panel -r 2>/dev/null &
+                # Use nohup and redirect all output to suppress errors
+                nohup xfce4-panel -r >/dev/null 2>&1 &
+                disown 2>/dev/null || true
             fi
             ;;
             
@@ -202,7 +204,7 @@ refresh_desktop_integration() {
             # GNOME Shell updates menu automatically, but we can trigger it
             if command -v gnome-shell &> /dev/null; then
                 # Send a signal to gnome-shell to refresh (non-intrusive)
-                killall -HUP gnome-shell 2>/dev/null || true
+                (killall -HUP gnome-shell >/dev/null 2>&1 &) || true
             fi
             ;;
             
@@ -210,9 +212,9 @@ refresh_desktop_integration() {
             echo "Applying KDE Plasma-specific desktop refresh..."
             # KDE's kbuildsycoca rebuilds the system configuration cache
             if command -v kbuildsycoca5 &> /dev/null; then
-                kbuildsycoca5 2>/dev/null &
+                (kbuildsycoca5 >/dev/null 2>&1 &) || true
             elif command -v kbuildsycoca6 &> /dev/null; then
-                kbuildsycoca6 2>/dev/null &
+                (kbuildsycoca6 >/dev/null 2>&1 &) || true
             fi
             ;;
             
@@ -220,7 +222,7 @@ refresh_desktop_integration() {
             echo "Applying Cinnamon-specific desktop refresh..."
             # Cinnamon can reload its configuration
             if command -v cinnamon &> /dev/null && command -v dbus-send &> /dev/null; then
-                dbus-send --type=method_call --dest=org.Cinnamon /org/Cinnamon org.Cinnamon.ReloadXlet string:'menu@cinnamon.org' string:'APPLET' 2>/dev/null || true
+                (dbus-send --type=method_call --dest=org.Cinnamon /org/Cinnamon org.Cinnamon.ReloadXlet string:'menu@cinnamon.org' string:'APPLET' >/dev/null 2>&1 &) || true
             fi
             ;;
             
@@ -228,7 +230,7 @@ refresh_desktop_integration() {
             echo "Applying MATE-specific desktop refresh..."
             # MATE panel refresh
             if command -v mate-panel &> /dev/null; then
-                mate-panel --replace 2>/dev/null &
+                (nohup mate-panel --replace >/dev/null 2>&1 &) || true
             fi
             ;;
             
@@ -236,7 +238,7 @@ refresh_desktop_integration() {
             echo "Applying Budgie-specific desktop refresh..."
             # Budgie panel refresh
             if command -v budgie-panel &> /dev/null; then
-                budgie-panel --replace 2>/dev/null &
+                (nohup budgie-panel --replace >/dev/null 2>&1 &) || true
             fi
             ;;
             
@@ -244,7 +246,7 @@ refresh_desktop_integration() {
             echo "Applying LXDE/LXQt-specific desktop refresh..."
             # LXPanel or LXQt panel refresh
             if command -v lxpanelctl &> /dev/null; then
-                lxpanelctl restart 2>/dev/null &
+                (lxpanelctl restart >/dev/null 2>&1 &) || true
             fi
             ;;
             
