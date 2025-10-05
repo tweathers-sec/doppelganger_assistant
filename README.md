@@ -28,28 +28,28 @@ The automated installers will prompt you to select your device type during insta
 
 Below are the officially supported card types based on Doppelgänger firmware:
 
-| Card Types                  | Core | Stealth | FC Range        | CN Range          | Notes                         |
-| --------------------------- | ---- | ------- | --------------- | ----------------- | ----------------------------- |
-| Keypad PIN Codes            |      | X       | N/A             | N/A               |                               |
-| HID H10301 26-bit           | X    | X       | 0–255           | 0–65,535          |                               |
-| Indala 26-bit               | X    | X       | 0–255           | 0–65,535          | Requires Indala reader/module |
-| Indala 27-bit               | X    | X       | 0–4,095         | 0–8,191           | Requires Indala reader/module |
-| 2804 WIEGAND 28-bit         | X    | X       | 0–255           | 0–16,383          |                               |
-| Indala 29-bit               | X    | X       | 0–4,095         | 0–32,767          | Requires Indala reader/module |
-| ATS Wiegand 30-bit          | X    | X       | 0–2,047         | 0–32,767          |                               |
-| HID ADT 31-Bit              | X    | X       | 0–15            | 0–8,388,607       |                               |
-| EM4102 / Wiegand 32-bit     | X    | X       | 0–32,767        | 0–65,535          | Hex data format               |
-| HID D10202 33-bit           | X    | X       | 0–127           | 0–16,777,215      |                               |
-| HID H10306 34-bit           | X    | X       | 0–65,535        | 0–65,535          |                               |
-| HID Corporate 1000 35-bit   | X    | X       | 0–4,095         | 0–1,048,575       |                               |
-| HID Simplex 36-bit (S12906) | X    | X       | 0–255           | 0–65,535          |                               |
-| HID H10304 37-bit           | X    | X       | 0–65,535        | 0–524,287         |                               |
-| HID H800002 46-bit          | X    | X       | 0–16,383        | 0–1,073,741,823   |                               |
-| HID Corporate 1000 48-bit   | X    | X       | 0–4,194,303     | 0–8,388,607       |                               |
-| AWID 50-bit                 | X    | X       | 0–65,535        | 0–8,388,607       |                               |
-| Avigilon 56-bit             | X    | X       | 0–1,048,575     | 0–4,194,303       |                               |
-| C910 PIVKey                 | X    | X       | N/A             | N/A               | UID Only                      |
-| MIFARE (Various Types)      | X    | X       | N/A             | N/A               | UID Only                      |
+| Card Types                  | Core | Stealth | FC Range    | CN Range        | Notes                         |
+| --------------------------- | ---- | ------- | ----------- | --------------- | ----------------------------- |
+| Keypad PIN Codes            |      | X       | N/A         | N/A             |                               |
+| HID H10301 26-bit           | X    | X       | 0–255       | 0–65,535        |                               |
+| Indala 26-bit               | X    | X       | 0–255       | 0–65,535        | Requires Indala reader/module |
+| Indala 27-bit               | X    | X       | 0–4,095     | 0–8,191         | Requires Indala reader/module |
+| 2804 WIEGAND 28-bit         | X    | X       | 0–255       | 0–16,383        |                               |
+| Indala 29-bit               | X    | X       | 0–4,095     | 0–32,767        | Requires Indala reader/module |
+| ATS Wiegand 30-bit          | X    | X       | 0–2,047     | 0–32,767        |                               |
+| HID ADT 31-Bit              | X    | X       | 0–15        | 0–8,388,607     |                               |
+| EM4102 / Wiegand 32-bit     | X    | X       | 0–32,767    | 0–65,535        | Hex data format               |
+| HID D10202 33-bit           | X    | X       | 0–127       | 0–16,777,215    |                               |
+| HID H10306 34-bit           | X    | X       | 0–65,535    | 0–65,535        |                               |
+| HID Corporate 1000 35-bit   | X    | X       | 0–4,095     | 0–1,048,575     |                               |
+| HID Simplex 36-bit (S12906) | X    | X       | 0–255       | 0–65,535        |                               |
+| HID H10304 37-bit           | X    | X       | 0–65,535    | 0–524,287       |                               |
+| HID H800002 46-bit          | X    | X       | 0–16,383    | 0–1,073,741,823 |                               |
+| HID Corporate 1000 48-bit   | X    | X       | 0–4,194,303 | 0–8,388,607     |                               |
+| AWID 50-bit                 | X    | X       | 0–65,535    | 0–8,388,607     |                               |
+| Avigilon 56-bit             | X    | X       | 0–1,048,575 | 0–4,194,303     |                               |
+| C910 PIVKey                 | X    | X       | N/A         | N/A             | UID Only                      |
+| MIFARE (Various Types)      | X    | X       | N/A         | N/A             | UID Only                      |
 
 Supported technologies include:
 
@@ -254,7 +254,8 @@ To uninstall from Linux:
 
 ```bash
 sudo rm /usr/local/bin/doppelganger_assistant
-sudo rm /usr/share/applications/doppelganger_assistant.desktop
+rm -f ~/.local/share/applications/doppelganger_assistant.desktop
+rm -f ~/Desktop/doppelganger_assistant.desktop
 sudo rm /usr/share/pixmaps/doppelganger_assistant.png
 ```
 

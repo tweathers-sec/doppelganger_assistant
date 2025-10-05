@@ -94,8 +94,9 @@ configure_proxmark_device() {
 uninstall_doppelganger() {
     echo "Uninstalling Doppelganger Assistant..."
     
-    # Remove the desktop shortcut
+    # Remove the desktop shortcuts
     rm -f "$HOME/Desktop/Doppelganger Assistant.desktop"
+    rm -f "$HOME/Desktop/doppelganger_assistant.desktop"
     rm -f "$HOME/.local/share/applications/doppelganger_assistant.desktop"
     
     # Remove the icon
@@ -272,8 +273,8 @@ if [ "$skip_doppelganger_install" = false ]; then
     mkdir -p "$HOME/.local/share/applications"
     mkdir -p "$HOME/Desktop"
 
-    # Create .desktop file
-    echo "Creating desktop shortcut..."
+    # Create .desktop file for applications menu
+    echo "Creating application menu entry..."
     cat > "$desktop_file" << EOL
 [Desktop Entry]
 Version=1.0
@@ -283,16 +284,41 @@ Comment=Launch Doppelganger Assistant
 Exec=doppelganger_assistant
 Icon=$icon_path
 Terminal=false
-Categories=Utility;
+Categories=Utility;System;
 EOL
 
     # Make the .desktop file executable
     chmod +x "$desktop_file"
 
-    # Create symlink on the desktop
-    ln -sf "$desktop_file" "$HOME/Desktop/Doppelganger Assistant.desktop"
+    # Also create desktop shortcut
+    desktop_shortcut="$HOME/Desktop/doppelganger_assistant.desktop"
+    cat > "$desktop_shortcut" << EOL
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Doppelganger Assistant
+Comment=Launch Doppelganger Assistant
+Exec=doppelganger_assistant
+Icon=$icon_path
+Terminal=false
+Categories=Utility;System;
+EOL
+
+    # Make desktop shortcut executable
+    chmod +x "$desktop_shortcut"
+
+    # Mark desktop file as trusted (for GNOME-based desktops)
+    if command -v gio &> /dev/null; then
+        gio set "$desktop_shortcut" metadata::trusted true 2>/dev/null || true
+    fi
+
+    # Update desktop database
+    if command -v update-desktop-database &> /dev/null; then
+        update-desktop-database "$HOME/.local/share/applications" 2>/dev/null || true
+    fi
 
     echo "Desktop shortcut created successfully."
+    echo "Note: You may need to right-click the desktop icon and select 'Allow Launching' or 'Trust' on first use."
 fi
 
 echo "Installation process completed."
