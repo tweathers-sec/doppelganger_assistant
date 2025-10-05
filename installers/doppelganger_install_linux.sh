@@ -187,15 +187,22 @@ refresh_desktop_integration() {
         xdg-desktop-menu forceupdate 2>/dev/null || true
     fi
     
+    # If available, refresh garcon (XFCE XDG menu implementation)
+    if command -v update-desktop-database &> /dev/null && command -v grep &> /dev/null; then
+        # Touch the local applications directory so menu watchers see the change
+        (touch "$HOME/.local/share/applications" >/dev/null 2>&1) || true
+    fi
+    
     # Desktop environment specific refresh commands
     case "$desktop_env" in
         *"XFCE"*)
             echo "Applying XFCE-specific desktop refresh..."
-            # Restart XFCE panel to refresh menu (silently, in background)
-            if command -v xfce4-panel &> /dev/null; then
-                # Use nohup and redirect all output to suppress errors
-                nohup xfce4-panel -r >/dev/null 2>&1 &
-                disown 2>/dev/null || true
+            # Kali/XFCE uses garcon (XDG menus). Menu updates after cache refresh.
+            # Do NOT attempt to restart xfce4-panel here — in non-interactive contexts
+            # (installer, sudo) there is no user session D-Bus and it triggers an error dialog.
+            # Refresh desktop icons (desktop entry on ~/Desktop) safely instead.
+            if command -v xfdesktop &> /dev/null; then
+                (xfdesktop --reload >/dev/null 2>&1 &) || true
             fi
             ;;
             
@@ -447,7 +454,9 @@ EOL
     # Provide DE-specific instructions if needed
     case "$DESKTOP_ENV" in
         *"XFCE"*)
-            echo "If the menu item doesn't appear immediately, try: xfce4-panel -r"
+            echo "XFCE detected. If the applications menu does not update immediately, either:"
+            echo " - Log out and back in, or"
+            echo " - Manually run 'xfce4-panel -r' from a user terminal (not via sudo)."
             ;;
         *"KDE"*|*"Plasma"*)
             echo "If the menu item doesn't appear immediately, try logging out and back in."
