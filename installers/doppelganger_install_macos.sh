@@ -7,148 +7,224 @@ print_color() {
     echo -e "\033[${COLOR}m${MESSAGE}\033[0m"
 }
 
-print_color "1;34" "Starting Doppelganger Assistant installation..."
+# Function to display ASCII art
+display_doppelganger_ascii() {
+    print_color "1;31" '
+                                                                      
+    ____                         _                                 
+   |  _ \  ___  _ __  _ __   ___| | __ _  __ _ _ __   __ _  ___ _ __  
+   | | | |/ _ \| '"'"'_ \| '"'"'_ \ / _ \ |/ _` |/ _` | '"'"'_ \ / _` |/ _ \ '"'"'__| 
+   | |_| | (_) | |_) | |_) |  __/ | (_| | (_| | | | | (_| |  __/ |    
+   |____/ \___/| .__/| .__/ \___|_|\__, |\__,_|_| |_|\__, |\___|_|    
+               |_|   |_|           |___/             |___/            
+                                                                      
+'
+}
 
-# Detect architecture
-print_color "1;33" "Detecting system architecture..."
-TIMESTAMP=$(date +%s)
+# Display ASCII art
+display_doppelganger_ascii
+
+print_color "1;32" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+print_color "1;32" "  Doppelgänger Assistant Installer for macOS"
+print_color "1;32" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+
+# ============================
+# ASK ALL QUESTIONS FIRST
+# ============================
+
+# Detect architecture (needed for download URL)
 if [[ $(uname -m) == "x86_64" ]]; then
-    URL="https://github.com/tweathers-sec/doppelganger_assistant/releases/download/latest/doppelganger_assistant_darwin_amd64.dmg?t=${TIMESTAMP}"
-    print_color "0;32" "Detected x86_64 architecture."
+    ARCH="amd64"
+    ARCH_NAME="Intel (x86_64)"
 elif [[ $(uname -m) == "arm64" ]]; then
-    URL="https://github.com/tweathers-sec/doppelganger_assistant/releases/download/latest/doppelganger_assistant_darwin_arm64.dmg?t=${TIMESTAMP}"
-    print_color "0;32" "Detected arm64 architecture."
+    ARCH="arm64"
+    ARCH_NAME="Apple Silicon (arm64)"
 else
-    print_color "1;31" "Unsupported architecture detected. Exiting."
+    print_color "1;31" "[✗] Unsupported architecture: $(uname -m)"
     exit 1
 fi
 
-# Download and mount DMG
-print_color "1;33" "Downloading and mounting the Doppelganger Assistant disk image..."
+print_color "1;36" "System: $ARCH_NAME"
+echo ""
+
+# Ask about Proxmark3
+INSTALL_PM3=0
+BREW_FLAGS=""
+
+if ! command -v pm3 &> /dev/null; then
+    print_color "1;33" "Proxmark3 (Iceman) is not currently installed."
+    read -p "Would you like to install it? (y/n) " -n 1 -r
+    echo ""
+    
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        INSTALL_PM3=1
+        echo ""
+        print_color "1;36" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        print_color "1;36" "  Select your Proxmark3 device type:"
+        print_color "1;36" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo ""
+        print_color "1;32" "  1) Proxmark3 RDV4 with Blueshark"
+        print_color "1;33" "  2) Proxmark3 RDV4 (without Blueshark)"
+        print_color "1;35" "  3) Proxmark3 Easy (512KB)"
+        echo ""
+        read -p "Enter your choice (1-3): " device_choice
+        echo ""
+        
+        case "$device_choice" in
+            1)
+                print_color "1;32" "✓ Selected: Proxmark3 RDV4 with Blueshark"
+                BREW_FLAGS="--HEAD --with-blueshark"
+                ;;
+            2)
+                print_color "1;32" "✓ Selected: Proxmark3 RDV4 (without Blueshark)"
+                BREW_FLAGS="--HEAD"
+                ;;
+            3)
+                print_color "1;32" "✓ Selected: Proxmark3 Easy (512KB)"
+                BREW_FLAGS="--HEAD --with-generic"
+                ;;
+            *)
+                print_color "1;33" "⚠ Invalid choice. Defaulting to Proxmark3 RDV4 with Blueshark"
+                BREW_FLAGS="--HEAD --with-blueshark"
+                ;;
+        esac
+        echo ""
+        
+        # Check if Homebrew is needed and available
+        if ! command -v brew &> /dev/null; then
+            print_color "1;33" "Homebrew is required to install Proxmark3."
+            read -p "Would you like to install Homebrew? (y/n) " -n 1 -r
+            echo ""
+            if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+                print_color "1;31" "✗ Cannot install Proxmark3 without Homebrew"
+                INSTALL_PM3=0
+            fi
+            echo ""
+        fi
+    else
+        echo ""
+    fi
+else
+    print_color "1;32" "✓ Proxmark3 (Iceman) is already installed"
+    echo ""
+fi
+
+# ============================
+# NOW DO THE INSTALLATION
+# ============================
+
+print_color "1;32" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+print_color "1;32" "  Starting Installation"
+print_color "1;32" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+
+# Download and install Doppelgänger Assistant
+TIMESTAMP=$(date +%s)
+URL="https://github.com/tweathers-sec/doppelganger_assistant/releases/download/latest/doppelganger_assistant_darwin_${ARCH}.dmg?t=${TIMESTAMP}"
+
+print_color "1;34" "[•] Downloading Doppelgänger Assistant..."
 TMP_DMG=$(mktemp -d)/doppelganger_assistant.dmg
-curl -H "Cache-Control: no-cache" -H "Pragma: no-cache" -L "$URL" -o "$TMP_DMG"
-hdiutil attach "$TMP_DMG"
-print_color "0;32" "Disk image downloaded and mounted successfully."
-
-# Copy app to Applications folder
-print_color "1;33" "Copying Doppelganger Assistant to Applications folder..."
-if [[ $(uname -m) == "arm64" ]]; then
-    cp -R "/Volumes/doppelganger_assistant_darwin_arm64/doppelganger_assistant.app" /Applications/
+if curl -H "Cache-Control: no-cache" -H "Pragma: no-cache" -L "$URL" -o "$TMP_DMG" 2>/dev/null; then
+    print_color "1;32" "    ✓ Download completed"
 else
-    cp -R "/Volumes/doppelganger_assistant_darwin_amd64/doppelganger_assistant.app" /Applications/
+    print_color "1;31" "    ✗ Download failed"
+    exit 1
 fi
-print_color "0;32" "Doppelganger Assistant copied successfully."
 
-# Unmount DMG
-print_color "1;33" "Unmounting the Doppelganger Assistant disk image..."
-if [[ $(uname -m) == "arm64" ]]; then
-    hdiutil detach "/Volumes/doppelganger_assistant_darwin_arm64"
+print_color "1;34" "[•] Mounting disk image..."
+if hdiutil attach "$TMP_DMG" -quiet 2>/dev/null; then
+    print_color "1;32" "    ✓ Disk image mounted"
 else
-    hdiutil detach "/Volumes/doppelganger_assistant_darwin_amd64"
+    print_color "1;31" "    ✗ Failed to mount disk image"
+    exit 1
 fi
-print_color "0;32" "Disk image unmounted successfully."
 
-# Remove downloaded files
-print_color "1;33" "Removing downloaded files..."
-rm -f "$TMP_DMG"
-print_color "0;32" "Downloaded files removed successfully."
+print_color "1;34" "[•] Installing to /Applications..."
+if cp -R "/Volumes/doppelganger_assistant_darwin_${ARCH}/doppelganger_assistant.app" /Applications/ 2>/dev/null; then
+    print_color "1;32" "    ✓ Application installed"
+else
+    print_color "1;31" "    ✗ Installation failed"
+    hdiutil detach "/Volumes/doppelganger_assistant_darwin_${ARCH}" -quiet 2>/dev/null
+    exit 1
+fi
 
-# Run command to ignore Apple Error
-print_color "1;33" "Ignoring Apple error for Doppelganger Assistant..."
+print_color "1;34" "[•] Removing quarantine attributes..."
 xattr -cr "/Applications/doppelganger_assistant.app"
-print_color "0;32" "Apple error ignored successfully."
+print_color "1;32" "    ✓ Application authorized"
 
-# Add Assistant to path
-print_color "1;33" "Adding Doppelganger Assistant to path..."
+print_color "1;34" "[•] Cleaning up..."
+hdiutil detach "/Volumes/doppelganger_assistant_darwin_${ARCH}" -quiet 2>/dev/null
+rm -f "$TMP_DMG"
+print_color "1;32" "    ✓ Temporary files removed"
+echo ""
+
+# Configure shell
+print_color "1;34" "[•] Configuring shell environment..."
 PROFILE_FILE="$HOME/.zprofile"
 [[ -f "$HOME/.zshrc" ]] && PROFILE_FILE="$HOME/.zshrc"
 ALIAS_LINE="alias doppelganger_assistant='/Applications/doppelganger_assistant.app/Contents/MacOS/doppelganger_assistant'"
 
-if grep -q "$ALIAS_LINE" "$PROFILE_FILE"; then
-    print_color "0;32" "Doppelganger Assistant alias already exists in $PROFILE_FILE."
+if grep -q "$ALIAS_LINE" "$PROFILE_FILE" 2>/dev/null; then
+    print_color "1;32" "    ✓ Command alias already configured"
 else
     echo "$ALIAS_LINE" >> "$PROFILE_FILE"
-    print_color "0;32" "Doppelganger Assistant added to path successfully."
+    print_color "1;32" "    ✓ Command alias added to $PROFILE_FILE"
 fi
+echo ""
 
-# Function to select Proxmark3 device type
-select_proxmark_device_macos() {
-    echo ""
-    echo "=============================================="
-    echo "  Select your Proxmark3 device type:"
-    echo "=============================================="
-    echo "1) Proxmark3 RDV4 with Blueshark"
-    echo "2) Proxmark3 RDV4 (without Blueshark)"
-    echo "3) Proxmark3 Easy (512KB)"
-    echo ""
-    read -p "Enter your choice (1-3): " device_choice
-    
-    case "$device_choice" in
-        1)
-            print_color "0;32" "Selected: Proxmark3 RDV4 with Blueshark"
-            BREW_FLAGS="--HEAD --with-blueshark"
-            ;;
-        2)
-            print_color "0;32" "Selected: Proxmark3 RDV4 (without Blueshark)"
-            BREW_FLAGS="--HEAD"
-            ;;
-        3)
-            print_color "0;32" "Selected: Proxmark3 Easy (512KB)"
-            BREW_FLAGS="--HEAD --with-generic"
-            ;;
-        *)
-            print_color "1;33" "Invalid choice. Defaulting to Proxmark3 RDV4 with Blueshark"
-            BREW_FLAGS="--HEAD --with-blueshark"
-            ;;
-    esac
-}
-
-# ============================
-# Pre-flight questions (gather all input up-front)
-# ============================
-
-print_color "1;33" "Pre-flight questions..."
-# Proxmark3 decision and device type first
-if ! command -v pm3 &> /dev/null; then
-    read -p "Proxmark3 (Iceman) not found. Install it now? (y/n) " -n 1 -r; echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        select_proxmark_device_macos
-        INSTALL_PM3=1
-    else
-        INSTALL_PM3=0
-    fi
-else
-    INSTALL_PM3=0
-fi
-
-# Check if 'pm3' is installed
-print_color "1;33" "Checking if Proxmark3 is installed..."
+# Install Proxmark3 if requested
 if [[ "$INSTALL_PM3" == "1" ]]; then
-        print_color "1;33" "Checking if Homebrew is installed..."
-        if ! command -v brew &> /dev/null; then
-            print_color "1;31" "Homebrew is not installed."
-            read -p "Do you want to install Homebrew? (y/n) " -n 1 -r
-            echo
-            if [[ $REPLY =~ ^[Yy]$ ]]; then
-                print_color "1;33" "Installing Homebrew..."
-                /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-                print_color "0;32" "Homebrew installed successfully."
-            else
-                print_color "1;31" "Homebrew installation skipped. Proxmark3 cannot be installed."
-                print_color "1;31" "Exiting Proxmark3 installation."
-                INSTALL_PM3=0
-            fi
-        else
-            print_color "0;32" "Homebrew is already installed."
-        fi
-
-        print_color "1;33" "Installing Proxmark3..."
-        xcode-select --install 2>/dev/null || true
-        brew install xquartz
-        brew tap RfidResearchGroup/proxmark3
-        brew install $BREW_FLAGS rfidresearchgroup/proxmark3/proxmark3
-        print_color "0;32" "Proxmark3 installed successfully."
+    print_color "1;32" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    print_color "1;32" "  Installing Proxmark3 (Iceman)"
+    print_color "1;32" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+    
+    # Install Homebrew if needed
+    if ! command -v brew &> /dev/null; then
+        print_color "1;34" "[•] Installing Homebrew..."
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        print_color "1;32" "    ✓ Homebrew installed"
+        echo ""
+    else
+        print_color "1;32" "    ✓ Homebrew already installed"
+        echo ""
+    fi
+    
+    # Install Xcode Command Line Tools
+    print_color "1;34" "[•] Installing Xcode Command Line Tools..."
+    xcode-select --install 2>/dev/null || print_color "1;32" "    ✓ Already installed"
+    echo ""
+    
+    # Install XQuartz
+    print_color "1;34" "[•] Installing XQuartz..."
+    brew install xquartz 2>/dev/null
+    print_color "1;32" "    ✓ XQuartz installed"
+    echo ""
+    
+    # Install Proxmark3
+    print_color "1;34" "[•] Installing Proxmark3..."
+    brew tap RfidResearchGroup/proxmark3 2>/dev/null
+    if brew install $BREW_FLAGS rfidresearchgroup/proxmark3/proxmark3 2>/dev/null; then
+        print_color "1;32" "    ✓ Proxmark3 installed successfully"
+    else
+        print_color "1;33" "    ⚠ Proxmark3 installation encountered issues"
+        print_color "0;37" "      You may need to run: brew install $BREW_FLAGS rfidresearchgroup/proxmark3/proxmark3"
+    fi
+    echo ""
 fi
 
-print_color "1;32" "Doppelganger Assistant has been installed successfully at /Applications/doppelganger_assistant.app!"
-print_color "1;33" "Please restart your terminal or run 'source $PROFILE_FILE' to use the 'doppelganger_assistant' command."
+# Final message
+print_color "1;32" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+print_color "1;32" "  Installation Complete!"
+print_color "1;32" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+print_color "1;36" "Application Location:"
+print_color "0;37" "  /Applications/doppelganger_assistant.app"
+echo ""
+print_color "1;36" "To use the command-line interface:"
+print_color "0;37" "  Restart your terminal or run: source $PROFILE_FILE"
+print_color "0;37" "  Then use: doppelganger_assistant"
+echo ""
+print_color "1;32" "Thank you for installing Doppelgänger Assistant!"
+echo ""
