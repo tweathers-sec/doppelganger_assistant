@@ -158,6 +158,12 @@ if (Test-Path "$env:SystemRoot\System32\RebootPending.txt") {
     Remove-Item "$env:SystemRoot\System32\RebootPending.txt" -Force
 }
 
+# Define headers to prevent caching (needed for uninstaller download)
+$headers = @{
+    'Cache-Control' = 'no-cache'
+    'Pragma'        = 'no-cache'
+}
+
 # Check for existing installation
 if (Test-Path -Path $basePath) {
     Write-Host "`n*************************************************************" -ForegroundColor Yellow
@@ -204,12 +210,6 @@ if (Test-Path -Path $basePath) {
 mkdir $basePath | Out-Null
 
 # Download the setup, launch, install scripts, and image from GitHub
-# Use headers to prevent caching
-$headers = @{
-    'Cache-Control' = 'no-cache'
-    'Pragma'        = 'no-cache'
-}
-
 Log "Downloading setup script..."
 Invoke-WebRequest -Uri $setupScriptUrl -OutFile $setupScriptPath -Headers $headers
 
