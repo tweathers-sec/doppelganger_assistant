@@ -60,8 +60,8 @@ Write-Host "*           RUNNING WITH ADMINISTRATOR PRIVILEGES           *" -Fore
 Write-Host "*                                                           *" -ForegroundColor Green
 Write-Host "*************************************************************`n" -ForegroundColor Green
 
-# Log file path
-$logFile = "C:\doppelganger_assistant\install_windows.log"
+# Log file path (outside install directory to persist through updates)
+$logFile = "C:\doppelganger_install_windows.log"
 
 # Function to log output to both file and screen
 function Log {
@@ -71,7 +71,58 @@ function Log {
     $timestamp = (Get-Date).ToString('u')
     $logMessage = "$timestamp - $message"
     Write-Output $message
-    Add-Content -Path $logFile -Value $logMessage
+    Add-Content -Path $logFile -Value $logMessage -ErrorAction SilentlyContinue
+}
+
+# Check for nested virtualization support
+Log "Checking for nested virtualization support..."
+$nestedVirtSupported = $false
+
+try {
+    # Check if Hyper-V is available and nested virtualization is enabled
+    $hypervFeature = Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V-All -ErrorAction SilentlyContinue
+    
+    # Check for signs of running in a VM
+    $computerSystem = Get-WmiObject -Class Win32_ComputerSystem
+    $isVM = $computerSystem.Model -match "Virtual" -or $computerSystem.Manufacturer -match "VMware|Microsoft Corporation|Xen|QEMU|VirtualBox|Parallels"
+    
+    if ($isVM) {
+        # Try to detect if nested virtualization is available
+        $vmProcessor = Get-WmiObject -Class Win32_Processor | Select-Object -First 1
+        $nestedVirtSupported = (Get-Command Get-VMProcessor -ErrorAction SilentlyContinue) -ne $null
+        
+        if (-not $nestedVirtSupported) {
+            Write-Host "`n*************************************************************" -ForegroundColor Red
+            Write-Host "*                                                           *" -ForegroundColor Red
+            Write-Host "*                 NESTED VM DETECTED                        *" -ForegroundColor Red
+            Write-Host "*                                                           *" -ForegroundColor Red
+            Write-Host "*   WSL2 requires nested virtualization support which may   *" -ForegroundColor Red
+            Write-Host "*   not be available in your current virtual environment.   *" -ForegroundColor Red
+            Write-Host "*                                                           *" -ForegroundColor Red
+            Write-Host "*   If installation fails, please ensure:                   *" -ForegroundColor Red
+            Write-Host "*   - Nested virtualization is enabled in your hypervisor   *" -ForegroundColor Red
+            Write-Host "*   - Your VM has sufficient resources allocated            *" -ForegroundColor Red
+            Write-Host "*                                                           *" -ForegroundColor Red
+            Write-Host "*************************************************************`n" -ForegroundColor Red
+            
+            Log "WARNING: Nested VM detected. Nested virtualization may not be supported."
+            
+            $continueChoice = Read-Host "Do you want to continue anyway? (y/n)"
+            if ($continueChoice -ne "y" -and $continueChoice -ne "Y") {
+                Log "User chose to exit due to nested VM warning."
+                Write-Host "`nInstallation cancelled. Press any key to exit..."
+                $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+                exit
+            }
+            Log "User chose to continue despite nested VM warning."
+        } else {
+            Log "Nested virtualization appears to be supported."
+        }
+    } else {
+        Log "Running on physical hardware."
+    }
+} catch {
+    Log "Could not determine virtualization status. Proceeding with installation..."
 }
 
 # Function to create a shortcut that runs as an administrator
