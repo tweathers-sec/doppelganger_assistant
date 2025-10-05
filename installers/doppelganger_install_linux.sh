@@ -208,6 +208,10 @@ if [ "$skip_doppelganger_install" = false ]; then
         sudo wget -O "$icon_path" "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/img/doppelganger_assistant.png"
     fi
 
+    # Create necessary directories
+    mkdir -p "$HOME/.local/share/applications"
+    mkdir -p "$HOME/Desktop"
+
     # Create .desktop file
     echo "Creating desktop shortcut..."
     cat > "$desktop_file" << EOL
