@@ -109,7 +109,9 @@ function AttachUSBDeviceToWSL {
 function EnsureWindowsTerminalProfile {
     $distroName = Get-DoppelgangerDistro
     $settingsPath = "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json"
-    $iconPath = "C:\doppelganger_assistant\iceman_logo.png"
+    $iconIco = "C:\doppelganger_assistant\iceman_logo.ico"
+    $iconPng = "C:\doppelganger_assistant\iceman_logo.png"
+    $iconPath = if (Test-Path $iconIco) { $iconIco } elseif (Test-Path $iconPng) { $iconPng } else { $null }
     
     # Check if Windows Terminal settings exist
     if (Test-Path $settingsPath) {

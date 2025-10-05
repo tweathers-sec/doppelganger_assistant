@@ -23,7 +23,7 @@ $launchScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger
 $pm3TerminalScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/scripts/wsl_pm3_terminal.ps1"
 $installScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/scripts/wsl_doppelganger_install.sh"
 $imageUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/img/doppelganger_assistant.ico"
-$icemanLogoUrl = "https://avatars.githubusercontent.com/u/8577004?v=4"
+$icemanLogoUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/img/iceman_logo.ico"
 $wslEnableScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/scripts/wsl_enable.ps1"
 $usbReconnectScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/scripts/usb_reconnect.ps1"
 $proxmarkFlashScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/scripts/proxmark_flash.ps1"
@@ -33,7 +33,7 @@ $launchScriptPath = "$basePath\wsl_windows_launch.ps1"
 $pm3TerminalScriptPath = "$basePath\wsl_pm3_terminal.ps1"
 $installScriptPath = "$basePath\wsl_doppelganger_install.sh"
 $imagePath = "$basePath\doppelganger_assistant.ico"
-$icemanLogoPath = "$basePath\iceman_logo.png"
+$icemanLogoPath = "$basePath\iceman_logo.ico"
 $wslEnableScriptPath = "$basePath\wsl_enable.ps1"
 $usbReconnectScriptPath = "$basePath\usb_reconnect.ps1"
 $proxmarkFlashScriptPath = "$basePath\proxmark_flash.ps1"
@@ -216,7 +216,7 @@ Invoke-WebRequest -Uri $installScriptUrl -OutFile $installScriptPath -Headers $h
 Log "Downloading Doppelganger icon..."
 Invoke-WebRequest -Uri $imageUrl -OutFile $imagePath -Headers $headers
 
-Log "Downloading Iceman Proxmark3 logo..."
+Log "Downloading Iceman Proxmark3 icon (.ico)..."
 Invoke-WebRequest -Uri $icemanLogoUrl -OutFile $icemanLogoPath -Headers $headers
 
 Log "Downloading WSL enable script..."
