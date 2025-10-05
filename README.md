@@ -15,6 +15,15 @@ A professional GUI application for calculating card data and automating Proxmark
 
 You can purchase a Stealth reader, Doppelgänger Dev Board, or fully assembled long-range readers from the [Physical Exploitation Store](https://store.physicalexploit.com/). For the open-source firmware, check out [Doppelgänger Core](https://github.com/mwgroup-io/Doppelganger_Core).
 
+## Supported Proxmark3 Devices
+
+Doppelgänger Assistant works with the [Iceman fork of Proxmark3](https://github.com/RfidResearchGroup/proxmark3) and supports the following device types:
+
+* **Proxmark3 RDV4** - With or without Blueshark Bluetooth addon
+* **Proxmark3 Easy (512KB)** - Generic platform support
+
+The automated installers will prompt you to select your device type during installation for optimal configuration.
+
 ## Officially Supported Card Types
 
 Below are the officially supported card types based on Doppelgänger firmware:
@@ -54,62 +63,54 @@ Supported technologies include:
 
 ## Installation
 
-#### Manual Installation
+### Quick Install (Recommended)
 
-1) Grab your desired package from the [release page](https://github.com/tweathers-sec/doppelganger_assistant/releases).
-2) Ensure that you have the [Iceman fork of the Proxmark3](https://github.com/RfidResearchGroup/proxmark3?tab=readme-ov-file#proxmark3-installation-and-overview) software installed.
-3) Install dependencies, if required (WSL).
+The automated installers will install Doppelganger Assistant, required dependencies, and the latest [Iceman fork of Proxmark3](https://github.com/RfidResearchGroup/proxmark3). During installation, you'll be prompted to select your Proxmark3 device type for optimal configuration.
 
-#### Automated Installation
-
-Alternatively, you can use one of the one-liners below to install on [Linux](https://github.com/tweathers-sec/doppelganger_assistant?tab=readme-ov-file#automated-linux-installation-recommend) and [Windows (WSL)](https://github.com/tweathers-sec/doppelganger_assistant?tab=readme-ov-file#installation-windows-wsl). These one-liners will install Doppelganger Assistant, any required dependencies, and the latest fork of the (Iceman) Proxmark3 software.
-
-### Installation MacOS
-
-#### Automated MacOS Installation (RECOMMENDED)
-
-Run the following command in the terminal:
+#### macOS
 
 ```sh
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/installers/doppelganger_install_macos.sh)"
 ```
 
-#### Manual MacOS Installation
-
-Run the following command inside your preferred terminal application:
+#### Linux
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/installers/doppelganger_install_macos.sh | sudo bash
+curl -sSL https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/installers/doppelganger_install_linux.sh | sudo bash
 ```
 
-#### Alternative MacOS Installation
+#### Windows (WSL)
+
+Open **PowerShell as Administrator** and run:
+
+```powershell
+irm https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/installers/doppelganger_install_windows.ps1 | iex
+```
+
+**Note:** The installer will automatically detect existing installations and prompt you to update. If a reboot is required to enable WSL features, you'll be prompted. Simply run the same command again after rebooting.
+
+**For nested VMs (Proxmox, Parallels, VMware, etc.):** Ensure nested virtualization is enabled in your hypervisor settings before running the installer.
+
+---
+
+### Detailed Installation Instructions
+
+#### Manual MacOS Installation
 
 Download the application (.app) from the [release page](https://github.com/tweathers-sec/doppelganger_assistant/releases) and place it in the `/Applications` directory. You can create a symbolic link to run the application from the terminal or you create an alias in your shell profile.
 
 ```sh
-Only choose one of the following options...
-
 # Symbolic Link
 sudo ln -s /Applications/doppelganger_assistant.app/Contents/MacOS/doppelganger_assistant /usr/local/bin/doppelganger_assistant
 
-# Profile Alias
+# OR use a Profile Alias
 alias doppelganger_assistant='/Applications/doppelganger_assistant.app/Contents/MacOS/doppelganger_assistant'
 ```
 
-If you encounter an error stating that the **"doppelganger_assistant.app" is damaged and can't be opened. You should move it to the Trash.** Run the following command in the directory where the doppelganger assistant resides.
+If you encounter an error stating that the **"doppelganger_assistant.app" is damaged and can't be opened. You should move it to the Trash.** Run the following command:
 
 ```sh
 xattr -cr /Applications/doppelganger_assistant.app
-```
-
-### Installation Linux
-
-#### Automated Linux Installation (RECOMMEND)
-
-Run the following command inside your preferred terminal application:
-
-```bash
-curl -sSL https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/installers/doppelganger_install_linux.sh | sudo bash
 ```
 
 #### Manual Linux Installation
@@ -119,62 +120,7 @@ Install Doppelganger Assistant Dependencies:
 ```sh
 sudo apt update 
 sudo apt upgrade
-sudo apt install libgl1 xterm git
-```
-
-Grab the Doppelganger Assistant and install it:
-
-```sh
-sudo apt install make
-wget https://github.com/tweathers-sec/doppelganger_assistant/releases/latest/download/doppelganger_assistant_linux_{amd64/arm64}.tar.xz
-tar xvf doppelganger_assistant_*
-cd doppelganger_assistant
-sudo make install
-
-# Cleanup the directory, if desired
-rm -rf usr/
-rm doppelganger_assistant*
-rm Makefile
-```
-
-To launch the Doppelganger Assistant GUI:
-
-```sh
-doppelganger_assistant
-```
-
-### Installation Windows (WSL)
-
-#### Automated Installation of Doppelganger Assistant (RECOMMENDED)
-
-This process will install WSL, Doppelganger Assistant, Proxmark3 software, and create a desktop shortcut.
-
-Open **PowerShell as Administrator** and run:
-
-```powershell
-irm https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/installers/doppelganger_install_windows.ps1 | iex
-```
-
-**Note:** The installer will automatically detect existing installations and prompt you to update (recommended). If a reboot is required to enable WSL features, you'll be prompted. Simply run the same command again after rebooting.
-
-**For nested VMs (Proxmox, Parallels, VMware, etc.):** Ensure nested virtualization is enabled in your hypervisor settings before running the installer.
-
-#### Manual WSL Installation
-
-If needed, create an Ubuntu WSL environment. From cmd.exe run:
-
-```sh
-wsl --install -d Ubuntu
-```
-
-Reboot Windows. When Windows starts up, WSL will finish setting up. When prompted, enter the Username and Password for your Ubuntu system.
-
-Install Doppelganger Assistant Dependencies:
-
-```sh
-sudo apt update 
-sudo apt upgrade
-sudo apt install libgl1 xterm make git
+sudo apt install libgl1 xterm git make
 ```
 
 Grab the Doppelganger Assistant and install it:
@@ -197,49 +143,71 @@ To launch the Doppelganger Assistant GUI:
 doppelganger_assistant
 ```
 
-Install Proxmark3 Dependencies:
+#### Manual Windows (WSL) Installation
 
+1. Create an Ubuntu WSL environment. From cmd.exe run:
+   ```sh
+   wsl --install -d Ubuntu
+   ```
+
+2. Reboot Windows. When Windows starts up, WSL will finish setting up. When prompted, enter the Username and Password for your Ubuntu system.
+
+3. Install Doppelganger Assistant Dependencies:
+   ```sh
+   sudo apt update 
+   sudo apt upgrade
+   sudo apt install libgl1 xterm make git
+   ```
+
+4. Grab the Doppelganger Assistant and install it:
+   ```sh
+   wget https://github.com/tweathers-sec/doppelganger_assistant/releases/latest/download/doppelganger_assistant_linux_{amd64/arm64}.tar.xz
+   tar xvf doppelganger_assistant_*
+   cd doppelganger_assistant
+   sudo make install
+
+   # Cleanup the directory
+   rm -rf usr/
+   rm doppelganger_assistant*
+   rm Makefile
+   ```
+
+5. Install Proxmark3 Dependencies:
+   ```sh
+   sudo apt install --no-install-recommends git ca-certificates build-essential pkg-config \
+   libreadline-dev gcc-arm-none-eabi libnewlib-dev qtbase5-dev \
+   libbz2-dev liblz4-dev libbluetooth-dev libpython3-dev libssl-dev libgd-dev
+   ```
+
+6. Clone and build Proxmark3:
+   ```sh
+   git clone https://github.com/RfidResearchGroup/proxmark3.git
+   cd proxmark3
+   
+   # Configure for your device type (example for RDV4 with Blueshark)
+   cp Makefile.platform.sample Makefile.platform
+   nano Makefile.platform  # Uncomment #PLATFORM_EXTRAS=BTADDON if using Blueshark
+   
+   # Build and install
+   make clean && make -j
+   sudo make install
+   ```
+
+7. Install USBipd to passthrough the Proxmark3 device to WSL. From cmd.exe run:
+   ```sh
+   winget install --interactive --exact dorssel.usbipd-win
+   ```
+
+8. Connect the Proxmark3 device to WSL. Open cmd.exe as **Administrator** and run:
+   ```sh
+   usbipd list                         # List USB devices
+   usbipd bind --busid 9-1             # Replace 9-1 with your Proxmark3's ID
+   usbipd attach --wsl --busid 9-1     # Replace 9-1 with your Proxmark3's ID
+   ```
+
+To launch the Doppelganger Assistant GUI:
 ```sh
-sudo apt install --no-install-recommends git ca-certificates build-essential pkg-config \
-libreadline-dev gcc-arm-none-eabi libnewlib-dev qtbase5-dev \
-libbz2-dev liblz4-dev libbluetooth-dev libpython3-dev libssl-dev libgd-dev
-```
-
-Clone the Proxmark3 Repo:
-
-```sh
-git clone https://github.com/RfidResearchGroup/proxmark3.git
-cd proxmark3
-```
-
-If desired, modify the Makefile to support the Blueshark Device
-
-```sh
-cp Makefile.platform.sample Makefile.platform
-
-#uncomment #PLATFORM_EXTRAS=BTADDON
-nano Makefile.platform
-```
-
-Compile and Install Proxmark3 software
-
-```sh
-make clean && make -j
-make install
-```
-
-Install USBipd to passthrough the Proxmark3 device to WSL. From cmd.exe run:
-
-```sh
-winget install --interactive --exact dorssel.usbipd-win
-```
-
-To Connect the Proxmark3 device to WSL. Open cmd.exe as an **Administrator** and run:
-
-```sh
-usbipd list // This will list the usb devices attach to your computer
-usbipd bind --busid 9-1 // {9-1 Should be your Proxmark3's ID}
-usbipd attach --wsl --busid 9-1 // {9-1 Should be your Proxmark3's ID}
+doppelganger_assistant
 ```
 
 ## Uninstallation
