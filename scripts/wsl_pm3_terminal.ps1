@@ -116,45 +116,22 @@ function Ensure-Pm3Icon {
             $dir = Split-Path -Path $IconPath -Parent
             if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
 
-            Add-Type -AssemblyName System.Drawing
-
-            $size = 256
-            $bmp  = New-Object System.Drawing.Bitmap $size, $size
-            $g    = [System.Drawing.Graphics]::FromImage($bmp)
-            $g.SmoothingMode = 'AntiAlias'
-
-            # Colors: dark background, cyan accent
-            $bgColor     = [System.Drawing.Color]::FromArgb(32,36,42)
-            $accentColor = [System.Drawing.Color]::FromArgb(0,200,255)
-            $g.Clear($bgColor)
-
-            $font  = New-Object System.Drawing.Font ('Segoe UI Semibold', 96, [System.Drawing.FontStyle]::Bold, [System.Drawing.GraphicsUnit]::Pixel)
-            $brush = New-Object System.Drawing.SolidBrush $accentColor
-            $sf    = New-Object System.Drawing.StringFormat
-            $sf.Alignment = 'Center'
-            $sf.LineAlignment = 'Center'
-            $g.DrawString('PM3', $font, $brush, ([System.Drawing.RectangleF]::new(0,0,$size,$size)), $sf)
-
-            $hicon = $bmp.GetHicon()
-            $icon  = [System.Drawing.Icon]::FromHandle($hicon)
-            $fs    = [System.IO.File]::Open($IconPath, [System.IO.FileMode]::Create)
-            $icon.Save($fs)
-            $fs.Close()
-
-            $g.Dispose(); $bmp.Dispose()
-            Log "Generated generic PM3 icon at $IconPath"
+            # Download the official PM3 icon from repo if missing
+            $pm3IconUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/img/doppelganger_pm3.ico"
+            Invoke-WebRequest -Uri $pm3IconUrl -OutFile $IconPath -ErrorAction Stop
+            Log "Downloaded PM3 icon to $IconPath"
         }
         catch {
-            Log "WARNING: Failed to generate PM3 icon: $_"
+            Log "WARNING: Failed to download PM3 icon: $_"
         }
     }
 }
 
 # Function to ensure Windows Terminal profile exists for Proxmark3
 function EnsureWindowsTerminalProfile {
-    $distroName   = Get-DoppelgangerDistro
+    $distroName = Get-DoppelgangerDistro
     $settingsPath = "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json"
-    $iconPath     = "C:\doppelganger_assistant\pm3.ico"
+    $iconPath = "C:\doppelganger_assistant\doppelganger_pm3.ico"
 
     # Ensure the .ico exists (generate if needed)
     Ensure-Pm3Icon -IconPath $iconPath
