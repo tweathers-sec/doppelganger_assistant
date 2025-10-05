@@ -1,49 +1,45 @@
 # Doppelgänger Assistant
 
-A professional GUI application for calculating card data and automating Proxmark3 operations for every card type that Doppelgänger Core, Pro, Stealth, and MFAS support. This tool streamlines the card-writing process for physical penetration testing by providing an intuitive interface with dual output displays, visual separators, and one-click clipboard copying, eliminating the need to memorize complex Proxmark3 syntax or dig through notes.
+A professional GUI application for calculating card data and automating Proxmark3 operations for every card type that Doppelgänger Core and Stealth support. This tool streamlines the card-writing process for physical penetration testing by providing an intuitive interface with dual output displays, visual separators, and one-click clipboard copying, eliminating the need to memorize complex Proxmark3 syntax or dig through notes.
 
 ![Doppelgänger Assistant GUI](https://github.com/tweathers-sec/doppelganger_assistant/blob/main/img/assistant_gui.png)
 
 ## Features
 
 * **Modern GUI Interface**: Intuitive two-column layout with dedicated status and command output displays
-* **Real-Time Output**: Dual output panels with color-coded status messages and detailed command results
-* **Visual Separators**: Clear visual spacers between multiple write attempts for easy result tracking
-* **Copy to Clipboard**: One-click button to copy all command output for documentation and reporting
 * **Card Operations**: Automatically generates and executes Proxmark3 commands for writing, verifying, and simulating cards
 * **Direct Execution**: Execute write, verify, and simulate operations directly from the GUI with your Proxmark3
-* **Professional Design**: Clean, modern interface with custom-styled buttons, rounded borders, and cohesive color scheme
 * **Cross-Platform**: Available for macOS, Linux, and Windows (via WSL)
 
 ## Doppelgänger Devices
 
-You can purchase Doppelgänger Pro, Stealth, and MFAS from the [Physical Exploitation Store](https://store.physicalexploit.com/). For the open-source firmware, check out [Doppelgänger Core](https://github.com/mwgroup-io/Doppelganger_Core).
+You can purchase a Stealth reader, Doppelgänger Dev Board, or fully assembled long-range readers from the [Physical Exploitation Store](https://store.physicalexploit.com/). For the open-source firmware, check out [Doppelgänger Core](https://github.com/mwgroup-io/Doppelganger_Core).
 
 ## Officially Supported Card Types
 
-Below are the officially supported card types based on Doppelgänger version:
+Below are the officially supported card types based on Doppelgänger firmware:
 
-| Card Types                  | Community Edition | Pro | Stealth | MFAS | Notes                         |
-| --------------------------- | ----------------- | --- | ------- | ---- | ----------------------------- |
-| Keypad PIN Codes            |                   |     |         | X    |                               |
-| HID H10301 26-bit           | X                 | X   | X       | X    |                               |
-| Indala 26-bit               | X                 | X   | X       | X    | Requires Indala reader/module |
-| Indala 27-bit               | X                 | X   | X       | X    | Requires Indala reader/module |
-| 2804 WIEGAND 28-bit         |                   | X   | X       | X    |                               |
-| Indala 29-bit               | X                 | X   | X       | X    | Requires Indala reader/module |
-| ATS Wiegand 30-bit          |                   | X   | X       | X    |                               |
-| HID ADT 31-Bit              |                   | X   | X       | X    |                               |
-| EM4102 / Wiegand 32-bit     |                   |     | X       | X    |                               |
-| HID D10202 33-bit           | X                 | X   | X       | X    |                               |
-| HID H10306 34-bit           | X                 | X   | X       | X    |                               |
-| HID Corporate 1000 35-bit   | X                 | X   | X       | X    |                               |
-| HID Simplex 36-bit (S12906) |                   | X   | X       | X    |                               |
-| HID H10304 37-bit           | X                 | X   | X       | X    |                               |
-| HID H800002 46-bit          | X                 | X   | X       | X    |                               |
-| HID Corporate 1000 48-bit   |                   | X   | X       | X    |                               |
-| Avigilon 56-bit             | X                 | X   | X       | X    |                               |
-| C910 PIVKey                 |                   |     | X       | X    |                               |
-| MIFARE (Various Types)      |                   |     | X       | X    | UID Only                      |
+| Card Types                  | Core | Stealth | Notes                         |
+| --------------------------- | ---- | ------- | ----------------------------- |
+| Keypad PIN Codes            |      | X       |                               |
+| HID H10301 26-bit           | X    | X       |                               |
+| Indala 26-bit               | X    | X       | Requires Indala reader/module |
+| Indala 27-bit               | X    | X       | Requires Indala reader/module |
+| 2804 WIEGAND 28-bit         | X    | X       |                               |
+| Indala 29-bit               | X    | X       | Requires Indala reader/module |
+| ATS Wiegand 30-bit          | X    | X       |                               |
+| HID ADT 31-Bit              | X    | X       |                               |
+| EM4102 / Wiegand 32-bit     | X    | X       |                               |
+| HID D10202 33-bit           | X    | X       |                               |
+| HID H10306 34-bit           | X    | X       |                               |
+| HID Corporate 1000 35-bit   | X    | X       |                               |
+| HID Simplex 36-bit (S12906) | X    | X       |                               |
+| HID H10304 37-bit           | X    | X       |                               |
+| HID H800002 46-bit          | X    | X       |                               |
+| HID Corporate 1000 48-bit   | X    | X       |                               |
+| Avigilon 56-bit             | X    | X       |                               |
+| C910 PIVKey                 | X    | X       |                               |
+| MIFARE (Various Types)      | X    | X       | UID Only                      |
 
 Supported technologies include:
 
@@ -53,29 +49,8 @@ Supported technologies include:
 * AWID
 * Avigilon
 * EM4102
-* PIV
-* MIFARE
-
-## Project Structure
-
-The Doppelganger Assistant project is organized as follows:
-
-```
-doppelganger_assistant/
-├── src/                           # Go source code
-│   ├── *.go                      # All Go source files
-│   ├── go.mod                    # Go module definition
-│   ├── go.sum                    # Go dependencies
-│   └── Makefile                  # Installation Makefile
-├── installers/                   # Installation scripts
-│   ├── doppelganger_install_linux.sh
-│   ├── doppelganger_install_macos.sh
-│   └── doppelganger_install_windows.ps1
-├── scripts/                      # Utility scripts
-├── build.sh                      # Single-platform build script
-├── build_all.sh                  # Multi-platform build script
-└── Dockerfile                    # Docker container definition
-```
+* PIV (UID Only - As that is what is provided via the readers wiegand output)
+* MIFARE (UID Only - As that is what is provided via the readers wiegand output)
 
 ## Installation
 
@@ -435,7 +410,7 @@ doppelganger_assistant -t iclass -bl 26 -fc 123 -cn 4567 -w -v
 
 #### Simulating PIV/MF Cards
 
-Using the UID provided by Doppelgänger (v1.2.0 Doppelgänger Pro, Stealth, and MFAS), you can simulate the exact wiegand signal with a Proxmark3.
+Using the UID provided by Doppelgänger (Core and Stealth), you can simulate the exact wiegand signal with a Proxmark3.
 
 ```sh
 doppelganger_assistant -uid 5AF70D9D -s -t piv
