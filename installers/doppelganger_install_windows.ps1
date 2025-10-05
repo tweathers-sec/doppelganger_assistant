@@ -23,7 +23,6 @@ $launchScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger
 $pm3TerminalScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/scripts/wsl_pm3_terminal.ps1"
 $installScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/scripts/wsl_doppelganger_install.sh"
 $imageUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/img/doppelganger_assistant.ico"
-$icemanLogoUrl = "https://avatars.githubusercontent.com/u/8577004?v=4"
 $wslEnableScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/scripts/wsl_enable.ps1"
 $usbReconnectScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/scripts/usb_reconnect.ps1"
 $proxmarkFlashScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/scripts/proxmark_flash.ps1"
@@ -33,7 +32,6 @@ $launchScriptPath = "$basePath\wsl_windows_launch.ps1"
 $pm3TerminalScriptPath = "$basePath\wsl_pm3_terminal.ps1"
 $installScriptPath = "$basePath\wsl_doppelganger_install.sh"
 $imagePath = "$basePath\doppelganger_assistant.ico"
-$icemanLogoPath = "$basePath\iceman_logo.png"
 $wslEnableScriptPath = "$basePath\wsl_enable.ps1"
 $usbReconnectScriptPath = "$basePath\usb_reconnect.ps1"
 $proxmarkFlashScriptPath = "$basePath\proxmark_flash.ps1"
@@ -207,7 +205,8 @@ mkdir $basePath | Out-Null
 $installDistro = Read-Host "Which WSL distro would you like to install? (U)butu [default] / (K)ali"
 if ($installDistro -eq "K" -or $installDistro -eq "k") {
     $selectedDistro = "Kali"
-} else {
+}
+else {
     $selectedDistro = "Ubuntu"
 }
 
@@ -233,8 +232,7 @@ Invoke-WebRequest -Uri $installScriptUrl -OutFile $installScriptPath -Headers $h
 Log "Downloading Doppelganger icon..."
 Invoke-WebRequest -Uri $imageUrl -OutFile $imagePath -Headers $headers
 
-Log "Downloading Iceman Proxmark3 logo..."
-Invoke-WebRequest -Uri $icemanLogoUrl -OutFile $icemanLogoPath -Headers $headers
+<# No longer downloading Iceman logo; using default icon or none #>
 
 Log "Downloading WSL enable script..."
 Invoke-WebRequest -Uri $wslEnableScriptUrl -OutFile $wslEnableScriptPath -Headers $headers
@@ -286,9 +284,10 @@ if ($createPm3Shortcut) {
         -Arguments "-NoProfile -ExecutionPolicy Bypass -File `"$pm3TerminalScriptPath`"" `
         -Description "Launch Proxmark3 Terminal (pm3) as Administrator" `
         -WorkingDirectory $basePath `
-        -IconLocation $icemanLogoPath
+        -IconLocation $imagePath
     Log "Proxmark3 Terminal shortcut created."
-} else {
+}
+else {
     Log "User opted not to create the Proxmark3 Terminal shortcut."
 }
 
