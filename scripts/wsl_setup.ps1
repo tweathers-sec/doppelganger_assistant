@@ -607,7 +607,9 @@ chmod 0440 /etc/sudoers.d/\$username
     $wslInstallScriptPath = $wslInstallScriptPath -replace "C:", "/mnt/c"
 
     Log "Running custom installation script..."
-    wsl -d $wslName -u $username bash -ic "bash $wslInstallScriptPath"
+    # Use --update flag to run in non-interactive mode (works for both first install and updates)
+    # This skips all "do you want to reinstall?" prompts
+    wsl -d $wslName -u $username bash -ic "bash $wslInstallScriptPath --update"
 }
 
 Log "Doppelganger_assistant WSL setup is complete."

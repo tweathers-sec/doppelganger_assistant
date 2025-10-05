@@ -262,18 +262,9 @@ if (Test-Path "$env:SystemRoot\System32\RebootPending.txt") {
     $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
     exit
 }
-# Run the setup script with distro choice
-Log "Running WSL setup script..."
+# Run the setup script with distro choice (this will also run the install script internally)
+Log "Running WSL setup and installation..."
 powershell -ExecutionPolicy Bypass -File $setupScriptPath -DistroChoice $selectedDistro
-
-# Run the install script
-Log "Running Doppelganger Assistant installation..."
-if ($selectedDistro -eq "Kali") {
-    wsl -d "Kali-doppelganger_assistant" -u doppelganger bash -c "bash /mnt/c/doppelganger_assistant/wsl_doppelganger_install.sh"
-}
-else {
-    wsl -d "Ubuntu-doppelganger_assistant" -u doppelganger bash -c "bash /mnt/c/doppelganger_assistant/wsl_doppelganger_install.sh"
-}
 
 # Create desktop shortcuts
 Log "Creating Doppelganger Assistant desktop shortcut..."

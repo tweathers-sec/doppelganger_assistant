@@ -1,14 +1,14 @@
 #!/bin/bash
 
-# Check if running in update mode (non-interactive)
-UPDATE_MODE=""
+# Check if running in non-interactive mode (auto-install/update without prompts)
+NON_INTERACTIVE=""
 PROXMARK_DEVICE=""
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
-        --update)
-            UPDATE_MODE="--update"
+        --update|--non-interactive)
+            NON_INTERACTIVE="true"
             shift
             ;;
         --device)
@@ -28,9 +28,9 @@ command_exists() {
 
 # Function to prompt for reinstallation
 prompt_reinstall() {
-    # If in update mode, always update
-    if [ "$UPDATE_MODE" = "--update" ]; then
-        echo "Update mode: Updating $1..."
+    # If in non-interactive mode, always proceed without prompting
+    if [ "$NON_INTERACTIVE" = "true" ]; then
+        echo "Non-interactive mode: Installing/updating $1..."
         return 0
     fi
     
@@ -68,9 +68,9 @@ select_proxmark_device() {
         return
     fi
     
-    # Skip interactive prompt in update mode
-    if [ "$UPDATE_MODE" = "--update" ]; then
-        echo "Update mode: Using default Proxmark3 RDV4 with Blueshark"
+    # Skip interactive prompt in non-interactive mode
+    if [ "$NON_INTERACTIVE" = "true" ]; then
+        echo "Non-interactive mode: Using default Proxmark3 RDV4 with Blueshark"
         PROXMARK_DEVICE="rdv4_bt"
         return
     fi
