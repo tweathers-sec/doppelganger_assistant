@@ -207,27 +207,99 @@ create_deb_pkg arm64 "fyne-cross/bin/linux-arm64/doppelganger_assistant"
 print_color "green" "Debian package creation completed."
 
 print_color "blue" "Building for macOS (arm64 and amd64)..."
-# Set CGO flags to suppress duplicate library warnings on macOS
-export CGO_LDFLAGS="-Wl,-no_warn_duplicate_libraries"
-# Build for macOS (arm64 and amd64)
-fyne-cross darwin -arch=arm64,amd64 -app-id=io.mwgroup.doppelganger_assistant > /dev/null 2>&1
-if [ $? -eq 0 ]; then
-    print_color "green" "macOS builds completed successfully."
-else
-    print_color "red" "macOS build failed!"
-    exit 1
-fi
 
-# Rename the macOS apps from src.app to doppelganger_assistant.app
-print_color "blue" "Packaging macOS applications..."
-if [ -d "fyne-cross/dist/darwin-amd64/src.app" ]; then
-    mv fyne-cross/dist/darwin-amd64/src.app fyne-cross/dist/darwin-amd64/doppelganger_assistant.app
-fi
-if [ -d "fyne-cross/dist/darwin-arm64/src.app" ]; then
-    mv fyne-cross/dist/darwin-arm64/src.app fyne-cross/dist/darwin-arm64/doppelganger_assistant.app
+# Check if we're running on macOS - if so, build natively for current arch
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    print_color "yellow" "  Detected macOS host - building natively for current architecture"
+    
+    # Check if fyne is installed
+    if ! command -v fyne &> /dev/null; then
+        print_color "yellow" "  Installing fyne CLI..."
+        go install fyne.io/fyne/v2/cmd/fyne@latest
+        export PATH=$PATH:$(go env GOPATH)/bin
+    fi
+    
+    # Detect current architecture
+    CURRENT_ARCH=$(uname -m)
+    
+    if [[ "$CURRENT_ARCH" == "arm64" ]]; then
+        print_color "blue" "  Building native arm64 build..."
+        fyne package -os darwin -icon ../img/doppelganger_assistant.png -appID io.mwgroup.doppelganger_assistant > /dev/null 2>&1
+        if [ $? -eq 0 ]; then
+            mkdir -p fyne-cross/dist/darwin-arm64
+            mkdir -p fyne-cross/bin/darwin-arm64
+            mv doppelganger_assistant.app fyne-cross/dist/darwin-arm64/
+            cp fyne-cross/dist/darwin-arm64/doppelganger_assistant.app/Contents/MacOS/doppelganger_assistant fyne-cross/bin/darwin-arm64/
+            print_color "green" "  ✓ Native arm64 build completed"
+        else
+            print_color "red" "  ✗ Native arm64 build failed!"
+            exit 1
+        fi
+        
+        # Build amd64 using fyne-cross
+        print_color "blue" "  Building amd64 using fyne-cross..."
+        export CGO_LDFLAGS="-Wl,-no_warn_duplicate_libraries"
+        fyne-cross darwin -arch=amd64 -app-id=io.mwgroup.doppelganger_assistant > /dev/null 2>&1
+        if [ $? -eq 0 ]; then
+            # Rename src.app to doppelganger_assistant.app
+            if [ -d "fyne-cross/dist/darwin-amd64/src.app" ]; then
+                mv fyne-cross/dist/darwin-amd64/src.app fyne-cross/dist/darwin-amd64/doppelganger_assistant.app
+            fi
+            print_color "green" "  ✓ amd64 cross-compilation completed"
+        else
+            print_color "yellow" "  ⚠ amd64 cross-compilation failed (this is expected on some systems)"
+        fi
+    elif [[ "$CURRENT_ARCH" == "x86_64" ]]; then
+        print_color "blue" "  Building native amd64 build..."
+        fyne package -os darwin -icon ../img/doppelganger_assistant.png -appID io.mwgroup.doppelganger_assistant > /dev/null 2>&1
+        if [ $? -eq 0 ]; then
+            mkdir -p fyne-cross/dist/darwin-amd64
+            mkdir -p fyne-cross/bin/darwin-amd64
+            mv doppelganger_assistant.app fyne-cross/dist/darwin-amd64/
+            cp fyne-cross/dist/darwin-amd64/doppelganger_assistant.app/Contents/MacOS/doppelganger_assistant fyne-cross/bin/darwin-amd64/
+            print_color "green" "  ✓ Native amd64 build completed"
+        else
+            print_color "red" "  ✗ Native amd64 build failed!"
+            exit 1
+        fi
+        
+        # Build arm64 using fyne-cross
+        print_color "blue" "  Building arm64 using fyne-cross..."
+        export CGO_LDFLAGS="-Wl,-no_warn_duplicate_libraries"
+        fyne-cross darwin -arch=arm64 -app-id=io.mwgroup.doppelganger_assistant > /dev/null 2>&1
+        if [ $? -eq 0 ]; then
+            # Rename src.app to doppelganger_assistant.app
+            if [ -d "fyne-cross/dist/darwin-arm64/src.app" ]; then
+                mv fyne-cross/dist/darwin-arm64/src.app fyne-cross/dist/darwin-arm64/doppelganger_assistant.app
+            fi
+            print_color "green" "  ✓ arm64 cross-compilation completed"
+        else
+            print_color "yellow" "  ⚠ arm64 cross-compilation failed (this is expected on some systems)"
+        fi
+    fi
+else
+    # Not on macOS - use fyne-cross for cross-compilation
+    print_color "yellow" "  Using fyne-cross for cross-platform build"
+    export CGO_LDFLAGS="-Wl,-no_warn_duplicate_libraries"
+    fyne-cross darwin -arch=arm64,amd64 -app-id=io.mwgroup.doppelganger_assistant > /dev/null 2>&1
+    if [ $? -eq 0 ]; then
+        print_color "green" "  ✓ macOS cross-compilation completed"
+    else
+        print_color "red" "  ✗ macOS cross-compilation failed!"
+        exit 1
+    fi
+    
+    # Rename the macOS apps from src.app to doppelganger_assistant.app
+    if [ -d "fyne-cross/dist/darwin-amd64/src.app" ]; then
+        mv fyne-cross/dist/darwin-amd64/src.app fyne-cross/dist/darwin-amd64/doppelganger_assistant.app
+    fi
+    if [ -d "fyne-cross/dist/darwin-arm64/src.app" ]; then
+        mv fyne-cross/dist/darwin-arm64/src.app fyne-cross/dist/darwin-arm64/doppelganger_assistant.app
+    fi
 fi
 
 # Create DMG for macOS applications
+print_color "blue" "  Creating DMG packages..."
 if [ -d "fyne-cross/dist/darwin-amd64/doppelganger_assistant.app" ]; then
     hdiutil create -volname doppelganger_assistant_darwin_amd64 -srcfolder fyne-cross/dist/darwin-amd64/doppelganger_assistant.app -ov -format UDZO fyne-cross/dist/darwin-amd64/doppelganger_assistant_darwin_amd64.dmg > /dev/null 2>&1
     print_color "green" "  ✓ Created doppelganger_assistant_darwin_amd64.dmg"

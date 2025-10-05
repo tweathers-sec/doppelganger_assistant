@@ -215,21 +215,6 @@ else {
     $selectedDistro = "Kali"
 }
 
-Write-Host "`nWhich Proxmark3 device do you have?" -ForegroundColor Yellow
-Write-Host "1) RDV4 with Blueshark [default]" -ForegroundColor Green
-Write-Host "2) RDV4 without Blueshark" -ForegroundColor Cyan
-Write-Host "3) Proxmark3 Easy (512KB)" -ForegroundColor Magenta
-$pm3Device = Read-Host "`nEnter your choice (1-3) [default: 1]"
-if ($pm3Device -eq "2") {
-    $pm3DeviceType = "rdv4-no-blueshark"
-}
-elseif ($pm3Device -eq "3") {
-    $pm3DeviceType = "easy-512kb"
-}
-else {
-    $pm3DeviceType = "rdv4-blueshark"
-}
-
 # Download the setup, launch, install scripts, and images from GitHub
 Log "Downloading setup script..."
 Invoke-WebRequest -Uri $setupScriptUrl -OutFile $setupScriptPath -Headers $headers
@@ -281,13 +266,13 @@ if (Test-Path "$env:SystemRoot\System32\RebootPending.txt") {
 Log "Running WSL setup script..."
 powershell -ExecutionPolicy Bypass -File $setupScriptPath -DistroChoice $selectedDistro
 
-# Run the install script with device type
+# Run the install script
 Log "Running Doppelganger Assistant installation..."
 if ($selectedDistro -eq "Kali") {
-    wsl -d "Kali-doppelganger_assistant" -u doppelganger bash -c "bash /mnt/c/doppelganger_assistant/wsl_doppelganger_install.sh --device $pm3DeviceType"
+    wsl -d "Kali-doppelganger_assistant" -u doppelganger bash -c "bash /mnt/c/doppelganger_assistant/wsl_doppelganger_install.sh"
 }
 else {
-    wsl -d "Ubuntu-doppelganger_assistant" -u doppelganger bash -c "bash /mnt/c/doppelganger_assistant/wsl_doppelganger_install.sh --device $pm3DeviceType"
+    wsl -d "Ubuntu-doppelganger_assistant" -u doppelganger bash -c "bash /mnt/c/doppelganger_assistant/wsl_doppelganger_install.sh"
 }
 
 # Create desktop shortcuts
