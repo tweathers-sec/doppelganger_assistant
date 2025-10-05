@@ -1,7 +1,25 @@
 #!/bin/bash
 
 # Check if running in update mode (non-interactive)
-UPDATE_MODE=${1:-""}
+UPDATE_MODE=""
+PROXMARK_DEVICE=""
+
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --update)
+            UPDATE_MODE="--update"
+            shift
+            ;;
+        --device)
+            PROXMARK_DEVICE="$2"
+            shift 2
+            ;;
+        *)
+            shift
+            ;;
+    esac
+done
 
 # Function to check if a command exists
 command_exists() {
@@ -26,6 +44,30 @@ prompt_reinstall() {
 
 # Function to select Proxmark3 device type
 select_proxmark_device() {
+    # Skip interactive prompt if device was provided as parameter
+    if [ -n "$PROXMARK_DEVICE" ]; then
+        # Map Windows installer device names to internal names
+        case "$PROXMARK_DEVICE" in
+            "rdv4-blueshark")
+                PROXMARK_DEVICE="rdv4_bt"
+                echo "Using provided device: Proxmark3 RDV4 with Blueshark"
+                ;;
+            "rdv4-no-blueshark")
+                PROXMARK_DEVICE="rdv4"
+                echo "Using provided device: Proxmark3 RDV4 (without Blueshark)"
+                ;;
+            "easy-512kb")
+                PROXMARK_DEVICE="easy512"
+                echo "Using provided device: Proxmark3 Easy (512KB)"
+                ;;
+            *)
+                # Already in internal format, just use it
+                echo "Using provided device type: $PROXMARK_DEVICE"
+                ;;
+        esac
+        return
+    fi
+    
     # Skip interactive prompt in update mode
     if [ "$UPDATE_MODE" = "--update" ]; then
         echo "Update mode: Using default Proxmark3 RDV4 with Blueshark"

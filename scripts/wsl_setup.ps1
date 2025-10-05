@@ -1,3 +1,8 @@
+# Accept distro choice as parameter (optional)
+param(
+    [string]$DistroChoice = ""
+)
+
 # Define the installation path and other static values
 $basePath = "C:\doppelganger_assistant"
 $wslInstallationPath = "$basePath\wsl"
@@ -119,10 +124,12 @@ function Install-Winget {
         Add-AppxPackage -Path $wingetPath
         Log "Winget installed successfully."
         return $true
-    } catch {
+    }
+    catch {
         Log "Error installing winget: $_"
         return $false
-    } finally {
+    }
+    finally {
         Remove-Item $wingetPath -ErrorAction SilentlyContinue
         if ($isWindows10) {
             Remove-Item $xamlPath -ErrorAction SilentlyContinue
@@ -135,7 +142,8 @@ function Is-WingetInstalled {
     try {
         $null = Get-Command winget -ErrorAction Stop
         return $true
-    } catch {
+    }
+    catch {
         return $false
     }
 }
@@ -143,7 +151,7 @@ function Is-WingetInstalled {
 # Function to refresh PATH and check for usbipd
 function Refresh-UsbIpdCommand {
     Log "Refreshing PATH and checking for usbipd command..."
-    $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+    $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
     
     if (Get-Command usbipd -ErrorAction SilentlyContinue) {
         Log "usbipd command is now available."
@@ -171,11 +179,13 @@ $psGallery = Get-PSRepository -Name "PSGallery" -ErrorAction SilentlyContinue
 if ($psGallery -and $psGallery.InstallationPolicy -ne "Trusted") {
     Log "Setting PSGallery to trusted..."
     Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted -ErrorAction SilentlyContinue | Out-Null
-} elseif (-not $psGallery) {
+}
+elseif (-not $psGallery) {
     Log "PSGallery not found. Registering and setting to trusted..."
     Register-PSRepository -Default -ErrorAction SilentlyContinue | Out-Null
     Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted -ErrorAction SilentlyContinue | Out-Null
-} else {
+}
+else {
     Log "PSGallery is already set to trusted."
 }
 
@@ -184,10 +194,11 @@ if (-not (Is-WingetInstalled)) {
     Log "Winget is not installed. Installing Winget..."
     if (Install-Winget) {
         Log "Winget installed successfully. Refreshing PATH..."
-        $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+        $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
         # Force PowerShell to refresh its command cache
         $env:PSModulePath = [System.Environment]::GetEnvironmentVariable("PSModulePath", "Machine")
-    } else {
+    }
+    else {
         Log "Failed to install winget. Continuing without winget."
     }
 }
@@ -205,16 +216,19 @@ if (Is-WingetInstalled) {
         Log "Winget version is older than $minWingetVersion. Updating Winget..."
         if (Install-Winget) {
             Log "Winget updated successfully. Refreshing PATH..."
-            $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+            $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
             $newWingetVersion = (winget --version).Trim()
             Log "Updated Winget version: $newWingetVersion"
-        } else {
+        }
+        else {
             Log "Failed to update winget. Continuing with current version."
         }
-    } else {
+    }
+    else {
         Log "Winget version is up to date."
     }
-} else {
+}
+else {
     Log "Winget is not available. Skipping version check and update."
 }
 # Install usbipd using winget or alternative methods
@@ -225,7 +239,8 @@ if (-not (CommandExists "usbipd")) {
         if ($installOutput.ExitCode -ne 0) {
             throw "Winget installation failed with exit code: $($installOutput.ExitCode)"
         }
-    } catch {
+    }
+    catch {
         Log "Error installing usbipd using winget. Trying alternative method..."
         try {
             $usbIpdUrl = "https://github.com/dorssel/usbipd-win/releases/latest/download/usbipd-win_x64.msi"
@@ -236,7 +251,8 @@ if (-not (CommandExists "usbipd")) {
                 throw "MSI installation failed with exit code: $($msiExecOutput.ExitCode)"
             }
             Remove-Item $usbIpdMsiPath -Force
-        } catch {
+        }
+        catch {
             Log "WARNING: Failed to install usbipd: $_"
             Log "You can manually install usbipd later from: https://github.com/dorssel/usbipd-win/releases"
             Log "Continuing with installation..."
@@ -248,7 +264,8 @@ if (-not (CommandExists "usbipd")) {
         Log "NOTE: usbipd is not available in current session. It may require a restart or manual installation."
         Log "Continuing with WSL setup..."
     }
-} else {
+}
+else {
     Log "usbipd is already installed."
 }
 
@@ -263,7 +280,8 @@ $existingUbuntu = $false
 foreach ($distro in $wslList) {
     if ($distro -eq $kaliWslName) {
         $existingKali = $true
-    } elseif ($distro -eq $ubuntuWslName) {
+    }
+    elseif ($distro -eq $ubuntuWslName) {
         $existingUbuntu = $true
     }
 }
@@ -272,7 +290,8 @@ if ($existingKali -or $existingUbuntu) {
     # Determine which one exists
     if ($existingKali) {
         $wslName = $kaliWslName
-    } else {
+    }
+    else {
         $wslName = $ubuntuWslName
     }
     Write-Host "`n========================================" -ForegroundColor Cyan
@@ -335,10 +354,12 @@ if ($existingKali -or $existingUbuntu) {
         Write-Host "  doppelganger_assistant" -ForegroundColor Yellow
         Write-Host ""
         exit
-    } elseif ($response -eq "2") {
+    }
+    elseif ($response -eq "2") {
         Log "Unregistering existing $wslName for full reinstall..."
         wsl.exe --unregister $wslName
-    } else {
+    }
+    else {
         Log "Exiting without changes."
         exit
     }
@@ -348,19 +369,35 @@ if ($existingKali -or $existingUbuntu) {
 Log "No existing Doppelganger Assistant installation found."
 Log "Proceeding with fresh installation..."
 
-# Prompt user to select distribution
-Write-Host "`n========================================" -ForegroundColor Cyan
-Write-Host "  Select Linux Distribution for WSL2" -ForegroundColor Cyan
-Write-Host "========================================" -ForegroundColor Cyan
-Write-Host ""
-Write-Host "1) Kali Linux 2025.3 - Recommended" -ForegroundColor Magenta
-Write-Host ""
-Write-Host "2) Ubuntu 24.04 LTS (Noble) - Alternative" -ForegroundColor Green
-Write-Host ""
+# Check if distro choice was provided as parameter
+if ($DistroChoice -ne "") {
+    Log "Using provided distro choice: $DistroChoice"
+    if ($DistroChoice -eq "Kali") {
+        $distroChoice = "1"
+    }
+    elseif ($DistroChoice -eq "Ubuntu") {
+        $distroChoice = "2"
+    }
+    else {
+        Log "Invalid distro choice provided. Defaulting to Kali."
+        $distroChoice = "1"
+    }
+}
+else {
+    # Prompt user to select distribution
+    Write-Host "`n========================================" -ForegroundColor Cyan
+    Write-Host "  Select Linux Distribution for WSL2" -ForegroundColor Cyan
+    Write-Host "========================================" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "1) Kali Linux 2025.3 - Recommended" -ForegroundColor Magenta
+    Write-Host ""
+    Write-Host "2) Ubuntu 24.04 LTS (Noble) - Alternative" -ForegroundColor Green
+    Write-Host ""
 
-do {
-    $distroChoice = Read-Host "Enter your choice (1 or 2)"
-} while ($distroChoice -ne "1" -and $distroChoice -ne "2")
+    do {
+        $distroChoice = Read-Host "Enter your choice (1 or 2)"
+    } while ($distroChoice -ne "1" -and $distroChoice -ne "2")
+}
 
 # Create staging directory
 if (-Not (Test-Path -Path "$basePath\staging")) { mkdir "$basePath\staging" }
@@ -378,14 +415,16 @@ if ($distroChoice -eq "1") {
         $rootfsUrl = "https://kali.download/wsl-images/current/kali-linux-2025.3-wsl-rootfs-arm64.wsl"
         $rootfsFile = "$basePath\staging\kali.rootfs.wsl"
         $distroName = "Kali Linux 2025.3"
-    } else {
+    }
+    else {
         # AMD64/x86_64 for Intel/AMD processors (most common)
         Log "Using AMD64 rootfs (Kali Linux 2025.3)"
         $rootfsUrl = "https://kali.download/wsl-images/current/kali-linux-2025.3-wsl-rootfs-amd64.wsl"
         $rootfsFile = "$basePath\staging\kali.rootfs.wsl"
         $distroName = "Kali Linux 2025.3"
     }
-} else {
+}
+else {
     Log "Installing Ubuntu 24.04 (Noble) via direct rootfs import..."
     $wslName = $ubuntuWslName  # Set WSL name for Ubuntu
     if ($processorArch -eq "ARM64") {
@@ -394,7 +433,8 @@ if ($distroChoice -eq "1") {
         $rootfsUrl = "https://cloud-images.ubuntu.com/wsl/releases/noble/current/ubuntu-noble-wsl-arm64-24.04lts.rootfs.tar.gz"
         $rootfsFile = "$basePath\staging\ubuntu.rootfs.tar.gz"
         $distroName = "Ubuntu 24.04 (Noble)"
-    } else {
+    }
+    else {
         # AMD64/x86_64 for Intel/AMD processors (most common)
         Log "Using AMD64 rootfs (Ubuntu 24.04 Noble)"
         $rootfsUrl = "https://cloud-images.ubuntu.com/wsl/releases/noble/current/ubuntu-noble-wsl-amd64-24.04lts.rootfs.tar.gz"
@@ -412,7 +452,8 @@ try {
     # Use aria2 for faster download if available, otherwise use Invoke-WebRequest
     if (Test-Path "$basePath\aria2\aria2c.exe") {
         & "$basePath\aria2\aria2c.exe" -x 16 -s 16 -d "$basePath\staging" -o ([System.IO.Path]::GetFileName($rootfsFile)) $rootfsUrl
-    } else {
+    }
+    else {
         Invoke-WebRequest -Uri $rootfsUrl -OutFile $rootfsFile -UseBasicParsing
     }
     
@@ -440,7 +481,8 @@ try {
     
     # Mark that we directly imported (skip the export/import step later)
     $directImport = $true
-} catch {
+}
+catch {
     Log "ERROR: Failed to download or import $distroName rootfs: $_"
     throw "$distroName installation failed"
 }
@@ -473,7 +515,8 @@ if (-not $directImport) {
     Write-Host "`nPress any key to exit..."
     $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
     throw "Linux distribution not found after installation."
-} else {
+}
+else {
     Log "Linux distribution directly imported as $wslName"
 }
 

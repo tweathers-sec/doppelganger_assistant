@@ -369,9 +369,12 @@ func runGUI() {
 
 	w := a.NewWindow("Doppelgänger Assistant")
 
+	// Set window icon explicitly for better Linux/Wayland support
+	w.SetIcon(resourceIconPng)
+
 	a.Settings().SetTheme(&arrowDarkTheme{})
 
-	w.Resize(fyne.NewSize(1400, 800))
+	w.Resize(fyne.NewSize(1200, 686))
 	w.CenterOnScreen()
 
 	logo := canvas.NewImageFromResource(resourceDoppelgangerdmPng)

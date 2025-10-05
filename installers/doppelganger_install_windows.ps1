@@ -205,8 +205,8 @@ mkdir $basePath | Out-Null
 # ============================
 
 Write-Host "`nWhich WSL distro would you like to install?" -ForegroundColor Yellow
-Write-Host "1) Kali Linux [default]" -ForegroundColor Green
-Write-Host "2) Ubuntu" -ForegroundColor Cyan
+Write-Host "1) Kali Linux 2025.3 [default]" -ForegroundColor Green
+Write-Host "2) Ubuntu 24.04 LTS (Noble)" -ForegroundColor Cyan
 $installDistro = Read-Host "`nEnter your choice (1-2) [default: 1]"
 if ($installDistro -eq "2") {
     $selectedDistro = "Ubuntu"
@@ -277,9 +277,9 @@ if (Test-Path "$env:SystemRoot\System32\RebootPending.txt") {
     $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
     exit
 }
-# Run the setup script
+# Run the setup script with distro choice
 Log "Running WSL setup script..."
-powershell -ExecutionPolicy Bypass -File $setupScriptPath
+powershell -ExecutionPolicy Bypass -File $setupScriptPath -DistroChoice $selectedDistro
 
 # Run the install script with device type
 Log "Running Doppelganger Assistant installation..."
