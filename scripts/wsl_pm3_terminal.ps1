@@ -131,12 +131,12 @@ function EnsureWindowsTerminalProfile {
                 Log "Creating Windows Terminal Proxmark3 profile with Iceman icon..."
                 
                 $newProfile = @{
-                    name = "Proxmark3 Terminal"
-                    commandline = "wsl.exe -d $distroName --exec bash -c 'pm3'"
-                    icon = $iconPath
+                    name              = "Proxmark3 Terminal"
+                    commandline       = "wsl.exe -d $distroName --exec bash -c 'pm3'"
+                    icon              = $iconPath
                     startingDirectory = "~"
-                    guid = "{" + [guid]::NewGuid().ToString() + "}"
-                    hidden = $false
+                    guid              = "{" + [guid]::NewGuid().ToString() + "}"
+                    hidden            = $false
                 }
                 
                 # Add the new profile to the list
