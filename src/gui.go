@@ -369,8 +369,10 @@ func runGUI() {
 
 	w := a.NewWindow("Doppelgänger Assistant")
 
-	// Set window icon explicitly for better Linux/Wayland support
-	w.SetIcon(resourceIconPng)
+	// Set window icon explicitly for Linux/Wayland support
+	if runtime.GOOS == "linux" {
+		w.SetIcon(resourceIconPng)
+	}
 
 	a.Settings().SetTheme(&arrowDarkTheme{})
 
