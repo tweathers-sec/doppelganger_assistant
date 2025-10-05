@@ -98,45 +98,76 @@ irm https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/
 
 #### Manual MacOS Installation
 
-Download the application (.app) from the [release page](https://github.com/tweathers-sec/doppelganger_assistant/releases) and place it in the `/Applications` directory. You can create a symbolic link to run the application from the terminal or you create an alias in your shell profile.
+1. Download the appropriate DMG file for your architecture from the [release page](https://github.com/tweathers-sec/doppelganger_assistant/releases):
+   - Apple Silicon (M1/M2/M3): `doppelganger_assistant_darwin_arm64.dmg`
+   - Intel: `doppelganger_assistant_darwin_amd64.dmg`
 
-```sh
-# Symbolic Link
-sudo ln -s /Applications/doppelganger_assistant.app/Contents/MacOS/doppelganger_assistant /usr/local/bin/doppelganger_assistant
+2. Open the DMG file and drag `doppelganger_assistant.app` to your `/Applications` folder
 
-# OR use a Profile Alias
-alias doppelganger_assistant='/Applications/doppelganger_assistant.app/Contents/MacOS/doppelganger_assistant'
-```
+3. Remove quarantine attributes:
+   ```sh
+   xattr -cr /Applications/doppelganger_assistant.app
+   ```
 
-If you encounter an error stating that the **"doppelganger_assistant.app" is damaged and can't be opened. You should move it to the Trash.** Run the following command:
+4. Create a command-line alias by adding to your shell profile (`~/.zshrc` or `~/.zprofile`):
+   ```sh
+   alias doppelganger_assistant='/Applications/doppelganger_assistant.app/Contents/MacOS/doppelganger_assistant'
+   ```
 
-```sh
-xattr -cr /Applications/doppelganger_assistant.app
-```
+5. Reload your shell:
+   ```sh
+   source ~/.zshrc
+   ```
 
 #### Manual Linux Installation
 
-Install Doppelganger Assistant Dependencies:
+**Option 1: Using .deb package (Debian/Ubuntu/Kali - Recommended)**
 
-```sh
-sudo apt update 
-sudo apt upgrade
-sudo apt install libgl1 xterm git make
-```
+1. Install dependencies:
+   ```sh
+   sudo apt update && sudo apt upgrade -y
+   sudo apt install libgl1 xterm wget -y
+   ```
 
-Grab the Doppelganger Assistant and install it:
+2. Download and install the .deb package for your architecture:
+   ```sh
+   # For x86_64/amd64 systems:
+   wget https://github.com/tweathers-sec/doppelganger_assistant/releases/latest/download/doppelganger_assistant_linux_amd64.deb
+   sudo dpkg -i doppelganger_assistant_linux_amd64.deb
+   
+   # For ARM64 systems:
+   wget https://github.com/tweathers-sec/doppelganger_assistant/releases/latest/download/doppelganger_assistant_linux_arm64.deb
+   sudo dpkg -i doppelganger_assistant_linux_arm64.deb
+   ```
 
-```sh
-wget https://github.com/tweathers-sec/doppelganger_assistant/releases/latest/download/doppelganger_assistant_linux_{amd64/arm64}.tar.xz
-tar xvf doppelganger_assistant_*
-cd doppelganger_assistant
-sudo make install
+3. Fix any missing dependencies (if needed):
+   ```sh
+   sudo apt-get install -f -y
+   ```
 
-# Cleanup the directory, if desired
-rm -rf usr/
-rm doppelganger_assistant*
-rm Makefile
-```
+**Option 2: Using tar.xz archive (Other distributions)**
+
+1. Install dependencies:
+   ```sh
+   sudo apt update && sudo apt upgrade -y
+   sudo apt install libgl1 xterm make git wget -y
+   ```
+
+2. Download and install for your architecture:
+   ```sh
+   # For x86_64/amd64 systems:
+   wget https://github.com/tweathers-sec/doppelganger_assistant/releases/latest/download/doppelganger_assistant_linux_amd64.tar.xz
+   
+   # For ARM64 systems:
+   wget https://github.com/tweathers-sec/doppelganger_assistant/releases/latest/download/doppelganger_assistant_linux_arm64.tar.xz
+   
+   # Extract and install:
+   tar xvf doppelganger_assistant_linux_*.tar.xz
+   cd doppelganger_assistant
+   sudo make install
+   cd ..
+   rm -rf doppelganger_assistant
+   ```
 
 To launch the Doppelganger Assistant GUI:
 
@@ -146,67 +177,71 @@ doppelganger_assistant
 
 #### Manual Windows (WSL) Installation
 
-1. Create an Ubuntu 24.04 WSL environment. From cmd.exe run:
-   ```sh
+1. **Enable WSL and install a Linux distribution**. Open PowerShell as Administrator:
+   ```powershell
+   # For Kali Linux (recommended):
+   wsl --install -d kali-linux
+   
+   # OR for Ubuntu 24.04 LTS:
    wsl --install -d Ubuntu-24.04
    ```
 
-2. Reboot Windows. When Windows starts up, WSL will finish setting up. When prompted, enter the Username and Password for your Ubuntu system.
+2. **Reboot Windows**. After reboot, WSL will finish setup. When prompted, create a username and password for your Linux environment.
 
-3. Install Doppelganger Assistant Dependencies:
+3. **Install Doppelganger Assistant** (inside WSL):
    ```sh
-   sudo apt update 
-   sudo apt upgrade
-   sudo apt install libgl1 xterm make git
+   sudo apt update && sudo apt upgrade -y
+   sudo apt install libgl1 xterm wget -y
+   
+   # For x86_64/amd64 systems:
+   wget https://github.com/tweathers-sec/doppelganger_assistant/releases/latest/download/doppelganger_assistant_linux_amd64.deb
+   sudo dpkg -i doppelganger_assistant_linux_amd64.deb
+   
+   # For ARM64 systems:
+   wget https://github.com/tweathers-sec/doppelganger_assistant/releases/latest/download/doppelganger_assistant_linux_arm64.deb
+   sudo dpkg -i doppelganger_assistant_linux_arm64.deb
    ```
 
-4. Grab the Doppelganger Assistant and install it:
+4. **Install Proxmark3 dependencies**:
    ```sh
-   wget https://github.com/tweathers-sec/doppelganger_assistant/releases/latest/download/doppelganger_assistant_linux_{amd64/arm64}.tar.xz
-   tar xvf doppelganger_assistant_*
-   cd doppelganger_assistant
-   sudo make install
-
-   # Cleanup the directory
-   rm -rf usr/
-   rm doppelganger_assistant*
-   rm Makefile
-   ```
-
-5. Install Proxmark3 Dependencies:
-   ```sh
-   sudo apt install --no-install-recommends git ca-certificates build-essential pkg-config \
+   sudo apt install --no-install-recommends -y git ca-certificates build-essential pkg-config \
    libreadline-dev gcc-arm-none-eabi libnewlib-dev qtbase5-dev \
    libbz2-dev liblz4-dev libbluetooth-dev libpython3-dev libssl-dev libgd-dev
    ```
 
-6. Clone and build Proxmark3:
+5. **Clone and build Proxmark3**:
    ```sh
+   mkdir -p ~/src && cd ~/src
    git clone https://github.com/RfidResearchGroup/proxmark3.git
    cd proxmark3
    
-   # Configure for your device type (example for RDV4 with Blueshark)
+   # Configure for your Proxmark3 device type:
    cp Makefile.platform.sample Makefile.platform
-   nano Makefile.platform  # Uncomment #PLATFORM_EXTRAS=BTADDON if using Blueshark
+   
+   # Edit Makefile.platform for your device:
+   # - For RDV4 with Blueshark: Uncomment PLATFORM=PM3RDV4 and PLATFORM_EXTRAS=BTADDON
+   # - For RDV4 without Blueshark: Uncomment PLATFORM=PM3RDV4 only
+   # - For Proxmark3 Easy (512KB): Uncomment PLATFORM=PM3GENERIC and PLATFORM_SIZE=512
+   nano Makefile.platform
    
    # Build and install
-   make clean && make -j
-   sudo make install
+   make clean && make -j$(nproc)
+   sudo make install PREFIX=/usr/local
    ```
 
-7. Install USBipd to passthrough the Proxmark3 device to WSL. From cmd.exe run:
-   ```sh
+6. **Install USBipd** (from Windows PowerShell as Administrator):
+   ```powershell
    winget install --interactive --exact dorssel.usbipd-win
    ```
 
-8. Connect the Proxmark3 device to WSL. Open cmd.exe as **Administrator** and run:
-   ```sh
-   usbipd list                         # List USB devices
-   usbipd bind --busid 9-1             # Replace 9-1 with your Proxmark3's ID
-   usbipd attach --wsl --busid 9-1     # Replace 9-1 with your Proxmark3's ID
+7. **Connect Proxmark3 to WSL** (from Windows cmd.exe or PowerShell as Administrator):
+   ```powershell
+   usbipd list                         # List USB devices - find your Proxmark3 (VID: 9ac4)
+   usbipd bind --busid 9-1             # Replace 9-1 with your Proxmark3's busid
+   usbipd attach --wsl --busid 9-1     # Attach to WSL
    ```
 
-To launch the Doppelganger Assistant GUI:
+To launch Doppelganger Assistant:
 ```sh
 doppelganger_assistant
 ```
@@ -250,7 +285,13 @@ sudo rm /usr/local/bin/doppelganger_assistant
 
 ### Uninstalling from Linux
 
-To uninstall from Linux:
+**If installed via .deb package:**
+
+```bash
+sudo apt remove doppelganger-assistant
+```
+
+**If installed via tar.xz archive:**
 
 ```bash
 sudo rm /usr/local/bin/doppelganger_assistant
