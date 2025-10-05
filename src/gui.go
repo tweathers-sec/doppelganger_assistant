@@ -92,13 +92,13 @@ func (w *guiWriter) Write(p []byte) (n int, err error) {
 	text := string(p)
 
 	if strings.HasPrefix(text, "[SUCCESS] ") {
-		text = "[OK] " + strings.TrimPrefix(text, "[SUCCESS] ")
+		text = "✓  " + strings.TrimPrefix(text, "[SUCCESS] ")
 	} else if strings.HasPrefix(text, "[ERROR] ") {
-		text = "[!!] " + strings.TrimPrefix(text, "[ERROR] ")
+		text = "✗  " + strings.TrimPrefix(text, "[ERROR] ")
 	} else if strings.HasPrefix(text, "[INFO] ") {
-		text = "[>>] " + strings.TrimPrefix(text, "[INFO] ")
+		text = "►  " + strings.TrimPrefix(text, "[INFO] ")
 	} else if strings.HasPrefix(text, "[PROGRESS] ") {
-		text = "[..] " + strings.TrimPrefix(text, "[PROGRESS] ")
+		text = "⋯  " + strings.TrimPrefix(text, "[PROGRESS] ")
 	}
 
 	w.output.Append(text)
@@ -281,6 +281,77 @@ func (t *arrowDarkTheme) Size(name fyne.ThemeSizeName) float32 {
 	return theme.DefaultTheme().Size(name)
 }
 
+// validateCardInput validates facility code and card number ranges for each card type and bit length
+func validateCardInput(cardType string, bitLength int, fc int, cn int) (bool, string) {
+	type rangeInfo struct {
+		fcMax int
+		cnMax int
+	}
+	
+	// Define valid ranges for each card type and bit length
+	ranges := map[string]map[int]rangeInfo{
+		"prox": {
+			26: {fcMax: 255, cnMax: 65535},       // HID H10301
+			30: {fcMax: 2047, cnMax: 32767},      // ATS Wiegand
+			31: {fcMax: 15, cnMax: 8388607},      // HID ADT
+			33: {fcMax: 127, cnMax: 16777215},    // HID D10202
+			34: {fcMax: 65535, cnMax: 65535},     // HID H10306
+			35: {fcMax: 4095, cnMax: 1048575},    // HID Corporate 1000 35-bit
+			36: {fcMax: 255, cnMax: 65535},       // HID Simplex (S12906)
+			37: {fcMax: 65535, cnMax: 524287},    // HID H10304
+			46: {fcMax: 16383, cnMax: 1073741823}, // HID H800002
+			48: {fcMax: 4194303, cnMax: 8388607}, // HID Corporate 1000 48-bit
+		},
+		"iclass": {
+			26: {fcMax: 255, cnMax: 65535},       // HID H10301
+			30: {fcMax: 2047, cnMax: 32767},      // ATS Wiegand
+			33: {fcMax: 127, cnMax: 16777215},    // HID D10202
+			34: {fcMax: 65535, cnMax: 65535},     // HID H10306
+			35: {fcMax: 4095, cnMax: 1048575},    // HID Corporate 1000 35-bit
+			36: {fcMax: 255, cnMax: 65535},       // HID Simplex (S12906)
+			37: {fcMax: 65535, cnMax: 524287},    // HID H10304
+			46: {fcMax: 16383, cnMax: 1073741823}, // HID H800002
+			48: {fcMax: 4194303, cnMax: 8388607}, // HID Corporate 1000 48-bit
+		},
+		"awid": {
+			26: {fcMax: 255, cnMax: 65535}, // Standard 26-bit
+			50: {fcMax: 65535, cnMax: 8388607}, // Extended 50-bit
+		},
+		"indala": {
+			26: {fcMax: 255, cnMax: 65535},   // Standard 26-bit
+			27: {fcMax: 4095, cnMax: 8191},   // Indala 27-bit
+			29: {fcMax: 4095, cnMax: 32767},  // Indala 29-bit
+		},
+		"avigilon": {
+			56: {fcMax: 1048575, cnMax: 4194303}, // Avigilon 56-bit (20/22 split)
+		},
+	}
+	
+	// Check if card type has defined ranges
+	cardRanges, exists := ranges[cardType]
+	if !exists {
+		return true, "" // No validation needed for this card type
+	}
+	
+	// Check if bit length is valid for this card type
+	limits, exists := cardRanges[bitLength]
+	if !exists {
+		return false, fmt.Sprintf("Invalid bit length %d for card type %s", bitLength, cardType)
+	}
+	
+	// Validate facility code
+	if fc < 0 || fc > limits.fcMax {
+		return false, fmt.Sprintf("Facility Code must be between 0 and %d for %d-bit %s cards", limits.fcMax, bitLength, cardType)
+	}
+	
+	// Validate card number
+	if cn < 0 || cn > limits.cnMax {
+		return false, fmt.Sprintf("Card Number must be between 0 and %d for %d-bit %s cards", limits.cnMax, bitLength, cardType)
+	}
+	
+	return true, ""
+}
+
 func runGUI() {
 	os.Setenv("FYNE_DISABLE_CALL_CHECKING", "1")
 
@@ -417,19 +488,35 @@ func runGUI() {
 		switch cardTypeCmd {
 		case "prox", "iclass", "awid", "indala", "avigilon":
 			if facilityCodeValue == "" || cardNumberValue == "" {
-				currentStatusOutput.Set("ERROR: Facility Code and Card Number are required\n")
+				currentStatusOutput.Set("✗  Facility Code and Card Number are required\n")
 				return
 			}
+			
+			// Validate FC and CN ranges
+			fc, fcErr := strconv.Atoi(facilityCodeValue)
+			cn, cnErr := strconv.Atoi(cardNumberValue)
+			bl, blErr := strconv.Atoi(bitLengthValue)
+			
+			if fcErr != nil || cnErr != nil || blErr != nil {
+				currentStatusOutput.Set("✗  Invalid numeric values for Facility Code, Card Number, or Bit Length\n")
+				return
+			}
+			
+			if valid, errMsg := validateCardInput(cardTypeCmd, bl, fc, cn); !valid {
+				currentStatusOutput.Set(fmt.Sprintf("✗  %s\n", errMsg))
+				return
+			}
+			
 			args = append(args, "-bl", bitLengthValue, "-fc", facilityCodeValue, "-cn", cardNumberValue)
 		case "em":
 			if hexDataValue == "" {
-				currentStatusOutput.Set("ERROR: Hex Data is required\n")
+				currentStatusOutput.Set("✗  Hex Data is required\n")
 				return
 			}
 			args = append(args, "--hex", hexDataValue)
 		case "mifare", "piv":
 			if uidValue == "" {
-				currentStatusOutput.Set("ERROR: UID is required\n")
+				currentStatusOutput.Set("✗  UID is required\n")
 				return
 			}
 			args = append(args, "--uid", uidValue)
@@ -476,7 +563,7 @@ func runGUI() {
 			SetStatusWriter(statusWriter)
 
 			if actionValue == "Generate Command" {
-				WriteStatusInfo("Generated PM3 command:")
+				WriteStatusInfo("Generating PM3 command...")
 
 				// Generate the actual PM3 command string based on card type
 				var cmdStr string
