@@ -141,8 +141,126 @@ detect_os() {
     echo $OS
 }
 
+# Function to detect the Desktop Environment
+detect_desktop_environment() {
+    # First, check XDG_CURRENT_DESKTOP (most reliable for modern DEs)
+    if [ -n "$XDG_CURRENT_DESKTOP" ]; then
+        echo "$XDG_CURRENT_DESKTOP"
+        return
+    fi
+    
+    # Fall back to checking running processes and environment variables
+    if [ -n "$GNOME_DESKTOP_SESSION_ID" ] || command -v gnome-shell &> /dev/null; then
+        echo "GNOME"
+    elif [ -n "$KDE_FULL_SESSION" ] || command -v plasmashell &> /dev/null; then
+        echo "KDE"
+    elif command -v xfce4-session &> /dev/null; then
+        echo "XFCE"
+    elif [ -n "$MATE_DESKTOP_SESSION_ID" ] || command -v mate-session &> /dev/null; then
+        echo "MATE"
+    elif command -v cinnamon &> /dev/null; then
+        echo "Cinnamon"
+    elif command -v lxsession &> /dev/null; then
+        echo "LXDE"
+    elif command -v lxqt-session &> /dev/null; then
+        echo "LXQt"
+    elif command -v budgie-panel &> /dev/null; then
+        echo "Budgie"
+    else
+        echo "Unknown"
+    fi
+}
+
+# Function to refresh desktop environment and make new .desktop files visible
+refresh_desktop_integration() {
+    local desktop_env=$1
+    
+    echo "Refreshing desktop integration for $desktop_env..."
+    
+    # Update desktop database (works for most DEs)
+    if command -v update-desktop-database &> /dev/null; then
+        update-desktop-database "$HOME/.local/share/applications" 2>/dev/null || true
+    fi
+    
+    # Force update XDG desktop menu cache (standard method)
+    if command -v xdg-desktop-menu &> /dev/null; then
+        xdg-desktop-menu forceupdate 2>/dev/null || true
+    fi
+    
+    # Desktop environment specific refresh commands
+    case "$desktop_env" in
+        *"XFCE"*)
+            echo "Applying XFCE-specific desktop refresh..."
+            # Restart XFCE panel to refresh menu
+            if command -v xfce4-panel &> /dev/null; then
+                xfce4-panel -r 2>/dev/null &
+            fi
+            ;;
+            
+        *"GNOME"*|*"Ubuntu"*)
+            echo "Applying GNOME-specific desktop refresh..."
+            # GNOME Shell updates menu automatically, but we can trigger it
+            if command -v gnome-shell &> /dev/null; then
+                # Send a signal to gnome-shell to refresh (non-intrusive)
+                killall -HUP gnome-shell 2>/dev/null || true
+            fi
+            ;;
+            
+        *"KDE"*|*"Plasma"*)
+            echo "Applying KDE Plasma-specific desktop refresh..."
+            # KDE's kbuildsycoca rebuilds the system configuration cache
+            if command -v kbuildsycoca5 &> /dev/null; then
+                kbuildsycoca5 2>/dev/null &
+            elif command -v kbuildsycoca6 &> /dev/null; then
+                kbuildsycoca6 2>/dev/null &
+            fi
+            ;;
+            
+        *"Cinnamon"*)
+            echo "Applying Cinnamon-specific desktop refresh..."
+            # Cinnamon can reload its configuration
+            if command -v cinnamon &> /dev/null && command -v dbus-send &> /dev/null; then
+                dbus-send --type=method_call --dest=org.Cinnamon /org/Cinnamon org.Cinnamon.ReloadXlet string:'menu@cinnamon.org' string:'APPLET' 2>/dev/null || true
+            fi
+            ;;
+            
+        *"MATE"*)
+            echo "Applying MATE-specific desktop refresh..."
+            # MATE panel refresh
+            if command -v mate-panel &> /dev/null; then
+                mate-panel --replace 2>/dev/null &
+            fi
+            ;;
+            
+        *"Budgie"*)
+            echo "Applying Budgie-specific desktop refresh..."
+            # Budgie panel refresh
+            if command -v budgie-panel &> /dev/null; then
+                budgie-panel --replace 2>/dev/null &
+            fi
+            ;;
+            
+        *"LXDE"*|*"LXQt"*)
+            echo "Applying LXDE/LXQt-specific desktop refresh..."
+            # LXPanel or LXQt panel refresh
+            if command -v lxpanelctl &> /dev/null; then
+                lxpanelctl restart 2>/dev/null &
+            fi
+            ;;
+            
+        *)
+            echo "Unknown desktop environment. Using generic refresh methods only."
+            ;;
+    esac
+    
+    echo "Desktop integration refresh completed."
+}
+
 # Detect the OS
 OS=$(detect_os)
+
+# Detect the Desktop Environment
+DESKTOP_ENV=$(detect_desktop_environment)
 
 # Check if running as root
 if [ "$(id -u)" -eq 0 ]; then
@@ -153,6 +271,11 @@ fi
 
 # Display Doppelganger ASCII art
 display_doppelganger_ascii
+
+# Display detected environment
+echo "Detected OS: $OS"
+echo "Detected Desktop Environment: $DESKTOP_ENV"
+echo ""
 
 # Function to install packages based on the detected OS
 install_packages() {
@@ -312,24 +435,28 @@ EOL
         gio set "$desktop_shortcut" metadata::trusted true 2>/dev/null || true
     fi
 
-    # Update desktop database
-    if command -v update-desktop-database &> /dev/null; then
-        update-desktop-database "$HOME/.local/share/applications" 2>/dev/null || true
-    fi
+    # Refresh desktop integration based on detected DE
+    refresh_desktop_integration "$DESKTOP_ENV"
 
-    # Force update XDG desktop menu cache
-    if command -v xdg-desktop-menu &> /dev/null; then
-        xdg-desktop-menu forceupdate 2>/dev/null || true
-    fi
-
-    # Restart XFCE panel if running (to refresh menu)
-    if [ "$XDG_CURRENT_DESKTOP" = "XFCE" ] && command -v xfce4-panel &> /dev/null; then
-        xfce4-panel -r 2>/dev/null || true
-    fi
-
+    echo ""
     echo "Desktop shortcut created successfully."
     echo "Note: You may need to right-click the desktop icon and select 'Allow Launching' or 'Trust' on first use."
-    echo "If the menu item doesn't appear immediately, try logging out and back in, or run: xfce4-panel -r"
+    
+    # Provide DE-specific instructions if needed
+    case "$DESKTOP_ENV" in
+        *"XFCE"*)
+            echo "If the menu item doesn't appear immediately, try: xfce4-panel -r"
+            ;;
+        *"KDE"*|*"Plasma"*)
+            echo "If the menu item doesn't appear immediately, try logging out and back in."
+            ;;
+        *"GNOME"*)
+            echo "The menu should update automatically. If not, try pressing Alt+F2 and typing 'r' to restart GNOME Shell."
+            ;;
+        *)
+            echo "If the menu item doesn't appear immediately, try logging out and back in."
+            ;;
+    esac
 fi
 
 echo "Installation process completed."
