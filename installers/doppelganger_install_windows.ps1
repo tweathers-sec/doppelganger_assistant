@@ -171,29 +171,22 @@ if (Test-Path -Path $basePath) {
     if ($updateChoice -eq "y" -or $updateChoice -eq "Y" -or $updateChoice -eq "") {
         Log "User chose to update. Running uninstaller..."
         
-        # Check if uninstall script exists
-        if (Test-Path "$basePath\uninstall.ps1") {
-            Log "Running existing uninstaller script..."
-            powershell -ExecutionPolicy Bypass -File "$basePath\uninstall.ps1" -SkipUsbipdPrompt
+        # Download and run uninstaller
+        try {
+            Log "Downloading uninstaller script..."
+            $uninstallScript = Invoke-RestMethod -Uri $uninstallScriptUrl -Headers $headers
+            
+            Log "Executing uninstaller..."
+            Invoke-Expression $uninstallScript
             Start-Sleep -Seconds 2
         }
-        else {
-            Log "Uninstaller not found. Downloading and running uninstaller..."
-            $tempUninstallPath = "$env:TEMP\doppelganger_uninstall_temp.ps1"
-            try {
-                Invoke-WebRequest -Uri $uninstallScriptUrl -OutFile $tempUninstallPath -Headers $headers
-                powershell -ExecutionPolicy Bypass -File $tempUninstallPath -SkipUsbipdPrompt
-                Start-Sleep -Seconds 2
-                Remove-Item -Path $tempUninstallPath -Force -ErrorAction SilentlyContinue
-            }
-            catch {
-                Log "Failed to download uninstaller. Performing manual cleanup..."
-                # Fallback to manual cleanup
-                wsl --shutdown
-                Remove-Item -Path $basePath -Recurse -Force -ErrorAction SilentlyContinue
-                if (Test-Path -Path $shortcutPath) {
-                    Remove-Item -Path $shortcutPath -Force -ErrorAction SilentlyContinue
-                }
+        catch {
+            Log "Failed to download/run uninstaller. Performing manual cleanup..."
+            # Fallback to manual cleanup
+            wsl --shutdown
+            Remove-Item -Path $basePath -Recurse -Force -ErrorAction SilentlyContinue
+            if (Test-Path -Path $shortcutPath) {
+                Remove-Item -Path $shortcutPath -Force -ErrorAction SilentlyContinue
             }
         }
         

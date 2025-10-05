@@ -5,13 +5,6 @@
 #
 # Or if already installed:
 #   powershell -ExecutionPolicy Bypass -File C:\doppelganger_assistant\uninstall.ps1
-#
-# Parameters:
-#   -SkipUsbipdPrompt: Skip the usbipd uninstall prompt (used during updates)
-
-param(
-    [switch]$SkipUsbipdPrompt = $false
-)
 
 # Check if running from install directory - if so, copy to temp and re-execute
 $scriptPath = $MyInvocation.MyCommand.Path
@@ -22,9 +15,8 @@ if ($scriptPath -and $scriptPath.StartsWith($basePath)) {
     $tempScript = "$env:TEMP\doppelganger_uninstall_temp.ps1"
     Copy-Item -Path $scriptPath -Destination $tempScript -Force
     
-    # Re-execute from temp location with same parameters
-    $paramString = if ($SkipUsbipdPrompt) { "-SkipUsbipdPrompt" } else { "" }
-    Start-Process powershell -ArgumentList "-ExecutionPolicy Bypass -File `"$tempScript`" $paramString" -Wait -NoNewWindow
+    # Re-execute from temp location
+    Start-Process powershell -ArgumentList "-ExecutionPolicy Bypass -File `"$tempScript`"" -Wait -NoNewWindow
     
     # Exit this instance
     exit
@@ -114,30 +106,19 @@ else {
     Log "Desktop shortcut $shortcutPath not found."
 }
 
-# Optionally uninstall usbipd (skip if called during update)
-if (-not $SkipUsbipdPrompt) {
-    if (CommandExists "winget") {
-        $usbipdChoice = Read-Host "Do you want to uninstall usbipd? (y/n)"
-        if ($usbipdChoice -eq "y" -or $usbipdChoice -eq "Y") {
-            Log "Uninstalling usbipd..."
-            $uninstallOutput = Start-Process winget -ArgumentList "uninstall --exact usbipd" -Wait -PassThru -NoNewWindow
-            if ($uninstallOutput.ExitCode -ne 0) {
-                Log "Error uninstalling usbipd. Exit code: $($uninstallOutput.ExitCode)"
-            }
-            else {
-                Log "usbipd uninstalled."
-            }
-        }
-        else {
-            Log "Skipping usbipd uninstallation."
-        }
+# Uninstall usbipd (will be reinstalled by installer)
+if (CommandExists "winget") {
+    Log "Uninstalling usbipd..."
+    $uninstallOutput = Start-Process winget -ArgumentList "uninstall --exact usbipd" -Wait -PassThru -NoNewWindow
+    if ($uninstallOutput.ExitCode -ne 0) {
+        Log "Warning: Could not uninstall usbipd. Exit code: $($uninstallOutput.ExitCode)"
     }
     else {
-        Log "winget not found. If you want to uninstall usbipd, please do so manually."
+        Log "usbipd uninstalled successfully."
     }
 }
 else {
-    Log "Skipping usbipd uninstallation (update mode)."
+    Log "winget not found. Cannot uninstall usbipd automatically."
 }
 
 Log "Uninstallation complete."

@@ -266,7 +266,7 @@ The uninstaller will:
 - Stop and unregister WSL distributions (Kali-doppelganger_assistant or Ubuntu-doppelganger_assistant)
 - Remove all files from `C:\doppelganger_assistant`
 - Delete the desktop shortcut
-- Optionally uninstall usbipd
+- Uninstall usbipd (it will be reinstalled if you run the installer again)
 
 **Note:** The script automatically relocates itself to a temporary directory to ensure clean removal of the installation directory.
 
