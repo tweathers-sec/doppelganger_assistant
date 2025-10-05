@@ -363,6 +363,10 @@ func runGUI() {
 	}
 
 	a := app.New()
+	
+	// Set the app icon (window title bar, taskbar, etc.)
+	a.SetIcon(resourceIconPng)
+	
 	w := a.NewWindow("Doppelgänger Assistant")
 
 	a.Settings().SetTheme(&arrowDarkTheme{})

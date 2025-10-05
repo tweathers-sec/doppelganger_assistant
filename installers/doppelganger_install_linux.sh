@@ -317,8 +317,19 @@ EOL
         update-desktop-database "$HOME/.local/share/applications" 2>/dev/null || true
     fi
 
+    # Force update XDG desktop menu cache
+    if command -v xdg-desktop-menu &> /dev/null; then
+        xdg-desktop-menu forceupdate 2>/dev/null || true
+    fi
+
+    # Restart XFCE panel if running (to refresh menu)
+    if [ "$XDG_CURRENT_DESKTOP" = "XFCE" ] && command -v xfce4-panel &> /dev/null; then
+        xfce4-panel -r 2>/dev/null || true
+    fi
+
     echo "Desktop shortcut created successfully."
     echo "Note: You may need to right-click the desktop icon and select 'Allow Launching' or 'Trust' on first use."
+    echo "If the menu item doesn't appear immediately, try logging out and back in, or run: xfce4-panel -r"
 fi
 
 echo "Installation process completed."
