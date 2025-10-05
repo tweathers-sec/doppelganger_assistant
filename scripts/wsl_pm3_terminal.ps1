@@ -30,7 +30,8 @@ function Get-DoppelgangerDistro {
     foreach ($distro in $wslList) {
         if ($distro -eq $kaliName) {
             return $kaliName
-        } elseif ($distro -eq $ubuntuName) {
+        }
+        elseif ($distro -eq $ubuntuName) {
             return $ubuntuName
         }
     }
@@ -61,7 +62,8 @@ function StartWSLIfNotRunning {
         Log "WSL is not running. Starting $distroName..."
         & wsl -d $distroName --exec echo "WSL started"
         Log "WSL started."
-    } else {
+    }
+    else {
         Log "$distroName is already running."
     }
 }
@@ -75,7 +77,8 @@ function DetachUSBDevice {
     $detachOutput = & usbipd detach --busid $busId 2>&1 | Tee-Object -Variable detachOutputResult
     if ($LASTEXITCODE -ne 0) {
         Log "Device might not be attached. Exit code: $LASTEXITCODE"
-    } else {
+    }
+    else {
         Log "Device detached successfully."
     }
 
@@ -95,7 +98,8 @@ function AttachUSBDeviceToWSL {
         Log "Error attaching device to WSL. Exit code: $LASTEXITCODE"
         Log "Attach output: $attachOutputResult"
         return $false
-    } else {
+    }
+    else {
         Log "Device successfully attached to WSL."
         return $true
     }
@@ -145,7 +149,8 @@ if ($proxmark3Device) {
     if ($LASTEXITCODE -ne 0) {
         Log "Error binding Proxmark3 device. Exit code: $LASTEXITCODE"
         Log "Bind output: $bindOutputResult"
-    } else {
+    }
+    else {
         # Attach the Proxmark3 device to WSL
         $attached = AttachUSBDeviceToWSL -busId $busId
         
@@ -155,13 +160,15 @@ if ($proxmark3Device) {
             
             # Launch Proxmark3 Terminal
             LaunchProxmark3Terminal
-        } else {
+        }
+        else {
             Log "Failed to attach Proxmark3 device. Cannot launch pm3."
             Read-Host "Press Enter to exit"
             exit 1
         }
     }
-} else {
+}
+else {
     Log "Proxmark3 device not found."
     $userChoice = Read-Host "Proxmark3 device not detected. Do you want to (A)ttach the device and retry, or (E)xit? [A/E]"
     
@@ -177,12 +184,14 @@ if ($proxmark3Device) {
             Log "Proxmark3 device found after user intervention. Restarting the script."
             & $MyInvocation.MyCommand.Path  # Restart the script
             exit
-        } else {
+        }
+        else {
             Log "Proxmark3 device still not found. Exiting."
             Read-Host "Press Enter to exit"
             exit 1
         }
-    } else {
+    }
+    else {
         Log "User chose to exit."
         exit 1
     }
