@@ -96,7 +96,6 @@ try {
         Write-Host "*                                                           *" -ForegroundColor Red
         Write-Host "*   Please install on:                                      *" -ForegroundColor Red
         Write-Host "*   - Physical Windows hardware                             *" -ForegroundColor Red
-        Write-Host "*   - A primary (non-nested) virtual machine                *" -ForegroundColor Red
         Write-Host "*                                                           *" -ForegroundColor Red
         Write-Host "*   Installation will now exit.                             *" -ForegroundColor Red
         Write-Host "*                                                           *" -ForegroundColor Red
