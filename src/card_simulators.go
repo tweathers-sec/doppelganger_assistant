@@ -10,9 +10,13 @@ import (
 )
 
 func simulateProxmark3Command(command string) (string, error) {
-	fmt.Println(Yellow, "\nExecuting command:", command, Reset)
-	fmt.Println(Green, "\nSimulation is in progress... If your Proxmark3 has a battery, you can remove the device and the simulation will continue.", Reset)
-	fmt.Println(Green, "\nTo end the simulation, press the `pm3 button`.\n", Reset)
+	// Check Proxmark3 status first
+	if ok, msg := checkProxmark3(); !ok {
+		return "", fmt.Errorf(msg)
+	}
+
+	WriteStatusInfo("Simulation started - press PM3 button to stop")
+	WriteStatusInfo("With battery: you can remove device and simulation continues")
 
 	cmd := exec.Command("pm3", "-c", command)
 
@@ -24,7 +28,8 @@ func simulateProxmark3Command(command string) (string, error) {
 		return "", fmt.Errorf("error running command: %w", err)
 	}
 
-	return "Simulation completed", nil
+	WriteStatusSuccess("Simulation completed")
+	return "", nil
 }
 
 func simulateCardData(cardType string, cardData uint64, bitLength, facilityCode, cardNumber int, hexData, uid string) {
@@ -125,9 +130,7 @@ func simulateCardData(cardType string, cardData uint64, bitLength, facilityCode,
 			return
 		}
 
-		fmt.Println("File saved as", fileName)
-
-		fmt.Println(Green, "\nSimulating the iCLASS card on your Proxmark3:", Reset)
+		WriteStatusInfo("iCLASS simulation file saved: %s", fileName)
 		command = fmt.Sprintf("hf iclass eload -f %s; hf iclass sim -t 3", fileName)
 
 		output, err := simulateProxmark3Command(command)
@@ -137,7 +140,6 @@ func simulateCardData(cardType string, cardData uint64, bitLength, facilityCode,
 		}
 
 	case "prox":
-		fmt.Println(Green, "\nSimulating the PROX card on your Proxmark3:", Reset)
 		switch bitLength {
 		case 26:
 			command = fmt.Sprintf("lf hid sim -w H10301 --fc %d --cn %d", facilityCode, cardNumber)
@@ -166,7 +168,6 @@ func simulateCardData(cardType string, cardData uint64, bitLength, facilityCode,
 			fmt.Println(output)
 		}
 	case "awid":
-		fmt.Println(Green, "\nSimulating the AWID card on your Proxmark3:", Reset)
 		command = fmt.Sprintf("lf awid sim --fmt 26 --fc %d --cn %d", facilityCode, cardNumber)
 		output, err := simulateProxmark3Command(command)
 		if err != nil {
@@ -175,7 +176,6 @@ func simulateCardData(cardType string, cardData uint64, bitLength, facilityCode,
 		}
 
 	case "indala":
-		fmt.Println(Green, "\nSimulating the Indala card on your Proxmark3:", Reset)
 		switch bitLength {
 		case 26:
 			command = fmt.Sprintf("lf indala sim --fc %d --cn %d", facilityCode, cardNumber)
@@ -191,39 +191,31 @@ func simulateCardData(cardType string, cardData uint64, bitLength, facilityCode,
 		}
 
 	case "avigilon":
-		fmt.Println(Green, "\nSimulating the Avigilon card on your Proxmark3:", Reset)
 		command = fmt.Sprintf("lf hid sim -w Avig56 --fc %d --cn %d", facilityCode, cardNumber)
-		output, err := simulateProxmark3Command(command)
+		_, err := simulateProxmark3Command(command)
 		if err != nil {
-			fmt.Println(Red, err, Reset)
-			fmt.Println(output)
+			WriteStatusError("Simulation failed: %v", err)
 		}
 
 	case "em":
-		fmt.Println(Green, "\nSimulating the EM410X card on your Proxmark3:", Reset)
 		command = fmt.Sprintf("lf em 410x sim --id %s", hexData)
-		output, err := simulateProxmark3Command(command)
+		_, err := simulateProxmark3Command(command)
 		if err != nil {
-			fmt.Println(Red, err, Reset)
-			fmt.Println(output)
+			WriteStatusError("Simulation failed: %v", err)
 		}
 
 	case "piv":
-		fmt.Println(Green, "\nSimulating the PIV card on your Proxmark3:", Reset)
 		command = fmt.Sprintf("hf 14a sim -t 3 --uid %s", uid)
-		output, err := simulateProxmark3Command(command)
+		_, err := simulateProxmark3Command(command)
 		if err != nil {
-			fmt.Println(Red, err, Reset)
-			fmt.Println(output)
+			WriteStatusError("Simulation failed: %v", err)
 		}
 
 	case "mifare":
-		fmt.Println(Green, "\nSimulating the MIFARE card on your Proxmark3:", Reset)
 		command = fmt.Sprintf("hf 14a sim -t 1 --uid %s", uid)
-		output, err := simulateProxmark3Command(command)
+		_, err := simulateProxmark3Command(command)
 		if err != nil {
-			fmt.Println(Red, err, Reset)
-			fmt.Println(output)
+			WriteStatusError("Simulation failed: %v", err)
 		}
 	}
 }

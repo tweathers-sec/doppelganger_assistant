@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"os"
 )
 
 func handleCardType(cardType string, facilityCode, cardNumber, bitLength int, write, verify bool, uid, hexData string, simulate bool) {
@@ -32,19 +31,17 @@ func handleICLASS(facilityCode, cardNumber, bitLength int, simulate, write, veri
 	// Supported bit lengths: 26, 30, 33, 34, 35, 36, 37, 46, 48
 	validBitLengths := map[int]bool{26: true, 30: true, 33: true, 34: true, 35: true, 36: true, 37: true, 46: true, 48: true}
 	if !validBitLengths[bitLength] {
-		fmt.Println(Red, "Invalid bit length for iCLASS. Supported bit lengths are 26, 30, 33, 34, 35, 36, 37, 46, and 48.", Reset)
-		os.Stdout.Sync()
+		WriteStatusError("Invalid bit length for iCLASS. Supported: 26, 30, 33, 34, 35, 36, 37, 46, 48")
 		return
 	}
 
 	// DISABLED: iClass simulation is temporarily disabled
 	if simulate {
-		fmt.Println(Red, "iCLASS card simulation is currently disabled.", Reset)
-		os.Stdout.Sync()
+		WriteStatusError("iCLASS card simulation is currently disabled")
 		return
 	}
 
-	// Display the command that will be executed
+	// Get format code
 	var formatCode string
 	switch bitLength {
 	case 26:
@@ -67,18 +64,9 @@ func handleICLASS(facilityCode, cardNumber, bitLength int, simulate, write, veri
 		formatCode = "C1k48s"
 	}
 
-	fmt.Println("")
 	if write {
-		fmt.Println(Green, "The following will be written to an iCLASS 2k card:", Reset)
-	} else {
-		fmt.Println(Green, "Write the following to an iCLASS 2k card:", Reset)
-	}
-	fmt.Println(Green, "", Reset)
-	fmt.Println(Yellow, fmt.Sprintf("hf iclass encode -w %s --fc %d --cn %d --ki 0", formatCode, facilityCode, cardNumber), Reset)
-	fmt.Println(Green, "", Reset)
-	os.Stdout.Sync() // Force flush output for WSL2 compatibility
-
-	if write {
+		WriteStatusInfo("Writing to iCLASS 2k card...")
+		WriteStatusInfo("Command: hf iclass encode -w %s --fc %d --cn %d --ki 0", formatCode, facilityCode, cardNumber)
 		writeCardData("iclass", 0, bitLength, facilityCode, cardNumber, "", verify, formatCode)
 	}
 
@@ -90,206 +78,160 @@ func handleICLASS(facilityCode, cardNumber, bitLength int, simulate, write, veri
 func handleProx(facilityCode, cardNumber, bitLength int, simulate, write, verify bool) {
 	if simulate {
 		simulateCardData("prox", 0, bitLength, facilityCode, cardNumber, "", "")
-	} else {
-		fmt.Println(Green, "\nHandling Prox card...", Reset)
+		return
+	}
 
-		if write {
-			fmt.Println(Green, "\nThe following will be written to a T5577 card:", Reset)
-		} else {
-			fmt.Println(Green, "\nWrite the following values to a T5577 card:", Reset)
-		}
+	// Get command template
+	var cmdTemplate string
+	switch bitLength {
+	case 26:
+		cmdTemplate = "lf hid clone -w H10301 --fc %d --cn %d"
+	case 30:
+		cmdTemplate = "lf hid clone -w ATSW30 --fc %d --cn %d"
+	case 31:
+		cmdTemplate = "lf hid clone -w ADT31 --fc %d --cn %d"
+	case 33:
+		cmdTemplate = "lf hid clone -w D10202 --fc %d --cn %d"
+	case 34:
+		cmdTemplate = "lf hid clone -w H10306 --fc %d --cn %d"
+	case 35:
+		cmdTemplate = "lf hid clone -w C1k35s --fc %d --cn %d"
+	case 36:
+		cmdTemplate = "lf hid clone -w S12906 --fc %d --cn %d"
+	case 37:
+		cmdTemplate = "lf hid clone -w H10304 --fc %d --cn %d"
+	case 46:
+		cmdTemplate = "lf hid clone -w H800002 --fc %d --cn %d"
+	case 48:
+		cmdTemplate = "lf hid clone -w C1k48s --fc %d --cn %d"
+	default:
+		WriteStatusError("Unsupported bit length for Prox card")
+		return
+	}
 
-		fmt.Println(Green, "", Reset)
+	if write {
+		WriteStatusInfo("Writing to T5577 card...")
+		WriteStatusInfo("Command: "+cmdTemplate, facilityCode, cardNumber)
+		writeCardData("prox", 0, bitLength, facilityCode, cardNumber, "", verify, "")
+	}
 
-		switch bitLength {
-		case 26:
-			fmt.Println(Yellow, fmt.Sprintf("lf hid clone -w H10301 --fc %d --cn %d", facilityCode, cardNumber), Reset)
-		case 30:
-			fmt.Println(Yellow, fmt.Sprintf("lf hid clone -w ATSW30 --fc %d --cn %d", facilityCode, cardNumber), Reset)
-		case 31:
-			fmt.Println(Yellow, fmt.Sprintf("lf hid clone -w ADT31 --fc %d --cn %d", facilityCode, cardNumber), Reset)
-		case 33:
-			fmt.Println(Yellow, fmt.Sprintf("lf hid clone -w D10202 --fc %d --cn %d", facilityCode, cardNumber), Reset)
-		case 34:
-			fmt.Println(Yellow, fmt.Sprintf("lf hid clone -w H10306 --fc %d --cn %d", facilityCode, cardNumber), Reset)
-		case 35:
-			fmt.Println(Yellow, fmt.Sprintf("lf hid clone -w C1k35s --fc %d --cn %d", facilityCode, cardNumber), Reset)
-		case 36:
-			fmt.Println(Yellow, fmt.Sprintf("lf hid clone -w S12906 --fc %d --cn %d", facilityCode, cardNumber), Reset)
-		case 37:
-			fmt.Println(Yellow, fmt.Sprintf("lf hid clone -w H10304 --fc %d --cn %d", facilityCode, cardNumber), Reset)
-		case 46:
-			fmt.Println(Yellow, fmt.Sprintf("lf hid clone -w H800002 --fc %d --cn %d", facilityCode, cardNumber), Reset)
-		case 48:
-			fmt.Println(Yellow, fmt.Sprintf("lf hid clone -w C1k48s --fc %d --cn %d", facilityCode, cardNumber), Reset)
-		default:
-			fmt.Println(Red, "Unsupported bit length for Prox card.", Reset)
-			return
-		}
-
-		if write {
-			writeCardData("prox", 0, bitLength, facilityCode, cardNumber, "", verify, "")
-		}
-
-		if verify {
-			verifyCardData("prox", facilityCode, cardNumber, bitLength, "", "")
-		}
+	if verify {
+		verifyCardData("prox", facilityCode, cardNumber, bitLength, "", "")
 	}
 }
 
 func handleAWID(facilityCode, cardNumber, bitLength int, simulate, write, verify bool) {
 	if simulate {
 		simulateCardData("awid", 0, bitLength, facilityCode, cardNumber, "", "")
-	} else {
-		fmt.Println(Green, "\nHandling AWID card...", Reset)
-		if write {
-			fmt.Println(Green, "\nThe following will be written to a T5577 card:", Reset)
-		} else {
-			fmt.Println(Green, "\nWrite the following values to a T5577 card:", Reset)
-		}
-		fmt.Println(Green, "", Reset)
+		return
+	}
 
-		bitLength := 26
+	bitLength = 26 // AWID only supports 26-bit
+	if write {
+		WriteStatusInfo("Writing to T5577 card...")
+		WriteStatusInfo("Command: lf awid clone --fmt 26 --fc %d --cn %d", facilityCode, cardNumber)
+		writeCardData("awid", 0, bitLength, facilityCode, cardNumber, "", verify, "")
+	}
 
-		if bitLength == 26 {
-			fmt.Println(Yellow, fmt.Sprintf("\nlf awid clone --fmt 26 --fc %d --cn %d", facilityCode, cardNumber), Reset)
-		}
-
-		if write {
-			writeCardData("awid", 0, bitLength, facilityCode, cardNumber, "", verify, "")
-		}
-
-		if verify {
-			verifyCardData("awid", facilityCode, cardNumber, bitLength, "", "")
-		}
+	if verify {
+		verifyCardData("awid", facilityCode, cardNumber, bitLength, "", "")
 	}
 }
 
 func handleIndala(facilityCode, cardNumber, bitLength int, simulate, write, verify bool) {
 	if simulate {
 		simulateCardData("indala", 0, bitLength, facilityCode, cardNumber, "", "")
-	} else {
-		fmt.Println(Green, "\nHandling Indala card...", Reset)
-		fmt.Println(Yellow, "\nNote that the only supported bit length for writing an Indala card is 26-bit. Indala 27-bit and 29-bit will be written as a 26-bit card. \nThis may cause an issue given facility code and card number ranges. If so, grab the BIN data from doppelganger and encode the data\nfor writing or you can simulate the card with the Proxmark3: `lf hid sim -w ind27/ind29 --fc {FC} --cn {CN}'", Reset)
-		if write {
-			fmt.Println(Green, "\nThe following will be written to a T5577 card:", Reset)
-		} else {
-			fmt.Println(Green, "\nWrite the following values to a T5577 card:", Reset)
-		}
-		fmt.Println(Green, "", Reset)
+		return
+	}
 
-		bitLength := 26
+	// Indala writing only supports 26-bit
+	if bitLength != 26 {
+		WriteStatusInfo("Note: Indala 27/29-bit will be written as 26-bit. For full replication, use simulation mode")
+	}
 
-		fmt.Println(Yellow, fmt.Sprintf("lf indala clone --fc %d --cn %d", facilityCode, cardNumber), Reset)
+	bitLength = 26
+	if write {
+		WriteStatusInfo("Writing to T5577 card...")
+		WriteStatusInfo("Command: lf indala clone --fc %d --cn %d", facilityCode, cardNumber)
+		writeCardData("indala", 0, bitLength, facilityCode, cardNumber, "", verify, "")
+	}
 
-		if write {
-			writeCardData("indala", 0, bitLength, facilityCode, cardNumber, "", verify, "")
-		}
-
-		if verify {
-			verifyCardData("indala", facilityCode, cardNumber, bitLength, "", "")
-		}
+	if verify {
+		verifyCardData("indala", facilityCode, cardNumber, bitLength, "", "")
 	}
 }
 
 func handleEM(hexData string, simulate, write, verify bool) {
 	if simulate {
 		simulateCardData("em", 0, 0, 0, 0, hexData, "")
-	} else {
-		fmt.Println(Green, "\nHandling EM card...", Reset)
-		if write {
-			fmt.Println(Green, "\nThe following will be written to a T5577 card:", Reset)
-		} else {
-			fmt.Println(Green, "\nWrite the following values to a T5577 card:", Reset)
-		}
-		fmt.Println(Green, "", Reset)
+		return
+	}
 
-		fmt.Println(Yellow, fmt.Sprintf("lf em 410x clone --id %s", hexData), Reset)
+	if write {
+		WriteStatusInfo("Writing to T5577 card...")
+		WriteStatusInfo("Command: lf em 410x clone --id %s", hexData)
+		writeCardData("em", 0, 0, 0, 0, hexData, verify, "")
+	}
 
-		if write {
-			writeCardData("em", 0, 0, 0, 0, hexData, verify, "")
-		}
-
-		if verify {
-			verifyCardData("em", 0, 0, 0, hexData, "")
-		}
+	if verify {
+		verifyCardData("em", 0, 0, 0, hexData, "")
 	}
 }
 
 func handlePIV(uid string, simulate bool, write, verify bool) {
 	if simulate {
 		simulateCardData("piv", 0, 0, 0, 0, "", uid)
-	} else {
-		fmt.Println(Green, "\nHandling PIV card...", Reset)
-		if write {
-			fmt.Println(Green, "\nThe following will be written to a UID rewritable MIFARE card:", Reset)
-		} else {
-			fmt.Println(Green, "\nWrite the following values to a UID rewritable MIFARE card:", Reset)
-		}
-		fmt.Println(Green, "", Reset)
-		fmt.Println(Yellow, fmt.Sprintf("hf mf csetuid -u %s", uid), Reset)
-		fmt.Println(Green, "\nNote, this will only emulate the Wiegand signal of the captured card. This will not fully replicate the captured PIV card. This considered experimental as the badging system that your client employs may interpret the data differently than the reader that provided the Wiegand output to doppelganger.", Reset)
+		return
+	}
 
-		if write {
-			writeCardData("piv", 0, 0, 0, 0, "", verify, uid)
-		}
+	if write {
+		WriteStatusInfo("Writing UID to rewritable MIFARE card...")
+		WriteStatusInfo("Command: hf mf csetuid -u %s", uid)
+		WriteStatusInfo("Note: This emulates Wiegand signal only (experimental)")
+		writeCardData("piv", 0, 0, 0, 0, "", verify, uid)
+	}
 
-		if verify {
-			verifyCardData("piv", 0, 0, 0, "", uid)
-		}
+	if verify {
+		verifyCardData("piv", 0, 0, 0, "", uid)
 	}
 }
 
 func handleMIFARE(uid string, simulate bool, write, verify bool) {
 	if simulate {
 		simulateCardData("mifare", 0, 0, 0, 0, "", uid)
-	} else {
-		fmt.Println(Green, "\nHandling MIFARE card...", Reset)
-		if write {
-			fmt.Println(Green, "\nThe following will be written to a UID rewritable MIFARE card:", Reset)
-		} else {
-			fmt.Println(Green, "\nWrite the following values to a UID rewritable MIFARE card:", Reset)
-		}
-		fmt.Println(Green, "", Reset)
-		fmt.Println(Yellow, fmt.Sprintf("hf mf csetuid -u %s", uid), Reset)
-		fmt.Println(Green, "\nNote, this will only emulate the Wiegand signal of the captured card. This will not fully replicate the captured MIFARE card. This considered experimental as the badging system that your client employs may interpret the data differently than the reader that provided the Wiegand output to doppelganger.", Reset)
+		return
+	}
 
-		if write {
-			writeCardData("mifare", 0, 0, 0, 0, "", verify, uid)
-		}
+	if write {
+		WriteStatusInfo("Writing UID to rewritable MIFARE card...")
+		WriteStatusInfo("Command: hf mf csetuid -u %s", uid)
+		WriteStatusInfo("Note: This emulates Wiegand signal only (experimental)")
+		writeCardData("mifare", 0, 0, 0, 0, "", verify, uid)
+	}
 
-		if verify {
-			verifyCardData("mifare", 0, 0, 0, "", uid)
-		}
+	if verify {
+		verifyCardData("mifare", 0, 0, 0, "", uid)
 	}
 }
 
 func handleAvigilon(facilityCode, cardNumber, bitLength int, simulate, write, verify bool) {
 	if simulate {
 		simulateCardData("avigilon", 0, bitLength, facilityCode, cardNumber, "", "")
-	} else {
-		fmt.Println(Green, "\nHandling Avigilon card...", Reset)
-		if write {
-			fmt.Println(Green, "\nThe following will be written to a T5577 card:", Reset)
-		} else {
-			fmt.Println(Green, "\nWrite the following values to a T5577 card:", Reset)
-		}
+		return
+	}
 
-		fmt.Println(Green, "", Reset)
+	if bitLength != 56 {
+		WriteStatusError("Unsupported bit length for Avigilon card. Only 56-bit is supported")
+		return
+	}
 
-		if bitLength == 56 {
-			fmt.Println(Yellow, fmt.Sprintf("lf hid clone -w Avig56 --fc %d --cn %d", facilityCode, cardNumber), Reset)
-		} else {
-			fmt.Println(Red, "Unsupported bit length for Avigilon card. Supported bit length is 56.", Reset)
-			return
-		}
+	if write {
+		WriteStatusInfo("Writing to T5577 card...")
+		WriteStatusInfo("Command: lf hid clone -w Avig56 --fc %d --cn %d", facilityCode, cardNumber)
+		writeCardData("avigilon", 0, bitLength, facilityCode, cardNumber, "", verify, "")
+	}
 
-		if write {
-			writeCardData("avigilon", 0, bitLength, facilityCode, cardNumber, "", verify, "")
-		}
-
-		if verify {
-			verifyCardData("avigilon", facilityCode, cardNumber, bitLength, "", "")
-		}
+	if verify {
+		verifyCardData("avigilon", facilityCode, cardNumber, bitLength, "", "")
 	}
 }

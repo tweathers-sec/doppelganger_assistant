@@ -8,6 +8,11 @@ import (
 )
 
 func writeProxmark3Command(command string) (string, error) {
+	// Check Proxmark3 status
+	if ok, msg := checkProxmark3(); !ok {
+		return "", fmt.Errorf(msg)
+	}
+
 	cmd := exec.Command("pm3", "-c", command)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -37,27 +42,27 @@ func writeCardData(cardType string, cardData uint64, bitLength int, facilityCode
 
 	switch cardType {
 	case "iclass":
-		fmt.Println(Green, "\nWriting iCLASS card data using hf iclass encode...\n", Reset)
-		// Use the new hf iclass encode command with the format code
+		fmt.Println("\n|----------- WRITE -----------|")
+		WriteStatusProgress("Encoding iCLASS card data...")
 		formatCode := formatCodeOrUID
 		command := fmt.Sprintf("hf iclass encode -w %s --fc %d --cn %d --ki 0", formatCode, facilityCode, cardNumber)
 		output, err := writeProxmark3Command(command)
 		if err != nil {
-			fmt.Println(Red, "Error writing to iCLASS card:", err, Reset)
+			WriteStatusError("Failed to write iCLASS card: %v", err)
 			fmt.Println(output)
 		} else {
 			fmt.Println(output)
 			if verify {
-				fmt.Println(Green, "\nWrite complete. Verification will now begin.\n", Reset)
+				WriteStatusSuccess("Write complete - starting verification")
 			} else {
-				fmt.Println(Green, "\nWrite complete. Please verify the card data.\n", Reset)
+				WriteStatusSuccess("Write complete")
 			}
 		}
 	case "prox":
-		fmt.Println(Green, "\nWriting Prox card data...\n", Reset)
-
+		WriteStatusProgress("Writing Prox card (5 attempts)...")
 
 		for i := 0; i < 5; i++ {
+			fmt.Printf("\n|----------- WRITE #%d -----------|\n", i+1)
 			var output string
 			var err error
 			if bitLength == 26 {
@@ -82,111 +87,117 @@ func writeCardData(cardType string, cardData uint64, bitLength int, facilityCode
 				output, err = writeProxmark3Command(fmt.Sprintf("lf hid clone -w C1k48s --fc %d --cn %d", facilityCode, cardNumber))
 			}
 			if err != nil {
-				fmt.Println(Red, err, Reset)
+				WriteStatusError("Write attempt #%d failed: %v", i+1, err)
 			} else {
 				fmt.Println(output)
 			}
 			time.Sleep(1 * time.Second)
 			if i < 4 {
-				fmt.Printf(Green+"Move card... Write attempt #%d complete..."+Reset+"\n", i+1)
+				WriteStatusProgress("Move card slowly... Write attempt #%d complete", i+1)
 			} else {
 				if verify {
-					fmt.Println(Green, "\nFinal write attempt complete. Verification will now begin.\n", Reset)
+					WriteStatusSuccess("All 5 write attempts complete - starting verification")
 				} else {
-					fmt.Println(Green, "\nFinal write attempt complete. Please verify the card data.\n", Reset)
+					WriteStatusSuccess("All 5 write attempts complete")
 				}
 			}
 		}
 	case "awid":
-		fmt.Println(Green, "\nWriting AWID card data...\n", Reset)
+		WriteStatusProgress("Writing AWID card (5 attempts)...")
 		for i := 0; i < 5; i++ {
+			fmt.Printf("\n|----------- WRITE #%d -----------|\n", i+1)
 			output, err := writeProxmark3Command(fmt.Sprintf("lf awid clone --fmt 26 --fc %d --cn %d", facilityCode, cardNumber))
 			if err != nil {
-				fmt.Println(Red, err, Reset)
+				WriteStatusError("Write attempt #%d failed: %v", i+1, err)
 			} else {
 				fmt.Println(output)
 			}
 			time.Sleep(1 * time.Second)
 			if i < 4 {
-				fmt.Printf(Green+"Move card... Write attempt #%d complete..."+Reset+"\n", i+1)
+				WriteStatusProgress("Move card slowly... Write attempt #%d complete", i+1)
 			} else {
 				if verify {
-					fmt.Println(Green, "\nFinal write attempt complete. Verification will now begin.\n", Reset)
+					WriteStatusSuccess("All 5 write attempts complete - starting verification")
 				} else {
-					fmt.Println(Green, "\nFinal write attempt complete. Please verify the card data.\n", Reset)
+					WriteStatusSuccess("All 5 write attempts complete")
 				}
 			}
 		}
 	case "indala":
-		fmt.Println(Green, "\nWriting Indala card data...\n", Reset)
+		WriteStatusProgress("Writing Indala card (5 attempts)...")
 		for i := 0; i < 5; i++ {
+			fmt.Printf("\n|----------- WRITE #%d -----------|\n", i+1)
 			output, err := writeProxmark3Command(fmt.Sprintf("lf indala clone --fc %d --cn %d", facilityCode, cardNumber))
 			if err != nil {
-				fmt.Println(Red, err, Reset)
+				WriteStatusError("Write attempt #%d failed: %v", i+1, err)
 			} else {
 				fmt.Println(output)
 			}
 			time.Sleep(1 * time.Second)
 			if i < 4 {
-				fmt.Printf(Green+"Move card... Write attempt #%d complete..."+Reset+"\n", i+1)
+				WriteStatusProgress("Move card slowly... Write attempt #%d complete", i+1)
 			} else {
 				if verify {
-					fmt.Println(Green, "\nFinal write attempt complete. Verification will now begin.\n", Reset)
+					WriteStatusSuccess("All 5 write attempts complete - starting verification")
 				} else {
-					fmt.Println(Green, "\nFinal write attempt complete. Please verify the card data.\n", Reset)
+					WriteStatusSuccess("All 5 write attempts complete")
 				}
 			}
 		}
 	case "avigilon":
-		fmt.Println(Green, "\nWriting Avigilon card data...\n", Reset)
+		WriteStatusProgress("Writing Avigilon card (5 attempts)...")
 		for i := 0; i < 5; i++ {
+			fmt.Printf("\n|----------- WRITE #%d -----------|\n", i+1)
 			output, err := writeProxmark3Command(fmt.Sprintf("lf hid clone -w Avig56 --fc %d --cn %d", facilityCode, cardNumber))
 			if err != nil {
-				fmt.Println(Red, err, Reset)
+				WriteStatusError("Write attempt #%d failed: %v", i+1, err)
 			} else {
 				fmt.Println(output)
 			}
 			time.Sleep(1 * time.Second)
 			if i < 4 {
-				fmt.Printf(Green+"Move card... Write attempt #%d complete..."+Reset+"\n", i+1)
+				WriteStatusProgress("Move card slowly... Write attempt #%d complete", i+1)
 			} else {
 				if verify {
-					fmt.Println(Green, "\nFinal write attempt complete. Verification will now begin.\n", Reset)
+					WriteStatusSuccess("All 5 write attempts complete - starting verification")
 				} else {
-					fmt.Println(Green, "\nFinal write attempt complete. Please verify the card data.\n", Reset)
+					WriteStatusSuccess("All 5 write attempts complete")
 				}
 			}
 		}
 	case "em":
-		fmt.Println(Green, "\nWriting EM card data...\n", Reset)
+		WriteStatusProgress("Writing EM card (5 attempts)...")
 		for i := 0; i < 5; i++ {
+			fmt.Printf("\n|----------- WRITE #%d -----------|\n", i+1)
 			output, err := writeProxmark3Command(fmt.Sprintf("lf em 410x clone --id %s", hexData))
 			if err != nil {
-				fmt.Println(Red, err, Reset)
+				WriteStatusError("Write attempt #%d failed: %v", i+1, err)
 			} else {
 				fmt.Println(output)
 			}
 			time.Sleep(1 * time.Second)
 			if i < 4 {
-				fmt.Printf(Green+"Move card... Write attempt #%d complete..."+Reset+"\n", i+1)
+				WriteStatusProgress("Move card slowly... Write attempt #%d complete", i+1)
 			} else {
 				if verify {
-					fmt.Println(Green, "\nFinal write attempt complete. Verification will now begin.\n", Reset)
+					WriteStatusSuccess("All 5 write attempts complete - starting verification")
 				} else {
-					fmt.Println(Green, "\nFinal write attempt complete. Please verify the card data.\n", Reset)
+					WriteStatusSuccess("All 5 write attempts complete")
 				}
 			}
 		}
 	case "piv", "mifare":
-		fmt.Println(Green, "\nWriting the provided UID...\n", Reset)
+		fmt.Println("\n|----------- WRITE -----------|")
+		WriteStatusProgress("Writing UID to card...")
 		uid := formatCodeOrUID
 		command := fmt.Sprintf("hf mf csetuid -u %s", uid)
 		output, err := writeProxmark3Command(command)
 		if err != nil {
-			fmt.Println(Red, "Error writing to card:", err, Reset)
-			fmt.Println("Command output:", output)
+			WriteStatusError("Failed to write UID: %v", err)
+			fmt.Println(output)
 		} else {
 			fmt.Println(output)
+			WriteStatusSuccess("UID written successfully")
 		}
 	}
 }

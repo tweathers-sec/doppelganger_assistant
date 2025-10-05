@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"image/color"
 	"os"
-	"os/exec"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -14,55 +14,103 @@ import (
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 )
 
-// Simple cross-platform output display using data binding
+// Simple text display using Label - proper colors and no padding
 type outputDisplay struct {
-	widget.Entry
-	str binding.String
-	mu  sync.Mutex
+	widget.Label
+	mu        sync.Mutex
+	stripANSI bool
 }
 
-func newOutputDisplay() *outputDisplay {
-	str := binding.NewString()
-	str.Set("")
-
-	o := &outputDisplay{
-		str: str,
-	}
+func newOutputDisplay(stripANSI bool) *outputDisplay {
+	o := &outputDisplay{stripANSI: stripANSI}
 	o.ExtendBaseWidget(o)
-	o.MultiLine = true
 	o.Wrapping = fyne.TextWrapWord
-	o.Bind(str) // Bind to data source - thread-safe updates!
-
+	o.TextStyle = fyne.TextStyle{Monospace: true}
 	return o
 }
 
 func (o *outputDisplay) Append(text string) {
-	// Don't strip ANSI codes - they provide color
-	o.mu.Lock()
-	defer o.mu.Unlock()
+	clean := text
+	if o.stripANSI {
+		clean = stripANSI(text)
+	}
 
-	current, _ := o.str.Get()
-	o.str.Set(current + text) // Binding handles thread safety
+	o.mu.Lock()
+	o.Text += clean
+	o.mu.Unlock()
+
+	fyne.Do(func() {
+		o.Refresh()
+	})
 }
 
 func (o *outputDisplay) Clear() {
 	o.mu.Lock()
-	defer o.mu.Unlock()
+	o.Text = ""
+	o.mu.Unlock()
 
-	o.str.Set("") // Binding handles thread safety
+	fyne.Do(func() {
+		o.Refresh()
+	})
+}
+
+func (o *outputDisplay) Set(text string) {
+	clean := text
+	if o.stripANSI {
+		clean = stripANSI(text)
+	}
+
+	o.mu.Lock()
+	o.Text = clean
+	o.mu.Unlock()
+
+	fyne.Do(func() {
+		o.Refresh()
+	})
 }
 
 // Strip ANSI escape codes
 func stripANSI(str string) string {
 	ansiRegex := regexp.MustCompile(`\x1b\[[0-9;]*[a-zA-Z]`)
 	return ansiRegex.ReplaceAllString(str, "")
+}
+
+// guiWriter implements io.Writer to route output to GUI widgets
+type guiWriter struct {
+	output *outputDisplay
+	scroll *container.Scroll
+}
+
+func (w *guiWriter) Write(p []byte) (n int, err error) {
+	text := string(p)
+
+	// Parse status prefix and format with simple text markers
+	if strings.HasPrefix(text, "[SUCCESS] ") {
+		text = "[OK] " + strings.TrimPrefix(text, "[SUCCESS] ")
+	} else if strings.HasPrefix(text, "[ERROR] ") {
+		text = "[!!] " + strings.TrimPrefix(text, "[ERROR] ")
+	} else if strings.HasPrefix(text, "[INFO] ") {
+		text = "[>>] " + strings.TrimPrefix(text, "[INFO] ")
+	} else if strings.HasPrefix(text, "[PROGRESS] ") {
+		text = "[..] " + strings.TrimPrefix(text, "[PROGRESS] ")
+	}
+
+	w.output.Append(text)
+
+	// Auto-scroll
+	if w.scroll != nil {
+		fyne.Do(func() {
+			w.scroll.ScrollToBottom()
+		})
+	}
+
+	return len(p), nil
 }
 
 // Fixed width layout
@@ -194,6 +242,8 @@ func (t *arrowDarkTheme) Color(name fyne.ThemeColorName, variant fyne.ThemeVaria
 		return color.RGBA{R: 226, G: 88, B: 34, A: 255} // #e25822
 	case theme.ColorNameDisabledButton:
 		return color.RGBA{R: 100, G: 100, B: 100, A: 255}
+	case theme.ColorNameDisabled:
+		return color.RGBA{R: 240, G: 246, B: 252, A: 255} // Same as foreground - keep text visible
 	case theme.ColorNameHover:
 		return color.RGBA{R: 255, G: 109, B: 61, A: 255} // #ff6d3d
 	case theme.ColorNameInputBackground:
@@ -288,6 +338,7 @@ func runGUI() {
 	actionLabel := canvas.NewText("ACTION", color.RGBA{R: 169, G: 182, B: 201, A: 255})
 	actionLabel.TextSize = 11
 	action := widget.NewSelect([]string{"Generate Command", "Write & Verify", "Simulate Card"}, nil)
+	action.SetSelectedIndex(1) // Default to "Write & Verify"
 
 	// Update fields based on card type
 	updateDataBlocks := func(selectedType string) {
@@ -330,8 +381,8 @@ func runGUI() {
 		} else {
 			action.Options = []string{"Generate Command", "Write & Verify", "Simulate Card"}
 		}
-		// Reset to first option to avoid selecting an option that no longer exists
-		action.SetSelectedIndex(0)
+		// Reset to Write & Verify (default action)
+		action.SetSelectedIndex(1)
 		action.Refresh()
 
 		dataBlocks.Refresh()
@@ -339,9 +390,17 @@ func runGUI() {
 
 	cardType.OnChanged = updateDataBlocks
 
-	// Create output display
-	output := newOutputDisplay()
-	var currentOutput *outputDisplay = output
+	// Create two output displays
+	// Status: strip ANSI codes for clean messages
+	// Command: keep ANSI codes for colored Proxmark3 output
+	statusOutput := newOutputDisplay(true)   // Strip ANSI
+	commandOutput := newOutputDisplay(false) // Keep ANSI
+	var currentStatusOutput *outputDisplay = statusOutput
+	var currentCommandOutput *outputDisplay = commandOutput
+
+	// Scroll containers - will be set after creation
+	var statusScroll *container.Scroll
+	var commandScroll *container.Scroll
 
 	// Execute command function
 	executeCommand := func() {
@@ -373,19 +432,19 @@ func runGUI() {
 		switch cardTypeCmd {
 		case "prox", "iclass", "awid", "indala", "avigilon":
 			if facilityCodeValue == "" || cardNumberValue == "" {
-				currentOutput.Append(fmt.Sprintf("%sError: Facility Code and Card Number are required%s\n", Red, Reset))
+				currentStatusOutput.Set("ERROR: Facility Code and Card Number are required\n")
 				return
 			}
 			args = append(args, "-bl", bitLengthValue, "-fc", facilityCodeValue, "-cn", cardNumberValue)
 		case "em":
 			if hexDataValue == "" {
-				currentOutput.Append(fmt.Sprintf("%sError: Hex Data is required%s\n", Red, Reset))
+				currentStatusOutput.Set("ERROR: Hex Data is required\n")
 				return
 			}
 			args = append(args, "--hex", hexDataValue)
 		case "mifare", "piv":
 			if uidValue == "" {
-				currentOutput.Append(fmt.Sprintf("%sError: UID is required%s\n", Red, Reset))
+				currentStatusOutput.Set("ERROR: UID is required\n")
 				return
 			}
 			args = append(args, "--uid", uidValue)
@@ -399,70 +458,125 @@ func runGUI() {
 			args = append(args, "-s")
 		}
 
-		// Execute command in current process
+		// Execute card operations directly in GUI
 		go func() {
-			// First check Proxmark3 status for all actions except "Generate Command"
-			if actionValue != "Generate Command" {
-				currentOutput.Append("Checking Proxmark3 status...\n")
-				if ok, msg := checkProxmark3(); !ok {
-					currentOutput.Append(fmt.Sprintf("%sError: %s%s\n", Red, msg, Reset))
-					return
-				}
-			}
+			// Clear both outputs
+			currentStatusOutput.Clear()
+			currentCommandOutput.Clear()
 
-			// Build command
-			execPath, err := os.Executable()
-			if err != nil {
-				currentOutput.Append(fmt.Sprintf("%sError getting executable path: %v%s\n", Red, err, Reset))
-				return
-			}
+			// Parse inputs
+			fc, _ := strconv.Atoi(facilityCodeValue)
+			cn, _ := strconv.Atoi(cardNumberValue)
+			bl, _ := strconv.Atoi(bitLengthValue)
 
-			// Show command being executed
-			cmdStr := execPath + " " + strings.Join(args, " ")
-			currentOutput.Append(fmt.Sprintf("Executing: %s\n\n", cmdStr))
+			// Set up custom writer for status output
+			statusWriter := &guiWriter{output: currentStatusOutput, scroll: statusScroll}
 
-			// Execute command
-			cmd := exec.Command(execPath, args...)
-			cmd.Env = os.Environ()
+			// Redirect stdout/stderr to command output for PM3 commands
+			oldStdout := os.Stdout
+			oldStderr := os.Stderr
+			r, w, _ := os.Pipe()
+			os.Stdout = w
+			os.Stderr = w
 
-			// Set up pipes for real-time output
-			stdout, err := cmd.StdoutPipe()
-			if err != nil {
-				currentOutput.Append(fmt.Sprintf("%sError setting up output pipe: %v%s\n", Red, err, Reset))
-				return
-			}
-			stderr, err := cmd.StderrPipe()
-			if err != nil {
-				currentOutput.Append(fmt.Sprintf("%sError setting up error pipe: %v%s\n", Red, err, Reset))
-				return
-			}
-
-			// Start command
-			if err := cmd.Start(); err != nil {
-				currentOutput.Append(fmt.Sprintf("%sError starting command: %v%s\n", Red, err, Reset))
-				return
-			}
-
-			// Read output in real-time
+			// Read PM3 output in background
+			done := make(chan bool)
 			go func() {
-				scanner := bufio.NewScanner(stdout)
+				scanner := bufio.NewScanner(r)
 				for scanner.Scan() {
-					currentOutput.Append(scanner.Text() + "\n")
+					line := scanner.Text()
+					currentCommandOutput.Append(line + "\n")
+					if commandScroll != nil {
+						fyne.Do(func() {
+							commandScroll.ScrollToBottom()
+						})
+					}
 				}
+				done <- true
 			}()
 
-			go func() {
-				scanner := bufio.NewScanner(stderr)
-				for scanner.Scan() {
-					currentOutput.Append(scanner.Text() + "\n")
-				}
-			}()
+			// Set global status writer
+			SetStatusWriter(statusWriter)
 
-			// Wait for command to complete
-			if err := cmd.Wait(); err != nil {
-				currentOutput.Append(fmt.Sprintf("%sCommand failed: %v%s\n", Red, err, Reset))
+			// Handle "Generate Command" separately
+			if actionValue == "Generate Command" {
+				WriteStatusInfo("Generated PM3 command:")
+
+				// Generate the actual PM3 command string based on card type
+				var cmdStr string
+				switch cardTypeCmd {
+				case "prox":
+					formatMap := map[int]string{26: "H10301", 30: "ATSW30", 31: "ADT31", 33: "D10202", 34: "H10306", 35: "C1k35s", 36: "S12906", 37: "H10304", 46: "H800002", 48: "C1k48s"}
+					if format, ok := formatMap[bl]; ok {
+						cmdStr = fmt.Sprintf("lf hid clone -w %s --fc %d --cn %d", format, fc, cn)
+					}
+				case "iclass":
+					formatMap := map[int]string{26: "H10301", 30: "ATSW30", 33: "D10202", 34: "H10306", 35: "C1k35s", 36: "S12906", 37: "H10304", 46: "H800002", 48: "C1k48s"}
+					if format, ok := formatMap[bl]; ok {
+						cmdStr = fmt.Sprintf("hf iclass encode -w %s --fc %d --cn %d --ki 0", format, fc, cn)
+					}
+				case "awid":
+					cmdStr = fmt.Sprintf("lf awid clone --fmt 26 --fc %d --cn %d", fc, cn)
+				case "indala":
+					cmdStr = fmt.Sprintf("lf indala clone --fc %d --cn %d", fc, cn)
+				case "avigilon":
+					cmdStr = fmt.Sprintf("lf hid clone -w Avig56 --fc %d --cn %d", fc, cn)
+				case "em":
+					cmdStr = fmt.Sprintf("lf em 410x clone --id %s", hexDataValue)
+				case "mifare", "piv":
+					cmdStr = fmt.Sprintf("hf mf csetuid -u %s", uidValue)
+				}
+
+				// Show command in command output
+				if cmdStr != "" {
+					fmt.Println(cmdStr)
+				} else {
+					fmt.Println("Error: Unsupported configuration")
+				}
+
+				// Restore stdout/stderr
+				w.Close()
+				os.Stdout = oldStdout
+				os.Stderr = oldStderr
+				<-done
+
+				WriteStatusSuccess("PM3 command generated")
 				return
 			}
+
+			// Check Proxmark3 status for actual operations
+			WriteStatusInfo("Checking Proxmark3 connection...")
+			if ok, msg := checkProxmark3(); !ok {
+				WriteStatusError(msg)
+				w.Close()
+				os.Stdout = oldStdout
+				os.Stderr = oldStderr
+				<-done
+				return
+			}
+			WriteStatusSuccess("Proxmark3 connected")
+			WriteStatusInfo("Executing %s...", actionValue)
+
+			// Determine operation
+			write := (actionValue == "Write & Verify")
+			verify := (actionValue == "Write & Verify")
+			simulate := (actionValue == "Simulate Card")
+
+			// Execute card operation
+			handleCardType(cardTypeCmd, fc, cn, bl, write, verify, uidValue, hexDataValue, simulate)
+
+			// Flush any remaining output
+			os.Stdout.Sync()
+			os.Stderr.Sync()
+
+			// Restore stdout/stderr
+			w.Close()
+			os.Stdout = oldStdout
+			os.Stderr = oldStderr
+			<-done
+
+			// Update status on success
+			WriteStatusSuccess("%s completed", actionValue)
 		}()
 	}
 
@@ -475,7 +589,7 @@ func runGUI() {
 		cardNumber.SetText("")
 		hexData.SetText("")
 		uid.SetText("")
-		action.SetSelectedIndex(0)
+		action.SetSelectedIndex(1) // Reset to Write & Verify
 		updateDataBlocks(cardTypes[0])
 	})
 
@@ -483,8 +597,22 @@ func runGUI() {
 	outputLabel := canvas.NewText("OUTPUT", color.RGBA{R: 169, G: 182, B: 201, A: 255})
 	outputLabel.TextSize = 11
 
+	copyOutput := newOutlinedButton("COPY OUTPUT", func() {
+		// Get text from command output only
+		currentCommandOutput.mu.Lock()
+		commandText := currentCommandOutput.Text
+		currentCommandOutput.mu.Unlock()
+
+		// Copy to clipboard
+		w.Clipboard().SetContent(commandText)
+
+		// Show feedback
+		WriteStatusSuccess("Output copied to clipboard!")
+	})
+
 	clearOutput := newOutlinedButton("CLEAR OUTPUT", func() {
-		currentOutput.Clear()
+		currentStatusOutput.Clear()
+		currentCommandOutput.Clear()
 	})
 
 	// Make buttons less tall by constraining their size
@@ -522,37 +650,42 @@ func runGUI() {
 		container.NewPadded(versionText),
 	)
 
-	// Output header with clear button
-	outputHeader := container.NewBorder(
-		nil, nil,
+	// Build right column output area
+	// Header
+	outputHeader := container.NewHBox(
 		container.NewPadded(outputLabel),
+		layout.NewSpacer(),
+		container.NewPadded(copyOutput),
 		container.NewPadded(clearOutput),
 	)
 
-	// Add dark grey background with orange border to output area
-	outputBg := canvas.NewRectangle(color.RGBA{R: 24, G: 26, B: 27, A: 255})
-	outputBg.CornerRadius = 5
+	// Status and Command scroll containers with background for contrast
+	statusBg := canvas.NewRectangle(color.RGBA{R: 30, G: 35, B: 41, A: 255}) // Lighter than main bg
+	statusBg.CornerRadius = 5
+	statusBg.StrokeColor = color.RGBA{R: 226, G: 88, B: 34, A: 255} // Orange border matching buttons
+	statusBg.StrokeWidth = 1
+	statusScroll = container.NewScroll(statusOutput)
+	statusScroll.SetMinSize(fyne.NewSize(0, 200))
+	statusWithBg := container.NewStack(statusBg, statusScroll)
 
-	// Orange border - subtle
-	outputBorder := canvas.NewRectangle(color.RGBA{R: 0, G: 0, B: 0, A: 0}) // Transparent fill
-	outputBorder.StrokeColor = color.RGBA{R: 226, G: 88, B: 34, A: 80}      // Orange with lower opacity
-	outputBorder.StrokeWidth = 1
-	outputBorder.CornerRadius = 5
+	commandBg := canvas.NewRectangle(color.RGBA{R: 30, G: 35, B: 41, A: 255}) // Lighter than main bg
+	commandBg.CornerRadius = 5
+	commandBg.StrokeColor = color.RGBA{R: 226, G: 88, B: 34, A: 255} // Orange border matching buttons
+	commandBg.StrokeWidth = 1
+	commandScroll = container.NewScroll(commandOutput)
+	commandWithBg := container.NewStack(commandBg, commandScroll)
 
-	// Create scrollable output area
-	outputScroll := container.NewScroll(output)
-	outputScroll.SetMinSize(fyne.NewSize(800, 400))
-
-	outputWithBg := container.NewStack(
-		outputBorder,
-		outputBg,
-		container.NewPadded(outputScroll),
+	// Use VBox with fixed status height (no resize divider)
+	outputArea := container.NewBorder(
+		statusWithBg,
+		nil, nil, nil,
+		commandWithBg,
 	)
 
 	rightColumn := container.NewBorder(
 		outputHeader,
 		nil, nil, nil,
-		outputWithBg,
+		outputArea,
 	)
 
 	// Main content with two columns - left side fixed width, not resizable
@@ -578,7 +711,7 @@ func runGUI() {
 
 	// Initialize after content is set (so widgets have window context)
 	cardType.SetSelectedIndex(0)
-	action.SetSelectedIndex(0)
+	action.SetSelectedIndex(1) // Default to Write & Verify
 	updateDataBlocks(cardTypes[0])
 
 	w.ShowAndRun()

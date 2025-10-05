@@ -7,8 +7,15 @@ import (
 )
 
 func verifyCardData(cardType string, facilityCode, cardNumber, bitLength int, hexData string, uid string) {
+	// Check Proxmark3 status first
+	if ok, msg := checkProxmark3(); !ok {
+		WriteStatusError(msg)
+		return
+	}
+
+	fmt.Println("\n|----------- VERIFICATION -----------|")
+	WriteStatusProgress("Verifying card data - place card flat on reader...")
 	var cmd *exec.Cmd
-	fmt.Println(Green, "\nVerifying that the card data was successfully written. Set your card flat on the reader...\n", Reset)
 	switch cardType {
 	case "iclass":
 		// Read block 7 to verify the written data
@@ -26,13 +33,13 @@ func verifyCardData(cardType string, facilityCode, cardNumber, bitLength int, he
 	case "piv", "mifare":
 		cmd = exec.Command("pm3", "-c", "hf mf info")
 	default:
-		fmt.Println(Red, "Unsupported card type for verification.", Reset)
+		WriteStatusError("Unsupported card type for verification")
 		return
 	}
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		fmt.Println(Red, "Error dumping card data:", err, Reset)
+		WriteStatusError("Failed to read card data: %v", err)
 		return
 	}
 
@@ -57,12 +64,11 @@ func verifyCardData(cardType string, facilityCode, cardNumber, bitLength int, he
 		}
 
 		if block7Data != "" {
-			fmt.Println(Green, "\nVerification successful: iCLASS card block 7 data read successfully.\n", Reset)
-			fmt.Println(Green, "Block 7 contains:", block7Data, "\n", Reset)
-			fmt.Println(Green, fmt.Sprintf("The card contains the encoded data for Bit Length %d, Facility Code %d, and Card Number %d\n", bitLength, facilityCode, cardNumber), Reset)
+			WriteStatusSuccess("Verification successful - Block 7: %s", block7Data)
+			WriteStatusSuccess("Card contains: %d-bit, FC: %d, CN: %d", bitLength, facilityCode, cardNumber)
 			return
 		} else {
-			fmt.Println(Red, "\nVerification failed: Unable to read block 7 data from the card.\n", Reset)
+			WriteStatusError("Verification failed - unable to read block 7 data")
 			return
 		}
 	} else {
@@ -70,20 +76,20 @@ func verifyCardData(cardType string, facilityCode, cardNumber, bitLength int, he
 		for _, line := range lines {
 			if cardType == "awid" || cardType == "indala" {
 				if strings.Contains(line, fmt.Sprintf("FC: %d", facilityCode)) && strings.Contains(line, fmt.Sprintf("Card: %d", cardNumber)) {
-					fmt.Println(Green, "\nVerification successful: Facility Code and Card Number match.\n", Reset)
+					WriteStatusSuccess("Verification successful - FC and CN match")
 					return
 				}
 			} else if cardType == "avigilon" {
 				if strings.Contains(line, "[Avig56") && strings.Contains(line, fmt.Sprintf("FC: %d", facilityCode)) && strings.Contains(line, fmt.Sprintf("CN: %d", cardNumber)) {
-					fmt.Println(Green, "\nVerification successful: Avigilon card detected with matching Facility Code and Card Number.\n", Reset)
+					WriteStatusSuccess("Verification successful - Avigilon FC and CN match")
 					return
 				}
 			} else if cardType == "em" {
 				if strings.Contains(line, fmt.Sprintf("EM 410x ID %s", hexData)) {
-					fmt.Println(Green, "\nVerification successful: EM card ID matches. Decoding the wiegand data, the result should match the output in doppelganger\n", Reset)
+					WriteStatusSuccess("Verification successful - EM card ID matches")
 					output, err := writeProxmark3Command(fmt.Sprintf("wiegand decode -r %s", hexData))
 					if err != nil {
-						fmt.Println(Red, "Error decoding Wiegand data:", err, Reset)
+						WriteStatusError("Failed to decode Wiegand data: %v", err)
 						return
 					}
 					fmt.Println(output)
@@ -91,38 +97,33 @@ func verifyCardData(cardType string, facilityCode, cardNumber, bitLength int, he
 						if strings.Contains(line, "[+] [WIE32   ] Wiegand 32-bit") {
 							var emFC, emCN int
 							fmt.Sscanf(line, "[+] [WIE32   ] Wiegand 32-bit                   FC: %d  CN: %d", &emFC, &emCN)
-							fmt.Printf(Green+"\nThe Facility Code is %d and the Card Number is %d.\n"+Reset, emFC, emCN)
+							WriteStatusSuccess("Decoded: FC: %d, CN: %d", emFC, emCN)
 							return
 						}
 					}
 				}
 			} else if cardType == "piv" || cardType == "mifare" {
 				if strings.Contains(line, "[+]  UID:") {
-					// Extract the UID part from the line
 					uidStartIndex := strings.Index(line, "[+]  UID:") + len("[+]  UID:")
 					extractedUID := strings.TrimSpace(line[uidStartIndex:])
-					// Normalize the UID format
 					normalizedUID := strings.ToUpper(strings.ReplaceAll(extractedUID, " ", ""))
 					if normalizedUID == strings.ToUpper(uid) {
-						fmt.Println(Green, "\nVerification successful: UID matches.\n", Reset)
+						WriteStatusSuccess("Verification successful - UID matches")
 						return
 					}
 				}
 			} else {
 				if strings.Contains(line, fmt.Sprintf("FC: %d", facilityCode)) && strings.Contains(line, fmt.Sprintf("CN: %d", cardNumber)) {
-					fmt.Println(Green, "\nVerification successful: Facility Code and Card Number match.\n", Reset)
+					WriteStatusSuccess("Verification successful - FC and CN match")
 					return
 				}
 			}
 		}
 	}
 
-	fmt.Println(Red, "\nVerification failed: ",
-		func() string {
-			if cardType == "piv" || cardType == "mifare" {
-				return "The UID does not match or the Proxmark3 failed to read the card."
-			}
-			return "Facility Code and Card Number do not match or the Proxmark3 failed to read the card."
-		}(),
-		Reset)
+	if cardType == "piv" || cardType == "mifare" {
+		WriteStatusError("Verification failed - UID does not match or card read failed")
+	} else {
+		WriteStatusError("Verification failed - FC/CN do not match or card read failed")
+	}
 }

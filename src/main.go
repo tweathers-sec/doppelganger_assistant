@@ -100,9 +100,11 @@ func main() {
 		return
 	}
 
-	if (*write || *simulate) && !checkProxmark3Version() {
-		fmt.Println(Red, "Proxmark3 software is not installed or not running the Iceman fork.", Reset)
-		return
+	if *write || *simulate {
+		if ok, msg := checkProxmark3(); !ok {
+			fmt.Printf("%sError: %s%s\n", Red, msg, Reset)
+			return
+		}
 	}
 
 	if *cardType == "piv" || *cardType == "mifare" {
