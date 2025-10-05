@@ -90,7 +90,7 @@ irm https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/
 
 **Note:** The installer will automatically detect existing installations and prompt you to update. If a reboot is required to enable WSL features, you'll be prompted. Simply run the same command again after rebooting.
 
-**For nested VMs (Proxmox, Parallels, VMware, etc.):** Ensure nested virtualization is enabled in your hypervisor settings before running the installer.
+**⚠️ IMPORTANT:** Nested virtual machines (VM within VM) are **NOT supported**. The installer will detect and block installation in nested VM environments. Please install on physical hardware or a primary (non-nested) virtual machine only.
 
 ---
 

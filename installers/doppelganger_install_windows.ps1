@@ -87,41 +87,28 @@ try {
     $isVM = $computerSystem.Model -match "Virtual" -or $computerSystem.Manufacturer -match "VMware|Microsoft Corporation|Xen|QEMU|VirtualBox|Parallels"
     
     if ($isVM) {
-        # Try to detect if nested virtualization is available
-        $vmProcessor = Get-WmiObject -Class Win32_Processor | Select-Object -First 1
-        $nestedVirtSupported = (Get-Command Get-VMProcessor -ErrorAction SilentlyContinue) -ne $null
+        Write-Host "`n*************************************************************" -ForegroundColor Red
+        Write-Host "*                                                           *" -ForegroundColor Red
+        Write-Host "*                 NESTED VM DETECTED                        *" -ForegroundColor Red
+        Write-Host "*                                                           *" -ForegroundColor Red
+        Write-Host "*   Doppelganger Assistant DOES NOT support installation    *" -ForegroundColor Red
+        Write-Host "*   in nested virtual machine environments (VM within VM).  *" -ForegroundColor Red
+        Write-Host "*                                                           *" -ForegroundColor Red
+        Write-Host "*   Please install on:                                      *" -ForegroundColor Red
+        Write-Host "*   - Physical Windows hardware                             *" -ForegroundColor Red
+        Write-Host "*   - A primary (non-nested) virtual machine                *" -ForegroundColor Red
+        Write-Host "*                                                           *" -ForegroundColor Red
+        Write-Host "*   Installation will now exit.                             *" -ForegroundColor Red
+        Write-Host "*                                                           *" -ForegroundColor Red
+        Write-Host "*************************************************************`n" -ForegroundColor Red
         
-        if (-not $nestedVirtSupported) {
-            Write-Host "`n*************************************************************" -ForegroundColor Red
-            Write-Host "*                                                           *" -ForegroundColor Red
-            Write-Host "*                 NESTED VM DETECTED                        *" -ForegroundColor Red
-            Write-Host "*                                                           *" -ForegroundColor Red
-            Write-Host "*   WSL2 requires nested virtualization support which may   *" -ForegroundColor Red
-            Write-Host "*   not be available in your current virtual environment.   *" -ForegroundColor Red
-            Write-Host "*                                                           *" -ForegroundColor Red
-            Write-Host "*   If installation fails, please ensure:                   *" -ForegroundColor Red
-            Write-Host "*   - Nested virtualization is enabled in your hypervisor   *" -ForegroundColor Red
-            Write-Host "*   - Your VM has sufficient resources allocated            *" -ForegroundColor Red
-            Write-Host "*                                                           *" -ForegroundColor Red
-            Write-Host "*************************************************************`n" -ForegroundColor Red
-            
-            Log "WARNING: Nested VM detected. Nested virtualization may not be supported."
-            
-            $continueChoice = Read-Host "Do you want to continue anyway? (y/n)"
-            if ($continueChoice -ne "y" -and $continueChoice -ne "Y") {
-                Log "User chose to exit due to nested VM warning."
-                Write-Host "`nInstallation cancelled. Press any key to exit..."
-                $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
-                exit
-            }
-            Log "User chose to continue despite nested VM warning."
-        }
-        else {
-            Log "Nested virtualization appears to be supported."
-        }
+        Log "ERROR: Nested VM detected. Installation blocked - nested VMs are not supported."
+        Write-Host "`nPress any key to exit..."
+        $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+        exit
     }
     else {
-        Log "Running on physical hardware."
+        Log "Running on physical hardware or primary VM."
     }
 }
 catch {
