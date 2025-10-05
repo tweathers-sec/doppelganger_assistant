@@ -104,10 +104,51 @@ if (Test-Path "$env:SystemRoot\System32\RebootPending.txt") {
     Remove-Item "$env:SystemRoot\System32\RebootPending.txt" -Force
 }
 
-# Clean up existing installation if present
+# Check for existing installation
 if (Test-Path -Path $basePath) {
-    Log "Cleaning up existing installation..."
-    Remove-Item -Path $basePath -Recurse -Force -ErrorAction SilentlyContinue
+    Write-Host "`n*************************************************************" -ForegroundColor Yellow
+    Write-Host "*                                                           *" -ForegroundColor Yellow
+    Write-Host "*         EXISTING INSTALLATION DETECTED                    *" -ForegroundColor Yellow
+    Write-Host "*                                                           *" -ForegroundColor Yellow
+    Write-Host "*************************************************************`n" -ForegroundColor Yellow
+    
+    $updateChoice = Read-Host "An existing installation was found. Do you want to remove and re-install (update)? [Recommended] (y/n)"
+    
+    if ($updateChoice -eq "y" -or $updateChoice -eq "Y" -or $updateChoice -eq "") {
+        Log "User chose to update. Running uninstaller..."
+        
+        # Check if uninstall script exists
+        if (Test-Path "$basePath\uninstall.ps1") {
+            Log "Running existing uninstaller script..."
+            powershell -ExecutionPolicy Bypass -File "$basePath\uninstall.ps1" -SkipUsbipdPrompt
+            Start-Sleep -Seconds 2
+        } else {
+            Log "Uninstaller not found. Downloading and running uninstaller..."
+            $tempUninstallPath = "$env:TEMP\doppelganger_uninstall_temp.ps1"
+            try {
+                Invoke-WebRequest -Uri $uninstallScriptUrl -OutFile $tempUninstallPath -Headers $headers
+                powershell -ExecutionPolicy Bypass -File $tempUninstallPath -SkipUsbipdPrompt
+                Start-Sleep -Seconds 2
+                Remove-Item -Path $tempUninstallPath -Force -ErrorAction SilentlyContinue
+            } catch {
+                Log "Failed to download uninstaller. Performing manual cleanup..."
+                # Fallback to manual cleanup
+                wsl --shutdown
+                Remove-Item -Path $basePath -Recurse -Force -ErrorAction SilentlyContinue
+                if (Test-Path -Path $shortcutPath) {
+                    Remove-Item -Path $shortcutPath -Force -ErrorAction SilentlyContinue
+                }
+            }
+        }
+        
+        Log "Previous installation removed. Proceeding with fresh installation..."
+    }
+    else {
+        Log "User chose not to update. Exiting installer."
+        Write-Host "`nInstallation cancelled. Press any key to exit..."
+        $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+        exit
+    }
 }
 
 # Create base directory
@@ -117,7 +158,7 @@ mkdir $basePath | Out-Null
 # Use headers to prevent caching
 $headers = @{
     'Cache-Control' = 'no-cache'
-    'Pragma' = 'no-cache'
+    'Pragma'        = 'no-cache'
 }
 
 Log "Downloading setup script..."
@@ -167,11 +208,11 @@ powershell -ExecutionPolicy Bypass -File $setupScriptPath
 # Create a shortcut on the desktop to run the launch script as an administrator
 Log "Creating desktop shortcut..."
 New-Shortcut -TargetPath "powershell.exe" `
-             -ShortcutPath $shortcutPath `
-             -Arguments "-NoProfile -ExecutionPolicy Bypass -File `"$launchScriptPath`"" `
-             -Description "Launch Doppelganger Assistant as Administrator" `
-             -WorkingDirectory $basePath `
-             -IconLocation $imagePath
+    -ShortcutPath $shortcutPath `
+    -Arguments "-NoProfile -ExecutionPolicy Bypass -File `"$launchScriptPath`"" `
+    -Description "Launch Doppelganger Assistant as Administrator" `
+    -WorkingDirectory $basePath `
+    -IconLocation $imagePath
 
 Log "Shortcut created on the desktop with administrator privileges."
 
@@ -182,7 +223,8 @@ $flashChoice = Read-Host "Do you want to flash your Proxmark3 device now (not re
 if ($flashChoice -eq "y" -or $flashChoice -eq "Y") {
     Log "User chose to flash Proxmark3. Running Proxmark3 flash script..."
     powershell -ExecutionPolicy Bypass -File $proxmarkFlashScriptPath
-} else {
+}
+else {
     Log "User chose not to flash Proxmark3."
 }
 
@@ -192,7 +234,8 @@ if ($scriptPath) {
     Log "Deleting installation script..."
     Remove-Item -Path $scriptPath -Force -ErrorAction SilentlyContinue
     Log "Installation script deleted."
-} else {
+}
+else {
     Log "Script was run directly (not from file). Nothing to delete."
 }
 

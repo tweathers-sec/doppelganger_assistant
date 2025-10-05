@@ -114,7 +114,7 @@ curl -sSL https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant
 
 #### Manual Linux Installation
 
-Install Doppelganger Assistant Dependencies. *Note that this step should only be required if you encounter errors that prevent the deployment of doppelganger_assistant.*
+Install Doppelganger Assistant Dependencies:
 
 ```sh
 sudo apt update 
@@ -155,7 +155,7 @@ Open **PowerShell as Administrator** and run:
 irm https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/installers/doppelganger_install_windows.ps1 | iex
 ```
 
-**Note:** The installer will automatically clean up any previous installation attempts. If a reboot is required to enable WSL features, you'll be prompted. Simply run the same command again after rebooting.
+**Note:** The installer will automatically detect existing installations and prompt you to update (recommended). If a reboot is required to enable WSL features, you'll be prompted. Simply run the same command again after rebooting.
 
 **For nested VMs (Proxmox, Parallels, VMware, etc.):** Ensure nested virtualization is enabled in your hypervisor settings before running the installer.
 

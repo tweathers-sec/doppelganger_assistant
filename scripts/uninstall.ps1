@@ -5,6 +5,13 @@
 #
 # Or if already installed:
 #   powershell -ExecutionPolicy Bypass -File C:\doppelganger_assistant\uninstall.ps1
+#
+# Parameters:
+#   -SkipUsbipdPrompt: Skip the usbipd uninstall prompt (used during updates)
+
+param(
+    [switch]$SkipUsbipdPrompt = $false
+)
 
 # Check if running from install directory - if so, copy to temp and re-execute
 $scriptPath = $MyInvocation.MyCommand.Path
@@ -15,8 +22,9 @@ if ($scriptPath -and $scriptPath.StartsWith($basePath)) {
     $tempScript = "$env:TEMP\doppelganger_uninstall_temp.ps1"
     Copy-Item -Path $scriptPath -Destination $tempScript -Force
     
-    # Re-execute from temp location
-    Start-Process powershell -ArgumentList "-ExecutionPolicy Bypass -File `"$tempScript`"" -Wait -NoNewWindow
+    # Re-execute from temp location with same parameters
+    $paramString = if ($SkipUsbipdPrompt) { "-SkipUsbipdPrompt" } else { "" }
+    Start-Process powershell -ArgumentList "-ExecutionPolicy Bypass -File `"$tempScript`" $paramString" -Wait -NoNewWindow
     
     # Exit this instance
     exit
@@ -66,7 +74,8 @@ foreach ($distro in $wslDistributions) {
         wsl.exe --unregister $kaliWslName
         Log "WSL distribution $kaliWslName unregistered."
         $removed = $true
-    } elseif ($distro -eq $ubuntuWslName) {
+    }
+    elseif ($distro -eq $ubuntuWslName) {
         Log "Unregistering WSL distribution $ubuntuWslName..."
         wsl.exe --unregister $ubuntuWslName
         Log "WSL distribution $ubuntuWslName unregistered."
@@ -90,7 +99,8 @@ if (Test-Path -Path $basePath) {
     Log "Removing base directory $basePath..."
     Remove-Item -Recurse -Force $basePath
     Log "Base directory $basePath removed."
-} else {
+}
+else {
     Log "Base directory $basePath not found."
 }
 
@@ -99,21 +109,33 @@ if (Test-Path -Path $shortcutPath) {
     Log "Removing desktop shortcut $shortcutPath..."
     Remove-Item -Path $shortcutPath -Force
     Log "Desktop shortcut $shortcutPath removed."
-} else {
+}
+else {
     Log "Desktop shortcut $shortcutPath not found."
 }
 
-# Uninstall usbipd
-if (CommandExists "winget") {
-    Log "Uninstalling usbipd..."
-    $uninstallOutput = Start-Process winget -ArgumentList "uninstall --exact usbipd" -Wait -PassThru
-    if ($uninstallOutput.ExitCode -ne 0) {
-        Log "Error uninstalling usbipd. Exit code: $($uninstallOutput.ExitCode)"
-    } else {
-        Log "usbipd uninstalled."
+# Optionally uninstall usbipd (skip if called during update)
+if (-not $SkipUsbipdPrompt) {
+    if (CommandExists "winget") {
+        $usbipdChoice = Read-Host "Do you want to uninstall usbipd? (y/n)"
+        if ($usbipdChoice -eq "y" -or $usbipdChoice -eq "Y") {
+            Log "Uninstalling usbipd..."
+            $uninstallOutput = Start-Process winget -ArgumentList "uninstall --exact usbipd" -Wait -PassThru -NoNewWindow
+            if ($uninstallOutput.ExitCode -ne 0) {
+                Log "Error uninstalling usbipd. Exit code: $($uninstallOutput.ExitCode)"
+            }
+            else {
+                Log "usbipd uninstalled."
+            }
+        } else {
+            Log "Skipping usbipd uninstallation."
+        }
+    }
+    else {
+        Log "winget not found. If you want to uninstall usbipd, please do so manually."
     }
 } else {
-    Log "winget not found. Please uninstall usbipd manually."
+    Log "Skipping usbipd uninstallation (update mode)."
 }
 
 Log "Uninstallation complete."
