@@ -180,6 +180,11 @@ if [[ "$INSTALL_PM3" == "1" ]]; then
     print_color "1;32" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
     
+    # Install Xcode Command Line Tools (must come first)
+    print_color "1;34" "[•] Installing Xcode Command Line Tools..."
+    xcode-select --install 2>/dev/null || print_color "1;32" "    ✓ Already installed"
+    echo ""
+    
     # Install Homebrew if needed
     if ! command -v brew &> /dev/null; then
         print_color "1;34" "[•] Installing Homebrew..."
@@ -191,20 +196,20 @@ if [[ "$INSTALL_PM3" == "1" ]]; then
         echo ""
     fi
     
-    # Install Xcode Command Line Tools
-    print_color "1;34" "[•] Installing Xcode Command Line Tools..."
-    xcode-select --install 2>/dev/null || print_color "1;32" "    ✓ Already installed"
-    echo ""
-    
     # Install XQuartz
     print_color "1;34" "[•] Installing XQuartz..."
     brew install xquartz 2>/dev/null
     print_color "1;32" "    ✓ XQuartz installed"
     echo ""
     
+    # Tap the RfidResearchGroup repo
+    print_color "1;34" "[•] Adding Proxmark3 repository..."
+    brew tap RfidResearchGroup/proxmark3 2>/dev/null
+    print_color "1;32" "    ✓ Repository added"
+    echo ""
+    
     # Install Proxmark3
     print_color "1;34" "[•] Installing Proxmark3..."
-    brew tap RfidResearchGroup/proxmark3 2>/dev/null
     if brew install $BREW_FLAGS rfidresearchgroup/proxmark3/proxmark3 2>/dev/null; then
         print_color "1;32" "    ✓ Proxmark3 installed successfully"
     else
