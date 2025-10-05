@@ -94,6 +94,12 @@ go mod init doppelganger_assistant || true
 go mod tidy
 cd ..
 
+# Extract version from src/main.go
+VERSION=$(awk -F '"' '/const \(/{flag=1} flag && /Version =/{print $2; exit}' src/main.go)
+if [ -z "$VERSION" ]; then
+  VERSION="1.0.0"
+fi
+
 print_color "blue" "Building for Linux (arm64 and amd64)..."
 # Build for Linux (arm64 and amd64)
 cd src
@@ -168,6 +174,83 @@ fi
 if [ -f "fyne-cross/dist/darwin-amd64/doppelganger_assistant_darwin_amd64.dmg" ]; then
     mv fyne-cross/dist/darwin-amd64/doppelganger_assistant_darwin_amd64.dmg ../build/
 fi
+
+print_color "blue" "Creating Debian packages (.deb) for Linux..."
+
+# Helper to create .deb package given arch and binary path
+create_deb_pkg() {
+  local arch=$1
+  local bin_path=$2
+
+  if [ ! -f "$bin_path" ]; then
+    print_color "yellow" "Skipping .deb for $arch; binary not found at $bin_path"
+    return
+  fi
+
+  local pkgroot="build/pkgroot-$arch"
+  local debname="doppelganger_assistant_linux_${arch}.deb"
+
+  rm -rf "$pkgroot"
+  mkdir -p "$pkgroot/DEBIAN"
+  mkdir -p "$pkgroot/usr/bin"
+  mkdir -p "$pkgroot/usr/share/applications"
+  mkdir -p "$pkgroot/usr/share/pixmaps"
+
+  # Control file
+  cat > "$pkgroot/DEBIAN/control" << EOF
+Package: doppelganger-assistant
+Version: $VERSION
+Section: utils
+Priority: optional
+Architecture: $arch
+Maintainer: tweathers-sec <noreply@example.com>
+Description: Doppelgänger Assistant GUI for Proxmark3 workflows
+EOF
+
+  # Post-install script to refresh menus/icons
+  cat > "$pkgroot/DEBIAN/postinst" << 'EOF'
+#!/bin/sh
+set -e
+update-desktop-database /usr/share/applications >/dev/null 2>&1 || true
+if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+  gtk-update-icon-cache /usr/share/icons/hicolor >/dev/null 2>&1 || true
+fi
+if command -v xdg-desktop-menu >/dev/null 2>&1; then
+  xdg-desktop-menu forceupdate >/dev/null 2>&1 || true
+fi
+exit 0
+EOF
+  chmod 0755 "$pkgroot/DEBIAN/postinst"
+
+  # Binary
+  cp "$bin_path" "$pkgroot/usr/bin/doppelganger_assistant"
+  chmod 0755 "$pkgroot/usr/bin/doppelganger_assistant"
+
+  # Icon
+  cp img/doppelganger_assistant.png "$pkgroot/usr/share/pixmaps/doppelganger_assistant.png"
+
+  # Desktop entry
+  cat > "$pkgroot/usr/share/applications/doppelganger_assistant.desktop" << EOF
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Doppelganger Assistant
+Comment=Launch Doppelganger Assistant
+Exec=doppelganger_assistant
+Icon=doppelganger_assistant
+Terminal=false
+Categories=Utility;System;
+EOF
+
+  # Build the deb
+  dpkg-deb --build "$pkgroot" "build/$debname"
+  print_color "green" "Created build/$debname"
+}
+
+create_deb_pkg amd64 "src/fyne-cross/bin/linux-amd64/doppelganger_assistant"
+create_deb_pkg arm64 "src/fyne-cross/bin/linux-arm64/doppelganger_assistant"
+
+print_color "green" "Debian package creation completed."
 
 print_color "blue" "Cleaning up..."
 # clean up

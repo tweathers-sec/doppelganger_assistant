@@ -204,12 +204,15 @@ mkdir $basePath | Out-Null
 # Pre-flight questions (gather all input up-front)
 # ============================
 
-$installDistro = Read-Host "Which WSL distro would you like to install? (U)butu [default] / (K)ali"
-if ($installDistro -eq "K" -or $installDistro -eq "k") {
-    $selectedDistro = "Kali"
+Write-Host "`nWhich WSL distro would you like to install?" -ForegroundColor Yellow
+Write-Host "1) Kali Linux [default]" -ForegroundColor Green
+Write-Host "2) Ubuntu" -ForegroundColor Cyan
+$installDistro = Read-Host "`nEnter your choice (1-2) [default: 1]"
+if ($installDistro -eq "2" -or $installDistro -eq "2") {
+    $selectedDistro = "Ubuntu"
 }
 else {
-    $selectedDistro = "Ubuntu"
+    $selectedDistro = "Kali"
 }
 
 $createPm3Shortcut = Read-Host "Create the 'Proxmark3 Terminal' desktop shortcut? (Y/n)"
