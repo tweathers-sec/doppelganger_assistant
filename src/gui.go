@@ -21,7 +21,7 @@ import (
 )
 
 // outputDisplay provides a text display widget for command and status output.
-type outputDisplay struct{
+type outputDisplay struct {
 	widget.Label
 	mu        sync.Mutex
 	stripANSI bool
@@ -614,7 +614,7 @@ func runGUI() {
 
 	statusBg := canvas.NewRectangle(color.RGBA{R: 30, G: 35, B: 41, A: 255})
 	statusBg.CornerRadius = 5
-	statusBg.StrokeColor = color.RGBA{R: 226, G: 88, B: 34, A: 255}
+	statusBg.StrokeColor = color.RGBA{R: 128, G: 128, B: 128, A: 255}
 	statusBg.StrokeWidth = 1
 	statusScroll = container.NewScroll(statusOutput)
 	statusScroll.SetMinSize(fyne.NewSize(0, 200))
@@ -622,7 +622,7 @@ func runGUI() {
 
 	commandBg := canvas.NewRectangle(color.RGBA{R: 30, G: 35, B: 41, A: 255})
 	commandBg.CornerRadius = 5
-	commandBg.StrokeColor = color.RGBA{R: 226, G: 88, B: 34, A: 255}
+	commandBg.StrokeColor = color.RGBA{R: 128, G: 128, B: 128, A: 255}
 	commandBg.StrokeWidth = 1
 	commandScroll = container.NewScroll(commandOutput)
 	commandWithBg := container.NewStack(commandBg, commandScroll)
