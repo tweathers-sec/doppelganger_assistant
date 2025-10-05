@@ -115,13 +115,16 @@ try {
                 exit
             }
             Log "User chose to continue despite nested VM warning."
-        } else {
+        }
+        else {
             Log "Nested virtualization appears to be supported."
         }
-    } else {
+    }
+    else {
         Log "Running on physical hardware."
     }
-} catch {
+}
+catch {
     Log "Could not determine virtualization status. Proceeding with installation..."
 }
 
