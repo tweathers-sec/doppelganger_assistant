@@ -62,10 +62,12 @@ if [ -z "$skip_doppelganger_install" ]; then
     sudo apt install -y libgl1 xterm make git
 
     # Download the latest Doppelganger Assistant release
+    # Add timestamp to prevent GitHub CDN caching
+    TIMESTAMP=$(date +%s)
     if [ "$(uname -m)" = "x86_64" ]; then
-        wget https://github.com/tweathers-sec/doppelganger_assistant/releases/latest/download/doppelganger_assistant_linux_amd64.tar.xz
+        wget --no-cache --no-cookies "https://github.com/tweathers-sec/doppelganger_assistant/releases/latest/download/doppelganger_assistant_linux_amd64.tar.xz?t=${TIMESTAMP}" -O doppelganger_assistant_linux_amd64.tar.xz
     else
-        wget https://github.com/tweathers-sec/doppelganger_assistant/releases/latest/download/doppelganger_assistant_linux_arm64.tar.xz
+        wget --no-cache --no-cookies "https://github.com/tweathers-sec/doppelganger_assistant/releases/latest/download/doppelganger_assistant_linux_arm64.tar.xz?t=${TIMESTAMP}" -O doppelganger_assistant_linux_arm64.tar.xz
     fi
 
     # Extract and install Doppelganger Assistant

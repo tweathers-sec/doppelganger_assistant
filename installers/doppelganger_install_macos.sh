@@ -11,11 +11,12 @@ print_color "1;34" "Starting Doppelganger Assistant installation..."
 
 # Detect architecture
 print_color "1;33" "Detecting system architecture..."
+TIMESTAMP=$(date +%s)
 if [[ $(uname -m) == "x86_64" ]]; then
-    URL="https://github.com/tweathers-sec/doppelganger_assistant/releases/download/latest/doppelganger_assistant_darwin_amd64.dmg"
+    URL="https://github.com/tweathers-sec/doppelganger_assistant/releases/download/latest/doppelganger_assistant_darwin_amd64.dmg?t=${TIMESTAMP}"
     print_color "0;32" "Detected x86_64 architecture."
 elif [[ $(uname -m) == "arm64" ]]; then
-    URL="https://github.com/tweathers-sec/doppelganger_assistant/releases/download/latest/doppelganger_assistant_darwin_arm64.dmg"
+    URL="https://github.com/tweathers-sec/doppelganger_assistant/releases/download/latest/doppelganger_assistant_darwin_arm64.dmg?t=${TIMESTAMP}"
     print_color "0;32" "Detected arm64 architecture."
 else
     print_color "1;31" "Unsupported architecture detected. Exiting."
@@ -25,7 +26,7 @@ fi
 # Download and mount DMG
 print_color "1;33" "Downloading and mounting the Doppelganger Assistant disk image..."
 TMP_DMG=$(mktemp -d)/doppelganger_assistant.dmg
-curl -L "$URL" -o "$TMP_DMG"
+curl -H "Cache-Control: no-cache" -H "Pragma: no-cache" -L "$URL" -o "$TMP_DMG"
 hdiutil attach "$TMP_DMG"
 print_color "0;32" "Disk image downloaded and mounted successfully."
 
