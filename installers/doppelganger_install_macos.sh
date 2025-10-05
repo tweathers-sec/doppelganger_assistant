@@ -189,7 +189,17 @@ if [[ "$INSTALL_PM3" == "1" ]]; then
     if ! command -v brew &> /dev/null; then
         print_color "1;34" "[•] Installing Homebrew..."
         /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-        print_color "1;32" "    ✓ Homebrew installed"
+        
+        # Add Homebrew to PATH for this script
+        if [[ $(uname -m) == "arm64" ]]; then
+            eval "$(/opt/homebrew/bin/brew shellenv)"
+            echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> "$PROFILE_FILE"
+        else
+            eval "$(/usr/local/bin/brew shellenv)"
+            echo 'eval "$(/usr/local/bin/brew shellenv)"' >> "$PROFILE_FILE"
+        fi
+        
+        print_color "1;32" "    ✓ Homebrew installed and configured"
         echo ""
     else
         print_color "1;32" "    ✓ Homebrew already installed"
