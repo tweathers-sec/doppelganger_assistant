@@ -41,6 +41,7 @@ $basePath = "C:\doppelganger_assistant"
 $kaliWslName = "Kali-doppelganger_assistant"
 $ubuntuWslName = "Ubuntu-doppelganger_assistant"
 $shortcutPath = [System.IO.Path]::Combine([System.Environment]::GetFolderPath("Desktop"), "Launch Doppelganger Assistant.lnk")
+$pm3ShortcutPath = [System.IO.Path]::Combine([System.Environment]::GetFolderPath("Desktop"), "Proxmark3 Terminal.lnk")
 
 # Function to check if a command exists
 function CommandExists {
@@ -96,14 +97,23 @@ else {
     Log "Base directory $basePath not found."
 }
 
-# Remove the desktop shortcut
+# Remove the desktop shortcuts
 if (Test-Path -Path $shortcutPath) {
-    Log "Removing desktop shortcut $shortcutPath..."
+    Log "Removing Doppelganger Assistant desktop shortcut..."
     Remove-Item -Path $shortcutPath -Force
-    Log "Desktop shortcut $shortcutPath removed."
+    Log "Doppelganger Assistant shortcut removed."
 }
 else {
-    Log "Desktop shortcut $shortcutPath not found."
+    Log "Doppelganger Assistant shortcut not found."
+}
+
+if (Test-Path -Path $pm3ShortcutPath) {
+    Log "Removing Proxmark3 Terminal desktop shortcut..."
+    Remove-Item -Path $pm3ShortcutPath -Force
+    Log "Proxmark3 Terminal shortcut removed."
+}
+else {
+    Log "Proxmark3 Terminal shortcut not found."
 }
 
 # Uninstall usbipd (will be reinstalled by installer)

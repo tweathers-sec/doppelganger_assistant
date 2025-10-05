@@ -20,21 +20,26 @@ if (-not $isAdmin) {
 $basePath = "C:\doppelganger_assistant"
 $setupScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/scripts/wsl_setup.ps1"
 $launchScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/scripts/wsl_windows_launch.ps1"
+$pm3TerminalScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/scripts/wsl_pm3_terminal.ps1"
 $installScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/scripts/wsl_doppelganger_install.sh"
 $imageUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/img/doppelganger_assistant.ico"
+$icemanLogoUrl = "https://avatars.githubusercontent.com/u/8577004?v=4"
 $wslEnableScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/scripts/wsl_enable.ps1"
 $usbReconnectScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/scripts/usb_reconnect.ps1"
 $proxmarkFlashScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/scripts/proxmark_flash.ps1"
 $uninstallScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/scripts/uninstall.ps1"
 $setupScriptPath = "$basePath\wsl_setup.ps1"
 $launchScriptPath = "$basePath\wsl_windows_launch.ps1"
+$pm3TerminalScriptPath = "$basePath\wsl_pm3_terminal.ps1"
 $installScriptPath = "$basePath\wsl_doppelganger_install.sh"
 $imagePath = "$basePath\doppelganger_assistant.ico"
+$icemanLogoPath = "$basePath\iceman_logo.png"
 $wslEnableScriptPath = "$basePath\wsl_enable.ps1"
 $usbReconnectScriptPath = "$basePath\usb_reconnect.ps1"
 $proxmarkFlashScriptPath = "$basePath\proxmark_flash.ps1"
 $uninstallScriptPath = "$basePath\uninstall.ps1"
 $shortcutPath = [System.IO.Path]::Combine([System.Environment]::GetFolderPath("Desktop"), "Launch Doppelganger Assistant.lnk")
+$pm3ShortcutPath = [System.IO.Path]::Combine([System.Environment]::GetFolderPath("Desktop"), "Proxmark3 Terminal.lnk")
 
 # ASCII Art function
 function Write-DoppelgangerAscii {
@@ -195,18 +200,24 @@ if (Test-Path -Path $basePath) {
 # Create base directory
 mkdir $basePath | Out-Null
 
-# Download the setup, launch, install scripts, and image from GitHub
+# Download the setup, launch, install scripts, and images from GitHub
 Log "Downloading setup script..."
 Invoke-WebRequest -Uri $setupScriptUrl -OutFile $setupScriptPath -Headers $headers
 
-Log "Downloading launch script..."
+Log "Downloading GUI launch script..."
 Invoke-WebRequest -Uri $launchScriptUrl -OutFile $launchScriptPath -Headers $headers
+
+Log "Downloading PM3 terminal launch script..."
+Invoke-WebRequest -Uri $pm3TerminalScriptUrl -OutFile $pm3TerminalScriptPath -Headers $headers
 
 Log "Downloading install script..."
 Invoke-WebRequest -Uri $installScriptUrl -OutFile $installScriptPath -Headers $headers
 
-Log "Downloading image..."
+Log "Downloading Doppelganger icon..."
 Invoke-WebRequest -Uri $imageUrl -OutFile $imagePath -Headers $headers
+
+Log "Downloading Iceman Proxmark3 logo..."
+Invoke-WebRequest -Uri $icemanLogoUrl -OutFile $icemanLogoPath -Headers $headers
 
 Log "Downloading WSL enable script..."
 Invoke-WebRequest -Uri $wslEnableScriptUrl -OutFile $wslEnableScriptPath -Headers $headers
@@ -240,18 +251,28 @@ if (Test-Path "$env:SystemRoot\System32\RebootPending.txt") {
 Log "Running WSL setup script..."
 powershell -ExecutionPolicy Bypass -File $setupScriptPath
 
-# Create a shortcut on the desktop to run the launch script as an administrator
-Log "Creating desktop shortcut..."
+# Create desktop shortcuts
+Log "Creating Doppelganger Assistant desktop shortcut..."
 New-Shortcut -TargetPath "powershell.exe" `
     -ShortcutPath $shortcutPath `
     -Arguments "-NoProfile -ExecutionPolicy Bypass -File `"$launchScriptPath`"" `
-    -Description "Launch Doppelganger Assistant as Administrator" `
+    -Description "Launch Doppelganger Assistant GUI as Administrator" `
     -WorkingDirectory $basePath `
     -IconLocation $imagePath
 
-Log "Shortcut created on the desktop with administrator privileges."
+Log "Doppelganger Assistant shortcut created."
 
-Log "Setup complete. Shortcut created on the desktop."
+Log "Creating Proxmark3 Terminal desktop shortcut..."
+New-Shortcut -TargetPath "powershell.exe" `
+    -ShortcutPath $pm3ShortcutPath `
+    -Arguments "-NoProfile -ExecutionPolicy Bypass -File `"$pm3TerminalScriptPath`"" `
+    -Description "Launch Proxmark3 Terminal (pm3) as Administrator" `
+    -WorkingDirectory $basePath `
+    -IconLocation $icemanLogoPath
+
+Log "Proxmark3 Terminal shortcut created."
+
+Log "Setup complete. Shortcuts created on the desktop."
 
 # Prompt user to flash Proxmark3
 $flashChoice = Read-Host "Do you want to flash your Proxmark3 device now (not recommended for virtual environments)? (y/n)"
