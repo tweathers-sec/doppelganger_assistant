@@ -71,6 +71,38 @@ else
     print_color "0;32" "Doppelganger Assistant added to path successfully."
 fi
 
+# Function to select Proxmark3 device type
+select_proxmark_device_macos() {
+    echo ""
+    echo "=============================================="
+    echo "  Select your Proxmark3 device type:"
+    echo "=============================================="
+    echo "1) Proxmark3 RDV4 with Blueshark"
+    echo "2) Proxmark3 RDV4 (without Blueshark)"
+    echo "3) Proxmark3 Easy (512KB)"
+    echo ""
+    read -p "Enter your choice (1-3): " device_choice
+    
+    case "$device_choice" in
+        1)
+            print_color "0;32" "Selected: Proxmark3 RDV4 with Blueshark"
+            BREW_FLAGS="--HEAD --with-blueshark"
+            ;;
+        2)
+            print_color "0;32" "Selected: Proxmark3 RDV4 (without Blueshark)"
+            BREW_FLAGS="--HEAD"
+            ;;
+        3)
+            print_color "0;32" "Selected: Proxmark3 Easy (512KB)"
+            BREW_FLAGS="--HEAD --with-generic"
+            ;;
+        *)
+            print_color "1;33" "Invalid choice. Defaulting to Proxmark3 RDV4 with Blueshark"
+            BREW_FLAGS="--HEAD --with-blueshark"
+            ;;
+    esac
+}
+
 # Check if 'pm3' is installed
 print_color "1;33" "Checking if Proxmark3 is installed..."
 if ! command -v pm3 &> /dev/null; then
@@ -90,17 +122,20 @@ if ! command -v pm3 &> /dev/null; then
             else
                 print_color "1;31" "Homebrew installation skipped. Proxmark3 cannot be installed."
                 print_color "1;31" "Exiting Proxmark3 installation."
-                break
+                exit 0
             fi
         else
             print_color "0;32" "Homebrew is already installed."
         fi
 
+        # Select Proxmark3 device type
+        select_proxmark_device_macos
+
         print_color "1;33" "Installing Proxmark3..."
-        xcode-select --install
+        xcode-select --install 2>/dev/null || true
         brew install xquartz
         brew tap RfidResearchGroup/proxmark3
-        brew install --HEAD --with-blueshark rfidresearchgroup/proxmark3/proxmark3
+        brew install $BREW_FLAGS rfidresearchgroup/proxmark3/proxmark3
         print_color "0;32" "Proxmark3 installed successfully."
     fi
 fi

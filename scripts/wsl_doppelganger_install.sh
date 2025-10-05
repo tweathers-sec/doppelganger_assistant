@@ -24,6 +24,71 @@ prompt_reinstall() {
     esac
 }
 
+# Function to select Proxmark3 device type
+select_proxmark_device() {
+    # Skip interactive prompt in update mode
+    if [ "$UPDATE_MODE" = "--update" ]; then
+        echo "Update mode: Using default Proxmark3 RDV4 with Blueshark"
+        PROXMARK_DEVICE="rdv4_bt"
+        return
+    fi
+    
+    echo ""
+    echo "=============================================="
+    echo "  Select your Proxmark3 device type:"
+    echo "=============================================="
+    echo "1) Proxmark3 RDV4 with Blueshark"
+    echo "2) Proxmark3 RDV4 (without Blueshark)"
+    echo "3) Proxmark3 Easy (512KB)"
+    echo ""
+    read -p "Enter your choice (1-3): " device_choice
+    
+    case "$device_choice" in
+        1)
+            echo "Selected: Proxmark3 RDV4 with Blueshark"
+            PROXMARK_DEVICE="rdv4_bt"
+            ;;
+        2)
+            echo "Selected: Proxmark3 RDV4 (without Blueshark)"
+            PROXMARK_DEVICE="rdv4"
+            ;;
+        3)
+            echo "Selected: Proxmark3 Easy (512KB)"
+            PROXMARK_DEVICE="easy512"
+            ;;
+        *)
+            echo "Invalid choice. Defaulting to Proxmark3 RDV4 with Blueshark"
+            PROXMARK_DEVICE="rdv4_bt"
+            ;;
+    esac
+}
+
+# Function to configure Proxmark3 based on device type
+configure_proxmark_device() {
+    local device_type=$1
+    
+    case "$device_type" in
+        "rdv4_bt")
+            echo "Configuring Proxmark3 RDV4 with Blueshark..."
+            cp Makefile.platform.sample Makefile.platform
+            sed -i 's/^#PLATFORM=PM3RDV4/PLATFORM=PM3RDV4/' Makefile.platform
+            sed -i 's/#PLATFORM_EXTRAS=BTADDON/PLATFORM_EXTRAS=BTADDON/' Makefile.platform
+            ;;
+        "rdv4")
+            echo "Configuring Proxmark3 RDV4 (no Blueshark)..."
+            cp Makefile.platform.sample Makefile.platform
+            sed -i 's/^#PLATFORM=PM3RDV4/PLATFORM=PM3RDV4/' Makefile.platform
+            sed -i 's/^PLATFORM_EXTRAS=BTADDON/#PLATFORM_EXTRAS=BTADDON/' Makefile.platform
+            ;;
+        "easy512")
+            echo "Configuring Proxmark3 Easy (512KB)..."
+            cp Makefile.platform.sample Makefile.platform
+            sed -i 's/^#PLATFORM=PM3GENERIC/PLATFORM=PM3GENERIC/' Makefile.platform
+            sed -i 's/^#PLATFORM_SIZE=512/PLATFORM_SIZE=512/' Makefile.platform
+            ;;
+    esac
+}
+
 # Update and upgrade system packages
 echo "Updating system packages..."
 sudo apt update
@@ -106,9 +171,11 @@ if [ -z "$skip_proxmark_install" ]; then
 
     cd proxmark3
 
-    # Modify Makefile to support the Blueshark Device, if desired
-    cp Makefile.platform.sample Makefile.platform
-    sed -i 's/#PLATFORM_EXTRAS=BTADDON/PLATFORM_EXTRAS=BTADDON/' Makefile.platform
+    # Prompt user to select their Proxmark3 device type
+    select_proxmark_device
+    
+    # Configure Makefile based on selected device type
+    configure_proxmark_device "$PROXMARK_DEVICE"
 
     # Compile and install Proxmark3 software
     echo "Building Proxmark3... (this may take several minutes)"
