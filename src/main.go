@@ -24,7 +24,6 @@ type Card struct {
 }
 
 func main() {
-	// Define flags
 	bitLength := flag.Int("bl", 0, "Bit length")
 	facilityCode := flag.Int("fc", 0, "Facility code")
 	cardNumber := flag.Int("cn", 0, "Card number")

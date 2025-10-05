@@ -28,20 +28,17 @@ func handleCardType(cardType string, facilityCode, cardNumber, bitLength int, wr
 }
 
 func handleICLASS(facilityCode, cardNumber, bitLength int, simulate, write, verify bool) {
-	// Supported bit lengths: 26, 30, 33, 34, 35, 36, 37, 46, 48
 	validBitLengths := map[int]bool{26: true, 30: true, 33: true, 34: true, 35: true, 36: true, 37: true, 46: true, 48: true}
 	if !validBitLengths[bitLength] {
 		WriteStatusError("Invalid bit length for iCLASS. Supported: 26, 30, 33, 34, 35, 36, 37, 46, 48")
 		return
 	}
 
-	// DISABLED: iClass simulation is temporarily disabled
 	if simulate {
 		WriteStatusError("iCLASS card simulation is currently disabled")
 		return
 	}
 
-	// Get format code
 	var formatCode string
 	switch bitLength {
 	case 26:
@@ -81,7 +78,6 @@ func handleProx(facilityCode, cardNumber, bitLength int, simulate, write, verify
 		return
 	}
 
-	// Get command template
 	var cmdTemplate string
 	switch bitLength {
 	case 26:
@@ -126,7 +122,7 @@ func handleAWID(facilityCode, cardNumber, bitLength int, simulate, write, verify
 		return
 	}
 
-	bitLength = 26 // AWID only supports 26-bit
+	bitLength = 26
 	if write {
 		WriteStatusInfo("Writing to T5577 card...")
 		WriteStatusInfo("Command: lf awid clone --fmt 26 --fc %d --cn %d", facilityCode, cardNumber)
@@ -144,7 +140,6 @@ func handleIndala(facilityCode, cardNumber, bitLength int, simulate, write, veri
 		return
 	}
 
-	// Indala writing only supports 26-bit
 	if bitLength != 26 {
 		WriteStatusInfo("Note: Indala 27/29-bit will be written as 26-bit. For full replication, use simulation mode")
 	}

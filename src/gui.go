@@ -20,8 +20,8 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-// Simple text display using Label - proper colors and no padding
-type outputDisplay struct {
+// outputDisplay provides a text display widget for command and status output.
+type outputDisplay struct{
 	widget.Label
 	mu        sync.Mutex
 	stripANSI bool
@@ -75,13 +75,13 @@ func (o *outputDisplay) Set(text string) {
 	})
 }
 
-// Strip ANSI escape codes
+// stripANSI removes ANSI escape codes from a string.
 func stripANSI(str string) string {
 	ansiRegex := regexp.MustCompile(`\x1b\[[0-9;]*[a-zA-Z]`)
 	return ansiRegex.ReplaceAllString(str, "")
 }
 
-// guiWriter implements io.Writer to route output to GUI widgets
+// guiWriter implements io.Writer to route output to GUI widgets.
 type guiWriter struct {
 	output *outputDisplay
 	scroll *container.Scroll
@@ -90,7 +90,6 @@ type guiWriter struct {
 func (w *guiWriter) Write(p []byte) (n int, err error) {
 	text := string(p)
 
-	// Parse status prefix and format with simple text markers
 	if strings.HasPrefix(text, "[SUCCESS] ") {
 		text = "[OK] " + strings.TrimPrefix(text, "[SUCCESS] ")
 	} else if strings.HasPrefix(text, "[ERROR] ") {
@@ -103,7 +102,6 @@ func (w *guiWriter) Write(p []byte) (n int, err error) {
 
 	w.output.Append(text)
 
-	// Auto-scroll
 	if w.scroll != nil {
 		fyne.Do(func() {
 			w.scroll.ScrollToBottom()
@@ -113,7 +111,7 @@ func (w *guiWriter) Write(p []byte) (n int, err error) {
 	return len(p), nil
 }
 
-// Fixed width layout
+// fixedWidthLayout provides a fixed-width layout for the left sidebar.
 type fixedWidthLayout struct {
 	width float32
 }
@@ -129,7 +127,7 @@ func (l *fixedWidthLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	}
 }
 
-// Custom outlined button
+// outlinedButton provides a custom button with orange outline styling.
 type outlinedButton struct {
 	widget.BaseWidget
 	text     string
@@ -150,12 +148,10 @@ func newOutlinedButton(text string, tapped func()) *outlinedButton {
 }
 
 func (b *outlinedButton) CreateRenderer() fyne.WidgetRenderer {
-	// Background with semi-transparent orange
 	b.bg = canvas.NewRectangle(color.RGBA{R: 226, G: 88, B: 34, A: 20})
 	b.bg.CornerRadius = 5
 
-	// Border rectangle - orange outline
-	b.border = canvas.NewRectangle(color.RGBA{R: 0, G: 0, B: 0, A: 0}) // Transparent fill
+	b.border = canvas.NewRectangle(color.RGBA{R: 0, G: 0, B: 0, A: 0})
 	b.border.StrokeColor = color.RGBA{R: 226, G: 88, B: 34, A: 255}
 	b.border.StrokeWidth = 2
 	b.border.CornerRadius = 5
@@ -209,7 +205,6 @@ func (r *outlinedButtonRenderer) Layout(size fyne.Size) {
 	r.border.Resize(size)
 	r.border.Move(fyne.NewPos(0, 0))
 
-	// Position label in center
 	r.label.Resize(size)
 	r.label.Move(fyne.NewPos(0, 0))
 }
@@ -231,7 +226,7 @@ func (r *outlinedButtonRenderer) Objects() []fyne.CanvasObject {
 
 func (r *outlinedButtonRenderer) Destroy() {}
 
-// Doppelgänger Arrow Dark Theme
+// arrowDarkTheme provides a custom dark theme for the application.
 type arrowDarkTheme struct{}
 
 func (t *arrowDarkTheme) Color(name fyne.ThemeColorName, variant fyne.ThemeVariant) color.Color {
@@ -286,10 +281,6 @@ func (t *arrowDarkTheme) Size(name fyne.ThemeSizeName) float32 {
 }
 
 func runGUI() {
-
-	// Suppress Fyne thread checking warnings from terminal library
-	// The fyne-io/terminal library updates UI from background threads,
-	// which is safe in this context but triggers warnings
 	os.Setenv("FYNE_DISABLE_CALL_CHECKING", "1")
 
 	a := app.New()
@@ -300,28 +291,23 @@ func runGUI() {
 	w.Resize(fyne.NewSize(1400, 800))
 	w.CenterOnScreen()
 
-	// Load bundled logo
 	logo := canvas.NewImageFromResource(resourceDoppelgangerdmPng)
 	logo.FillMode = canvas.ImageFillContain
 	logo.SetMinSize(fyne.NewSize(200, 50))
 
-	// Header with logo
 	header := container.NewVBox(
 		container.NewCenter(logo),
 	)
 
-	// Card Type selector
 	cardTypeLabel := canvas.NewText("CARD TYPE", color.RGBA{R: 169, G: 182, B: 201, A: 255})
 	cardTypeLabel.TextSize = 11
 	cardTypes := []string{"PROX", "iCLASS", "AWID", "Indala", "Avigilon", "EM4100", "PIV", "MIFARE"}
 	cardType := widget.NewSelect(cardTypes, nil)
 
-	// Bit Length selector
 	bitLengthLabel := canvas.NewText("BIT LENGTH", color.RGBA{R: 169, G: 182, B: 201, A: 255})
 	bitLengthLabel.TextSize = 11
 	bitLength := widget.NewSelect([]string{}, nil)
 
-	// Input fields
 	facilityCode := widget.NewEntry()
 	facilityCode.SetPlaceHolder("Facility Code")
 	cardNumber := widget.NewEntry()
@@ -331,10 +317,8 @@ func runGUI() {
 	uid := widget.NewEntry()
 	uid.SetPlaceHolder("UID")
 
-	// Data blocks container
 	dataBlocks := container.NewVBox()
 
-	// Action selector (defined early so it can be used in updateDataBlocks)
 	actionLabel := canvas.NewText("ACTION", color.RGBA{R: 169, G: 182, B: 201, A: 255})
 	actionLabel.TextSize = 11
 	action := widget.NewSelect([]string{"Generate Command", "Write & Verify", "Simulate Card"}, nil)
@@ -381,7 +365,6 @@ func runGUI() {
 		} else {
 			action.Options = []string{"Generate Command", "Write & Verify", "Simulate Card"}
 		}
-		// Reset to Write & Verify (default action)
 		action.SetSelectedIndex(1)
 		action.Refresh()
 
@@ -390,19 +373,14 @@ func runGUI() {
 
 	cardType.OnChanged = updateDataBlocks
 
-	// Create two output displays
-	// Status: strip ANSI codes for clean messages
-	// Command: keep ANSI codes for colored Proxmark3 output
-	statusOutput := newOutputDisplay(true)   // Strip ANSI
-	commandOutput := newOutputDisplay(false) // Keep ANSI
+	statusOutput := newOutputDisplay(true)
+	commandOutput := newOutputDisplay(false)
 	var currentStatusOutput *outputDisplay = statusOutput
 	var currentCommandOutput *outputDisplay = commandOutput
 
-	// Scroll containers - will be set after creation
 	var statusScroll *container.Scroll
 	var commandScroll *container.Scroll
 
-	// Execute command function
 	executeCommand := func() {
 		cardTypeMap := map[string]string{
 			"PROX":     "prox",
@@ -425,7 +403,6 @@ func runGUI() {
 
 		cardTypeCmd := cardTypeMap[cardTypeValue]
 
-		// Build command arguments
 		var args []string
 		args = append(args, "-t", cardTypeCmd)
 
@@ -450,7 +427,6 @@ func runGUI() {
 			args = append(args, "--uid", uidValue)
 		}
 
-		// Add action flags
 		switch actionValue {
 		case "Write & Verify":
 			args = append(args, "-w", "-v")
@@ -458,28 +434,22 @@ func runGUI() {
 			args = append(args, "-s")
 		}
 
-		// Execute card operations directly in GUI
 		go func() {
-			// Clear both outputs
 			currentStatusOutput.Clear()
 			currentCommandOutput.Clear()
 
-			// Parse inputs
 			fc, _ := strconv.Atoi(facilityCodeValue)
 			cn, _ := strconv.Atoi(cardNumberValue)
 			bl, _ := strconv.Atoi(bitLengthValue)
 
-			// Set up custom writer for status output
 			statusWriter := &guiWriter{output: currentStatusOutput, scroll: statusScroll}
 
-			// Redirect stdout/stderr to command output for PM3 commands
 			oldStdout := os.Stdout
 			oldStderr := os.Stderr
 			r, w, _ := os.Pipe()
 			os.Stdout = w
 			os.Stderr = w
 
-			// Read PM3 output in background
 			done := make(chan bool)
 			go func() {
 				scanner := bufio.NewScanner(r)
@@ -495,10 +465,8 @@ func runGUI() {
 				done <- true
 			}()
 
-			// Set global status writer
 			SetStatusWriter(statusWriter)
 
-			// Handle "Generate Command" separately
 			if actionValue == "Generate Command" {
 				WriteStatusInfo("Generated PM3 command:")
 
@@ -562,25 +530,20 @@ func runGUI() {
 			verify := (actionValue == "Write & Verify")
 			simulate := (actionValue == "Simulate Card")
 
-			// Execute card operation
 			handleCardType(cardTypeCmd, fc, cn, bl, write, verify, uidValue, hexDataValue, simulate)
 
-			// Flush any remaining output
 			os.Stdout.Sync()
 			os.Stderr.Sync()
 
-			// Restore stdout/stderr
 			w.Close()
 			os.Stdout = oldStdout
 			os.Stderr = oldStderr
 			<-done
 
-			// Update status on success
 			WriteStatusSuccess("%s completed", actionValue)
 		}()
 	}
 
-	// Custom outlined buttons
 	submit := newOutlinedButton("EXECUTE", executeCommand)
 	reset := newOutlinedButton("RESET", func() {
 		cardType.SetSelectedIndex(0)
@@ -589,24 +552,19 @@ func runGUI() {
 		cardNumber.SetText("")
 		hexData.SetText("")
 		uid.SetText("")
-		action.SetSelectedIndex(1) // Reset to Write & Verify
+		action.SetSelectedIndex(1)
 		updateDataBlocks(cardTypes[0])
 	})
 
-	// Right column - Output display with clear button
 	outputLabel := canvas.NewText("OUTPUT", color.RGBA{R: 169, G: 182, B: 201, A: 255})
 	outputLabel.TextSize = 11
 
 	copyOutput := newOutlinedButton("COPY OUTPUT", func() {
-		// Get text from command output only
 		currentCommandOutput.mu.Lock()
 		commandText := currentCommandOutput.Text
 		currentCommandOutput.mu.Unlock()
 
-		// Copy to clipboard
 		w.Clipboard().SetContent(commandText)
-
-		// Show feedback
 		WriteStatusSuccess("Output copied to clipboard!")
 	})
 
@@ -615,7 +573,6 @@ func runGUI() {
 		currentCommandOutput.Clear()
 	})
 
-	// Make buttons less tall by constraining their size
 	submitSized := container.NewStack(submit)
 	submitSized.Resize(fyne.NewSize(100, 30))
 
@@ -628,12 +585,10 @@ func runGUI() {
 		resetSized,
 	)
 
-	// Version text at bottom
 	versionText := canvas.NewText("v"+Version, color.RGBA{R: 169, G: 182, B: 201, A: 128})
 	versionText.TextSize = 11
 	versionText.Alignment = fyne.TextAlignCenter
 
-	// Left column - Input form with fixed width
 	leftColumnContent := container.NewVBox(
 		header,
 		widget.NewSeparator(),
@@ -650,8 +605,6 @@ func runGUI() {
 		container.NewPadded(versionText),
 	)
 
-	// Build right column output area
-	// Header
 	outputHeader := container.NewHBox(
 		container.NewPadded(outputLabel),
 		layout.NewSpacer(),
@@ -659,23 +612,21 @@ func runGUI() {
 		container.NewPadded(clearOutput),
 	)
 
-	// Status and Command scroll containers with background for contrast
-	statusBg := canvas.NewRectangle(color.RGBA{R: 30, G: 35, B: 41, A: 255}) // Lighter than main bg
+	statusBg := canvas.NewRectangle(color.RGBA{R: 30, G: 35, B: 41, A: 255})
 	statusBg.CornerRadius = 5
-	statusBg.StrokeColor = color.RGBA{R: 226, G: 88, B: 34, A: 255} // Orange border matching buttons
+	statusBg.StrokeColor = color.RGBA{R: 226, G: 88, B: 34, A: 255}
 	statusBg.StrokeWidth = 1
 	statusScroll = container.NewScroll(statusOutput)
 	statusScroll.SetMinSize(fyne.NewSize(0, 200))
 	statusWithBg := container.NewStack(statusBg, statusScroll)
 
-	commandBg := canvas.NewRectangle(color.RGBA{R: 30, G: 35, B: 41, A: 255}) // Lighter than main bg
+	commandBg := canvas.NewRectangle(color.RGBA{R: 30, G: 35, B: 41, A: 255})
 	commandBg.CornerRadius = 5
-	commandBg.StrokeColor = color.RGBA{R: 226, G: 88, B: 34, A: 255} // Orange border matching buttons
+	commandBg.StrokeColor = color.RGBA{R: 226, G: 88, B: 34, A: 255}
 	commandBg.StrokeWidth = 1
 	commandScroll = container.NewScroll(commandOutput)
 	commandWithBg := container.NewStack(commandBg, commandScroll)
 
-	// Use VBox with fixed status height (no resize divider)
 	outputArea := container.NewBorder(
 		statusWithBg,
 		nil, nil, nil,
@@ -688,8 +639,6 @@ func runGUI() {
 		outputArea,
 	)
 
-	// Main content with two columns - left side fixed width, not resizable
-	// Create a fixed-width wrapper using a custom container
 	leftWithWrapper := container.New(
 		layout.NewMaxLayout(),
 		container.NewPadded(
@@ -709,22 +658,19 @@ func runGUI() {
 
 	w.SetContent(content)
 
-	// Initialize after content is set (so widgets have window context)
 	cardType.SetSelectedIndex(0)
-	action.SetSelectedIndex(1) // Default to Write & Verify
+	action.SetSelectedIndex(1)
 	updateDataBlocks(cardTypes[0])
 
 	w.ShowAndRun()
 }
 
-// Helper function to join args with proper spacing
 func joinArgs(args []string) string {
 	result := ""
 	for i, arg := range args {
 		if i > 0 {
 			result += " "
 		}
-		// Quote args with spaces
 		if len(arg) > 0 && (arg[0] == '-' || arg == strings.TrimSpace(arg)) {
 			result += arg
 		} else {

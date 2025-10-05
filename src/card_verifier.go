@@ -7,7 +7,6 @@ import (
 )
 
 func verifyCardData(cardType string, facilityCode, cardNumber, bitLength int, hexData string, uid string) {
-	// Check Proxmark3 status first
 	if ok, msg := checkProxmark3(); !ok {
 		WriteStatusError(msg)
 		return
@@ -18,7 +17,6 @@ func verifyCardData(cardType string, facilityCode, cardNumber, bitLength int, he
 	var cmd *exec.Cmd
 	switch cardType {
 	case "iclass":
-		// Read block 7 to verify the written data
 		cmd = exec.Command("pm3", "-c", "hf iclass rdbl --blk 7 --ki 0")
 	case "prox":
 		cmd = exec.Command("pm3", "-c", "lf hid reader")
@@ -47,14 +45,10 @@ func verifyCardData(cardType string, facilityCode, cardNumber, bitLength int, he
 	fmt.Println(outputStr)
 
 	if cardType == "iclass" {
-		// Verify block 7 was written correctly
 		lines := strings.Split(outputStr, "\n")
 		var block7Data string
 		for _, line := range lines {
-			// Look for the block 7 data in the output
-			// Format: "[+]  block   7/0x07 : 75 EE 4D F1 32 AF DF 68"
 			if strings.Contains(line, "block") && strings.Contains(line, "7/0x07") {
-				// Extract the hex data after the colon
 				parts := strings.Split(line, ":")
 				if len(parts) > 1 {
 					block7Data = strings.TrimSpace(parts[1])

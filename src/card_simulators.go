@@ -10,7 +10,6 @@ import (
 )
 
 func simulateProxmark3Command(command string) (string, error) {
-	// Check Proxmark3 status first
 	if ok, msg := checkProxmark3(); !ok {
 		return "", fmt.Errorf(msg)
 	}
@@ -33,7 +32,7 @@ func simulateProxmark3Command(command string) (string, error) {
 }
 
 func simulateCardData(cardType string, cardData uint64, bitLength, facilityCode, cardNumber int, hexData, uid string) {
-	var command string // Initialize command variable
+	var command string
 	switch cardType {
 	case "iclass":
 

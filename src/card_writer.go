@@ -8,7 +8,6 @@ import (
 )
 
 func writeProxmark3Command(command string) (string, error) {
-	// Check Proxmark3 status
 	if ok, msg := checkProxmark3(); !ok {
 		return "", fmt.Errorf(msg)
 	}
@@ -21,7 +20,7 @@ func writeProxmark3Command(command string) (string, error) {
 	return string(output), nil
 }
 
-// waitForProxmark3 attempts to check if Proxmark3 is available
+// waitForProxmark3 checks if Proxmark3 is available with retries.
 func waitForProxmark3(maxRetries int) bool {
 	for i := 0; i < maxRetries; i++ {
 		cmd := exec.Command("pm3", "-c", "hw status")
@@ -38,8 +37,6 @@ func waitForProxmark3(maxRetries int) bool {
 }
 
 func writeCardData(cardType string, cardData uint64, bitLength int, facilityCode int, cardNumber int, hexData string, verify bool, formatCodeOrUID string) {
-	// Remove interactive prompts to avoid blocking in GUI environments
-
 	switch cardType {
 	case "iclass":
 		fmt.Println("\n|----------- WRITE -----------|")
