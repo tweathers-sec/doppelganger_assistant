@@ -105,6 +105,58 @@ function AttachUSBDeviceToWSL {
     }
 }
 
+# Function to ensure Windows Terminal profile exists for Proxmark3
+function EnsureWindowsTerminalProfile {
+    $distroName = Get-DoppelgangerDistro
+    $settingsPath = "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json"
+    $iconPath = "C:\doppelganger_assistant\iceman_logo.png"
+    
+    # Check if Windows Terminal settings exist
+    if (Test-Path $settingsPath) {
+        try {
+            $settings = Get-Content $settingsPath -Raw | ConvertFrom-Json
+            
+            # Check if Proxmark3 profile already exists
+            $pm3ProfileExists = $false
+            foreach ($profile in $settings.profiles.list) {
+                if ($profile.name -eq "Proxmark3 Terminal") {
+                    $pm3ProfileExists = $true
+                    Log "Windows Terminal Proxmark3 profile already exists."
+                    break
+                }
+            }
+            
+            # Create profile if it doesn't exist
+            if (-not $pm3ProfileExists) {
+                Log "Creating Windows Terminal Proxmark3 profile with Iceman icon..."
+                
+                $newProfile = @{
+                    name = "Proxmark3 Terminal"
+                    commandline = "wsl.exe -d $distroName --exec bash -c 'pm3'"
+                    icon = $iconPath
+                    startingDirectory = "~"
+                    guid = "{" + [guid]::NewGuid().ToString() + "}"
+                    hidden = $false
+                }
+                
+                # Add the new profile to the list
+                $settings.profiles.list += $newProfile
+                
+                # Save updated settings
+                $settings | ConvertTo-Json -Depth 10 | Set-Content $settingsPath -Encoding UTF8
+                Log "Proxmark3 profile created successfully."
+            }
+        }
+        catch {
+            Log "Warning: Could not modify Windows Terminal settings: $_"
+            Log "Icon may not appear in terminal. You can manually configure it in Windows Terminal settings."
+        }
+    }
+    else {
+        Log "Windows Terminal settings not found. Icon may not appear."
+    }
+}
+
 # Function to launch Proxmark3 terminal
 function LaunchProxmark3Terminal {
     $distroName = Get-DoppelgangerDistro
@@ -114,10 +166,14 @@ function LaunchProxmark3Terminal {
         exit 1
     }
     
+    # Ensure Windows Terminal profile exists with icon
+    EnsureWindowsTerminalProfile
+    
     Log "Launching Proxmark3 terminal in $distroName..."
     
     # Launch WSL terminal with pm3 command
-    wt.exe -w 0 new-tab --title "Proxmark3 Terminal" wsl -d $distroName --exec bash -c "pm3"
+    # Using -p "Proxmark3 Terminal" to use our custom profile with icon
+    wt.exe -w 0 new-tab -p "Proxmark3 Terminal" --title "Proxmark3 Terminal"
     
     Log "Proxmark3 terminal launched."
 }
