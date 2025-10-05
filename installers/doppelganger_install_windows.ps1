@@ -208,18 +208,30 @@ Write-Host "`nWhich WSL distro would you like to install?" -ForegroundColor Yell
 Write-Host "1) Kali Linux [default]" -ForegroundColor Green
 Write-Host "2) Ubuntu" -ForegroundColor Cyan
 $installDistro = Read-Host "`nEnter your choice (1-2) [default: 1]"
-if ($installDistro -eq "2" -or $installDistro -eq "2") {
+if ($installDistro -eq "2") {
     $selectedDistro = "Ubuntu"
 }
 else {
     $selectedDistro = "Kali"
 }
 
+Write-Host "`nWhich Proxmark3 device do you have?" -ForegroundColor Yellow
+Write-Host "1) RDV4 with Blueshark [default]" -ForegroundColor Green
+Write-Host "2) RDV4 without Blueshark" -ForegroundColor Cyan
+Write-Host "3) Proxmark3 Easy (512KB)" -ForegroundColor Magenta
+$pm3Device = Read-Host "`nEnter your choice (1-3) [default: 1]"
+if ($pm3Device -eq "2") {
+    $pm3DeviceType = "rdv4-no-blueshark"
+}
+elseif ($pm3Device -eq "3") {
+    $pm3DeviceType = "easy-512kb"
+}
+else {
+    $pm3DeviceType = "rdv4-blueshark"
+}
+
 $createPm3Shortcut = Read-Host "Create the 'Proxmark3 Terminal' desktop shortcut? (Y/n)"
 if ($createPm3Shortcut -eq "n" -or $createPm3Shortcut -eq "N") { $createPm3Shortcut = $false } else { $createPm3Shortcut = $true }
-
-$flashPromptPreference = Read-Host "Offer Proxmark3 flashing step at the end? (y/N)"
-if ($flashPromptPreference -eq "y" -or $flashPromptPreference -eq "Y") { $offerFlash = $true } else { $offerFlash = $false }
 
 # Download the setup, launch, install scripts, and images from GitHub
 Log "Downloading setup script..."
@@ -272,6 +284,15 @@ if (Test-Path "$env:SystemRoot\System32\RebootPending.txt") {
 Log "Running WSL setup script..."
 powershell -ExecutionPolicy Bypass -File $setupScriptPath
 
+# Run the install script with device type
+Log "Running Doppelganger Assistant installation..."
+if ($selectedDistro -eq "Kali") {
+    wsl -d "Kali-doppelganger_assistant" -u doppelganger bash -c "bash /mnt/c/doppelganger_assistant/wsl_doppelganger_install.sh --device $pm3DeviceType"
+}
+else {
+    wsl -d "Ubuntu-doppelganger_assistant" -u doppelganger bash -c "bash /mnt/c/doppelganger_assistant/wsl_doppelganger_install.sh --device $pm3DeviceType"
+}
+
 # Create desktop shortcuts
 Log "Creating Doppelganger Assistant desktop shortcut..."
 New-Shortcut -TargetPath "powershell.exe" `
@@ -299,16 +320,16 @@ else {
 
 Log "Setup complete. Shortcuts created on the desktop."
 
-# Prompt user to flash Proxmark3
-if ($offerFlash) {
-    $flashChoice = Read-Host "Do you want to flash your Proxmark3 device now (not recommended for virtual environments)? (y/n)"
-    if ($flashChoice -eq "y" -or $flashChoice -eq "Y") {
-        Log "User chose to flash Proxmark3. Running Proxmark3 flash script..."
-        powershell -ExecutionPolicy Bypass -File $proxmarkFlashScriptPath
-    }
-    else {
-        Log "User chose not to flash Proxmark3."
-    }
+# Prompt user to flash Proxmark3 firmware
+Write-Host "`nDo you want to flash your Proxmark3 device firmware now?" -ForegroundColor Yellow
+Write-Host "WARNING: Only flash on physical hardware, not in VMs!" -ForegroundColor Red
+$flashChoice = Read-Host "Flash Proxmark3 firmware? (y/N)"
+if ($flashChoice -eq "y" -or $flashChoice -eq "Y") {
+    Log "User chose to flash Proxmark3 firmware. Running Proxmark3 flash script..."
+    powershell -ExecutionPolicy Bypass -File $proxmarkFlashScriptPath
+}
+else {
+    Log "User chose not to flash Proxmark3 firmware."
 }
 
 # Delete this script (only if running from a file)
