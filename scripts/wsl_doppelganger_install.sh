@@ -148,31 +148,6 @@ if ! grep -q "export LANG=en_US.UTF-8" ~/.bashrc; then
     echo "export LC_ALL=en_US.UTF-8" >> ~/.bashrc
 fi
 
-# Configure dark mode for Linux window frames/decorations
-echo "Configuring dark theme for window decorations..."
-sudo apt install -y gtk2-engines-murrine gnome-themes-extra
-
-# Create GTK config directory if it doesn't exist
-mkdir -p ~/.config/gtk-3.0
-mkdir -p ~/.config/gtk-2.0
-
-# Set GTK3 to use dark theme
-cat > ~/.config/gtk-3.0/settings.ini << 'EOF'
-[Settings]
-gtk-application-prefer-dark-theme=1
-gtk-theme-name=Adwaita-dark
-EOF
-
-# Set GTK2 to use dark theme
-cat > ~/.gtkrc-2.0 << 'EOF'
-gtk-theme-name="Adwaita-dark"
-EOF
-
-# Add GTK theme environment variables to shell profile if not already present
-if ! grep -q "GTK_THEME=Adwaita:dark" ~/.bashrc; then
-    echo "export GTK_THEME=Adwaita:dark" >> ~/.bashrc
-fi
-
 # Check if doppelganger_assistant is installed
 if command_exists doppelganger_assistant; then
     if ! prompt_reinstall "Doppelganger Assistant"; then
