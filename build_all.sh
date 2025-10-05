@@ -90,9 +90,10 @@ fi
 print_color "blue" "Initializing Go module..."
 # Initialize Go module
 cd src
-go mod init doppelganger_assistant || true
-go mod tidy
+go mod init doppelganger_assistant 2>/dev/null || true
+go mod tidy 2>/dev/null
 cd ..
+print_color "green" "Go module initialized."
 
 # Extract version from src/main.go
 VERSION=$(awk -F '"' '/const \(/{flag=1} flag && /Version =/{print $2; exit}' src/main.go)
@@ -103,78 +104,15 @@ fi
 print_color "blue" "Building for Linux (arm64 and amd64)..."
 # Build for Linux (arm64 and amd64)
 cd src
-fyne-cross linux -arch=arm64,amd64 -app-id=io.mwgroup.doppelganger_assistant
-
-print_color "blue" "Building for macOS (arm64 and amd64)..."
-# Set CGO flags to suppress duplicate library warnings on macOS
-export CGO_LDFLAGS="-Wl,-no_warn_duplicate_libraries"
-# Build for macOS (arm64 and amd64)
-fyne-cross darwin -arch=arm64,amd64 -app-id=io.mwgroup.doppelganger_assistant
-
-# Rename the macOS apps from src.app to doppelganger_assistant.app
-print_color "blue" "Renaming macOS applications..."
-if [ -d "fyne-cross/dist/darwin-amd64/src.app" ]; then
-    mv fyne-cross/dist/darwin-amd64/src.app fyne-cross/dist/darwin-amd64/doppelganger_assistant.app
-fi
-if [ -d "fyne-cross/dist/darwin-arm64/src.app" ]; then
-    mv fyne-cross/dist/darwin-arm64/src.app fyne-cross/dist/darwin-arm64/doppelganger_assistant.app
+fyne-cross linux -arch=arm64,amd64 -app-id=io.mwgroup.doppelganger_assistant > /dev/null 2>&1
+if [ $? -eq 0 ]; then
+    print_color "green" "Linux builds completed successfully."
+else
+    print_color "red" "Linux build failed!"
+    exit 1
 fi
 
-# Create DMG for macOS applications
-print_color "blue" "Creating DMG files for macOS..."
-if [ -d "fyne-cross/dist/darwin-amd64/doppelganger_assistant.app" ]; then
-    hdiutil create -volname doppelganger_assistant_darwin_amd64 -srcfolder fyne-cross/dist/darwin-amd64/doppelganger_assistant.app -ov -format UDZO fyne-cross/dist/darwin-amd64/doppelganger_assistant_darwin_amd64.dmg
-fi
-if [ -d "fyne-cross/dist/darwin-arm64/doppelganger_assistant.app" ]; then
-    hdiutil create -volname doppelganger_assistant_darwin_arm64 -srcfolder fyne-cross/dist/darwin-arm64/doppelganger_assistant.app -ov -format UDZO fyne-cross/dist/darwin-arm64/doppelganger_assistant_darwin_arm64.dmg
-fi
-
-print_color "blue" "Moving and packaging binaries..."
-# Create build directory
-mkdir -p ../build/
-
-# Package Linux binaries with Makefile
-print_color "blue" "Packaging Linux amd64..."
-if [ -f "fyne-cross/bin/linux-amd64/doppelganger_assistant" ]; then
-    mkdir -p ../build/doppelganger_assistant
-    cp fyne-cross/bin/linux-amd64/doppelganger_assistant ../build/doppelganger_assistant/
-    cp Makefile ../build/doppelganger_assistant/
-    cd ../build
-    tar -cJf doppelganger_assistant_linux_amd64.tar.xz doppelganger_assistant/
-    rm -rf doppelganger_assistant/
-    cd ../src
-fi
-
-print_color "blue" "Packaging Linux arm64..."
-if [ -f "fyne-cross/bin/linux-arm64/doppelganger_assistant" ]; then
-    mkdir -p ../build/doppelganger_assistant
-    cp fyne-cross/bin/linux-arm64/doppelganger_assistant ../build/doppelganger_assistant/
-    cp Makefile ../build/doppelganger_assistant/
-    cd ../build
-    tar -cJf doppelganger_assistant_linux_arm64.tar.xz doppelganger_assistant/
-    rm -rf doppelganger_assistant/
-    cd ../src
-fi
-
-# Package macOS binaries
-print_color "blue" "Packaging macOS binaries..."
-if [ -f "fyne-cross/bin/darwin-arm64/doppelganger_assistant" ]; then
-    tar -cJf fyne-cross/bin/darwin-arm64/doppelganger_assistant_darwin_arm64.tar.xz -C fyne-cross/bin/darwin-arm64 doppelganger_assistant
-    mv fyne-cross/bin/darwin-arm64/doppelganger_assistant_darwin_arm64.tar.xz ../build/
-fi
-if [ -f "fyne-cross/bin/darwin-amd64/doppelganger_assistant" ]; then
-    tar -cJf fyne-cross/bin/darwin-amd64/doppelganger_assistant_darwin_amd64.tar.xz -C fyne-cross/bin/darwin-amd64 doppelganger_assistant
-    mv fyne-cross/bin/darwin-amd64/doppelganger_assistant_darwin_amd64.tar.xz ../build/
-fi
-
-# Move DMG files
-if [ -f "fyne-cross/dist/darwin-arm64/doppelganger_assistant_darwin_arm64.dmg" ]; then
-    mv fyne-cross/dist/darwin-arm64/doppelganger_assistant_darwin_arm64.dmg ../build/
-fi
-if [ -f "fyne-cross/dist/darwin-amd64/doppelganger_assistant_darwin_amd64.dmg" ]; then
-    mv fyne-cross/dist/darwin-amd64/doppelganger_assistant_darwin_amd64.dmg ../build/
-fi
-
+# Create Debian packages using Docker
 print_color "blue" "Creating Debian packages (.deb) for Linux..."
 
 # Helper to create .deb package given arch and binary path
@@ -187,7 +125,7 @@ create_deb_pkg() {
     return
   fi
 
-  local pkgroot="build/pkgroot-$arch"
+  local pkgroot="../build/pkgroot-$arch"
   local debname="doppelganger_assistant_linux_${arch}.deb"
 
   rm -rf "$pkgroot"
@@ -227,7 +165,7 @@ EOF
   chmod 0755 "$pkgroot/usr/bin/doppelganger_assistant"
 
   # Icon
-  cp img/doppelganger_assistant.png "$pkgroot/usr/share/pixmaps/doppelganger_assistant.png"
+  cp ../img/doppelganger_assistant.png "$pkgroot/usr/share/pixmaps/doppelganger_assistant.png"
 
   # Desktop entry
   cat > "$pkgroot/usr/share/applications/doppelganger_assistant.desktop" << EOF
@@ -242,19 +180,119 @@ Terminal=false
 Categories=Utility;System;
 EOF
 
-  # Build the deb
-  dpkg-deb --build "$pkgroot" "build/$debname"
-  print_color "green" "Created build/$debname"
+  # Build the deb using Docker if dpkg-deb is not available locally
+  if command -v dpkg-deb &> /dev/null; then
+    dpkg-deb --build "$pkgroot" "../build/$debname" > /dev/null 2>&1
+  else
+    # Use Docker to build the .deb package (pull image silently if needed)
+    docker pull debian:stable-slim > /dev/null 2>&1
+    docker run --rm -v "$(pwd)/..":/workspace -w /workspace \
+      debian:stable-slim \
+      dpkg-deb --build "build/pkgroot-$arch" "build/$debname" > /dev/null 2>&1
+  fi
+  
+  if [ $? -eq 0 ]; then
+    print_color "green" "  ✓ Created $debname"
+  else
+    print_color "red" "  ✗ Failed to create $debname"
+  fi
+  
+  # Clean up pkgroot
+  rm -rf "$pkgroot"
 }
 
-create_deb_pkg amd64 "src/fyne-cross/bin/linux-amd64/doppelganger_assistant"
-create_deb_pkg arm64 "src/fyne-cross/bin/linux-arm64/doppelganger_assistant"
+create_deb_pkg amd64 "fyne-cross/bin/linux-amd64/doppelganger_assistant"
+create_deb_pkg arm64 "fyne-cross/bin/linux-arm64/doppelganger_assistant"
 
 print_color "green" "Debian package creation completed."
 
-print_color "blue" "Cleaning up..."
+print_color "blue" "Building for macOS (arm64 and amd64)..."
+# Set CGO flags to suppress duplicate library warnings on macOS
+export CGO_LDFLAGS="-Wl,-no_warn_duplicate_libraries"
+# Build for macOS (arm64 and amd64)
+fyne-cross darwin -arch=arm64,amd64 -app-id=io.mwgroup.doppelganger_assistant > /dev/null 2>&1
+if [ $? -eq 0 ]; then
+    print_color "green" "macOS builds completed successfully."
+else
+    print_color "red" "macOS build failed!"
+    exit 1
+fi
+
+# Rename the macOS apps from src.app to doppelganger_assistant.app
+print_color "blue" "Packaging macOS applications..."
+if [ -d "fyne-cross/dist/darwin-amd64/src.app" ]; then
+    mv fyne-cross/dist/darwin-amd64/src.app fyne-cross/dist/darwin-amd64/doppelganger_assistant.app
+fi
+if [ -d "fyne-cross/dist/darwin-arm64/src.app" ]; then
+    mv fyne-cross/dist/darwin-arm64/src.app fyne-cross/dist/darwin-arm64/doppelganger_assistant.app
+fi
+
+# Create DMG for macOS applications
+if [ -d "fyne-cross/dist/darwin-amd64/doppelganger_assistant.app" ]; then
+    hdiutil create -volname doppelganger_assistant_darwin_amd64 -srcfolder fyne-cross/dist/darwin-amd64/doppelganger_assistant.app -ov -format UDZO fyne-cross/dist/darwin-amd64/doppelganger_assistant_darwin_amd64.dmg > /dev/null 2>&1
+    print_color "green" "  ✓ Created doppelganger_assistant_darwin_amd64.dmg"
+fi
+if [ -d "fyne-cross/dist/darwin-arm64/doppelganger_assistant.app" ]; then
+    hdiutil create -volname doppelganger_assistant_darwin_arm64 -srcfolder fyne-cross/dist/darwin-arm64/doppelganger_assistant.app -ov -format UDZO fyne-cross/dist/darwin-arm64/doppelganger_assistant_darwin_arm64.dmg > /dev/null 2>&1
+    print_color "green" "  ✓ Created doppelganger_assistant_darwin_arm64.dmg"
+fi
+
+print_color "blue" "Creating distribution archives..."
+# Create build directory
+mkdir -p ../build/
+
+# Package Linux binaries with Makefile
+if [ -f "fyne-cross/bin/linux-amd64/doppelganger_assistant" ]; then
+    mkdir -p ../build/doppelganger_assistant
+    cp fyne-cross/bin/linux-amd64/doppelganger_assistant ../build/doppelganger_assistant/
+    cp Makefile ../build/doppelganger_assistant/
+    cd ../build
+    tar -cJf doppelganger_assistant_linux_amd64.tar.xz doppelganger_assistant/ 2>/dev/null
+    rm -rf doppelganger_assistant/
+    cd ../src
+    print_color "green" "  ✓ Created doppelganger_assistant_linux_amd64.tar.xz"
+fi
+
+if [ -f "fyne-cross/bin/linux-arm64/doppelganger_assistant" ]; then
+    mkdir -p ../build/doppelganger_assistant
+    cp fyne-cross/bin/linux-arm64/doppelganger_assistant ../build/doppelganger_assistant/
+    cp Makefile ../build/doppelganger_assistant/
+    cd ../build
+    tar -cJf doppelganger_assistant_linux_arm64.tar.xz doppelganger_assistant/ 2>/dev/null
+    rm -rf doppelganger_assistant/
+    cd ../src
+    print_color "green" "  ✓ Created doppelganger_assistant_linux_arm64.tar.xz"
+fi
+
+# Package macOS binaries
+if [ -f "fyne-cross/bin/darwin-arm64/doppelganger_assistant" ]; then
+    tar -cJf fyne-cross/bin/darwin-arm64/doppelganger_assistant_darwin_arm64.tar.xz -C fyne-cross/bin/darwin-arm64 doppelganger_assistant 2>/dev/null
+    mv fyne-cross/bin/darwin-arm64/doppelganger_assistant_darwin_arm64.tar.xz ../build/
+    print_color "green" "  ✓ Created doppelganger_assistant_darwin_arm64.tar.xz"
+fi
+if [ -f "fyne-cross/bin/darwin-amd64/doppelganger_assistant" ]; then
+    tar -cJf fyne-cross/bin/darwin-amd64/doppelganger_assistant_darwin_amd64.tar.xz -C fyne-cross/bin/darwin-amd64 doppelganger_assistant 2>/dev/null
+    mv fyne-cross/bin/darwin-amd64/doppelganger_assistant_darwin_amd64.tar.xz ../build/
+    print_color "green" "  ✓ Created doppelganger_assistant_darwin_amd64.tar.xz"
+fi
+
+# Move DMG files
+if [ -f "fyne-cross/dist/darwin-arm64/doppelganger_assistant_darwin_arm64.dmg" ]; then
+    mv fyne-cross/dist/darwin-arm64/doppelganger_assistant_darwin_arm64.dmg ../build/
+fi
+if [ -f "fyne-cross/dist/darwin-amd64/doppelganger_assistant_darwin_amd64.dmg" ]; then
+    mv fyne-cross/dist/darwin-amd64/doppelganger_assistant_darwin_amd64.dmg ../build/
+fi
+
+print_color "blue" "Cleaning up temporary files..."
 # clean up
 rm -rf fyne-cross/
 cd ..
 
-print_color "green" "Build process completed successfully."
+print_color "green" "═══════════════════════════════════════════════════════════"
+print_color "green" "Build completed successfully!"
+print_color "green" "═══════════════════════════════════════════════════════════"
+echo ""
+echo "Built packages in build/ directory:"
+ls -lh build/ | grep -E '\.(deb|dmg|tar\.xz)$' | awk '{print "  " $9 " (" $5 ")"}'
+echo ""

@@ -230,9 +230,6 @@ else {
     $pm3DeviceType = "rdv4-blueshark"
 }
 
-$createPm3Shortcut = Read-Host "Create the 'Proxmark3 Terminal' desktop shortcut? (Y/n)"
-if ($createPm3Shortcut -eq "n" -or $createPm3Shortcut -eq "N") { $createPm3Shortcut = $false } else { $createPm3Shortcut = $true }
-
 # Download the setup, launch, install scripts, and images from GitHub
 Log "Downloading setup script..."
 Invoke-WebRequest -Uri $setupScriptUrl -OutFile $setupScriptPath -Headers $headers
@@ -305,18 +302,13 @@ New-Shortcut -TargetPath "powershell.exe" `
 Log "Doppelganger Assistant shortcut created."
 
 Log "Creating Proxmark3 Terminal desktop shortcut..."
-if ($createPm3Shortcut) {
-    New-Shortcut -TargetPath "powershell.exe" `
-        -ShortcutPath $pm3ShortcutPath `
-        -Arguments "-NoProfile -ExecutionPolicy Bypass -File `"$pm3TerminalScriptPath`"" `
-        -Description "Launch Proxmark3 Terminal (pm3) as Administrator" `
-        -WorkingDirectory $basePath `
-        -IconLocation $pm3IconPath
-    Log "Proxmark3 Terminal shortcut created."
-}
-else {
-    Log "User opted not to create the Proxmark3 Terminal shortcut."
-}
+New-Shortcut -TargetPath "powershell.exe" `
+    -ShortcutPath $pm3ShortcutPath `
+    -Arguments "-NoProfile -ExecutionPolicy Bypass -File `"$pm3TerminalScriptPath`"" `
+    -Description "Launch Proxmark3 Terminal (pm3) as Administrator" `
+    -WorkingDirectory $basePath `
+    -IconLocation $pm3IconPath
+Log "Proxmark3 Terminal shortcut created."
 
 Log "Setup complete. Shortcuts created on the desktop."
 

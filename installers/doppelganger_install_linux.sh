@@ -406,26 +406,72 @@ fi
 
 # Install necessary packages for Doppelganger Assistant
 if [ "$skip_doppelganger_install" = false ]; then
-    install_packages libgl1 xterm make git
+    # Determine architecture
+    ARCH=$(uname -m)
+    case "$ARCH" in
+        x86_64)
+            ARCH_SUFFIX="amd64"
+            ;;
+        aarch64|arm64)
+            ARCH_SUFFIX="arm64"
+            ;;
+        *)
+            echo "Unsupported architecture: $ARCH"
+            exit 1
+            ;;
+    esac
     
-    # Download the latest Doppelganger Assistant release
-    # Add timestamp to prevent GitHub CDN caching
-    TIMESTAMP=$(date +%s)
-    if [ "$(uname -m)" = "x86_64" ]; then
-        wget --no-cache --no-cookies "https://github.com/tweathers-sec/doppelganger_assistant/releases/latest/download/doppelganger_assistant_linux_amd64.tar.xz?t=${TIMESTAMP}" -O doppelganger_assistant_linux_amd64.tar.xz
-    else
-        wget --no-cache --no-cookies "https://github.com/tweathers-sec/doppelganger_assistant/releases/latest/download/doppelganger_assistant_linux_arm64.tar.xz?t=${TIMESTAMP}" -O doppelganger_assistant_linux_arm64.tar.xz
-    fi
-
-    # Extract and install Doppelganger Assistant
-    tar xvf doppelganger_assistant_*.tar.xz
-    cd doppelganger_assistant
-    sudo make install
-
-    # Cleanup the directory, if desired
-    rm -rf usr/
-    rm doppelganger_assistant*
-    rm Makefile
+    # Check if this is a Debian-based system
+    case "$OS" in
+        "Ubuntu"|"Debian"|"Kali GNU/Linux"|"Parrot GNU/Linux"|"Parrot Security")
+            echo "Detected Debian-based system. Installing from .deb package..."
+            
+            # Install required dependencies
+            install_packages libgl1 xterm wget
+            
+            # Download the latest Doppelganger Assistant .deb package
+            TIMESTAMP=$(date +%s)
+            DEB_FILE="doppelganger_assistant_linux_${ARCH_SUFFIX}.deb"
+            
+            echo "Downloading ${DEB_FILE}..."
+            wget --no-cache --no-cookies "https://github.com/tweathers-sec/doppelganger_assistant/releases/latest/download/${DEB_FILE}?t=${TIMESTAMP}" -O "${DEB_FILE}"
+            
+            # Install the .deb package
+            echo "Installing Doppelganger Assistant..."
+            sudo dpkg -i "${DEB_FILE}" || sudo apt-get install -f -y
+            
+            # Cleanup
+            rm -f "${DEB_FILE}"
+            
+            echo "Doppelganger Assistant installed successfully via .deb package."
+            ;;
+            
+        *)
+            echo "Non-Debian system detected. Installing from tar.xz archive..."
+            
+            # Install required dependencies
+            install_packages libgl1 xterm make git wget
+            
+            # Download the latest Doppelganger Assistant release
+            TIMESTAMP=$(date +%s)
+            TARBALL="doppelganger_assistant_linux_${ARCH_SUFFIX}.tar.xz"
+            
+            echo "Downloading ${TARBALL}..."
+            wget --no-cache --no-cookies "https://github.com/tweathers-sec/doppelganger_assistant/releases/latest/download/${TARBALL}?t=${TIMESTAMP}" -O "${TARBALL}"
+            
+            # Extract and install Doppelganger Assistant
+            tar xvf "${TARBALL}"
+            cd doppelganger_assistant
+            sudo make install
+            
+            # Cleanup
+            cd ..
+            rm -rf doppelganger_assistant
+            rm -f "${TARBALL}"
+            
+            echo "Doppelganger Assistant installed successfully from tarball."
+            ;;
+    esac
 fi
 
 # Install dependencies for Proxmark3
@@ -456,24 +502,75 @@ fi
 
 # Create desktop shortcut for Doppelganger Assistant
 if [ "$skip_doppelganger_install" = false ]; then
-    desktop_file="$HOME/.local/share/applications/doppelganger_assistant.desktop"
-    icon_path="/usr/share/pixmaps/doppelganger_assistant.png"
+    # For Debian-based systems, the .deb package already includes desktop files
+    # We just need to ensure they're properly registered and create desktop shortcuts
+    case "$OS" in
+        "Ubuntu"|"Debian"|"Kali GNU/Linux"|"Parrot GNU/Linux"|"Parrot Security")
+            echo "Configuring desktop integration for Debian-based system..."
+            
+            # Update desktop database
+            if command -v update-desktop-database &> /dev/null; then
+                update-desktop-database "$HOME/.local/share/applications" 2>/dev/null || true
+                sudo update-desktop-database /usr/share/applications 2>/dev/null || true
+            fi
+            
+            # Update MIME database
+            if command -v update-mime-database &> /dev/null; then
+                sudo update-mime-database /usr/share/mime 2>/dev/null || true
+            fi
+            
+            # Refresh icon cache
+            if command -v gtk-update-icon-cache &> /dev/null; then
+                sudo gtk-update-icon-cache -f -t /usr/share/icons/hicolor 2>/dev/null || true
+            fi
+            
+            # Create desktop shortcut from system application file
+            mkdir -p "$HOME/Desktop"
+            desktop_shortcut="$HOME/Desktop/doppelganger_assistant.desktop"
+            
+            if [ -f "/usr/share/applications/doppelganger_assistant.desktop" ]; then
+                cp /usr/share/applications/doppelganger_assistant.desktop "$desktop_shortcut"
+                chmod +x "$desktop_shortcut"
+                
+                # Mark as trusted for GNOME
+                if command -v gio &> /dev/null; then
+                    gio set "$desktop_shortcut" metadata::trusted true 2>/dev/null || true
+                fi
+                
+                echo "Desktop shortcut created successfully."
+            else
+                echo "Warning: System desktop file not found. The application should still be in your menu."
+            fi
+            
+            # Trigger desktop environment refresh
+            refresh_desktop_integration "$DESKTOP_ENV"
+            
+            echo ""
+            echo "Desktop integration configured."
+            echo "The application should now appear in your applications menu."
+            echo "Note: You may need to right-click the desktop icon and select 'Allow Launching' or 'Trust' on first use."
+            ;;
+            
+        *)
+            # For non-Debian systems, create desktop files manually
+            echo "Creating desktop files for non-Debian system..."
+            
+            desktop_file="$HOME/.local/share/applications/doppelganger_assistant.desktop"
+            icon_path="/usr/share/pixmaps/doppelganger_assistant.png"
 
-    # Download the icon
-    if [ -f "$icon_path" ]; then
-        echo "Icon already exists. Skipping download."
-    else
-        echo "Downloading Doppelganger Assistant icon..."
-        sudo wget -O "$icon_path" "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/img/doppelganger_assistant.png"
-    fi
+            # Download the icon if not present
+            if [ ! -f "$icon_path" ]; then
+                echo "Downloading Doppelganger Assistant icon..."
+                sudo wget -O "$icon_path" "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/img/doppelganger_assistant.png"
+            fi
 
-    # Create necessary directories
-    mkdir -p "$HOME/.local/share/applications"
-    mkdir -p "$HOME/Desktop"
+            # Create necessary directories
+            mkdir -p "$HOME/.local/share/applications"
+            mkdir -p "$HOME/Desktop"
 
-    # Create .desktop file for applications menu
-    echo "Creating application menu entry..."
-    cat > "$desktop_file" << EOL
+            # Create .desktop file for applications menu
+            echo "Creating application menu entry..."
+            cat > "$desktop_file" << EOL
 [Desktop Entry]
 Version=1.0
 Type=Application
@@ -485,12 +582,12 @@ Terminal=false
 Categories=Utility;System;
 EOL
 
-    # Make the .desktop file executable
-    chmod +x "$desktop_file"
+            # Make the .desktop file executable
+            chmod +x "$desktop_file"
 
-    # Also create desktop shortcut
-    desktop_shortcut="$HOME/Desktop/doppelganger_assistant.desktop"
-    cat > "$desktop_shortcut" << EOL
+            # Also create desktop shortcut
+            desktop_shortcut="$HOME/Desktop/doppelganger_assistant.desktop"
+            cat > "$desktop_shortcut" << EOL
 [Desktop Entry]
 Version=1.0
 Type=Application
@@ -502,38 +599,53 @@ Terminal=false
 Categories=Utility;System;
 EOL
 
-    # Make desktop shortcut executable
-    chmod +x "$desktop_shortcut"
+            # Make desktop shortcut executable
+            chmod +x "$desktop_shortcut"
 
-    # Mark desktop file as trusted (for GNOME-based desktops)
-    if command -v gio &> /dev/null; then
-        gio set "$desktop_shortcut" metadata::trusted true 2>/dev/null || true
-    fi
+            # Mark desktop file as trusted (for GNOME-based desktops)
+            if command -v gio &> /dev/null; then
+                gio set "$desktop_shortcut" metadata::trusted true 2>/dev/null || true
+            fi
 
-    # Refresh desktop integration based on detected DE
-    refresh_desktop_integration "$DESKTOP_ENV"
+            # Refresh desktop integration based on detected DE
+            refresh_desktop_integration "$DESKTOP_ENV"
 
-    echo ""
-    echo "Desktop shortcut created successfully."
-    echo "Note: You may need to right-click the desktop icon and select 'Allow Launching' or 'Trust' on first use."
+            echo ""
+            echo "Desktop shortcut created successfully."
+            echo "Note: You may need to right-click the desktop icon and select 'Allow Launching' or 'Trust' on first use."
+            ;;
+    esac
     
-    # Provide DE-specific instructions if needed
+    # Provide DE-specific instructions
     case "$DESKTOP_ENV" in
         *"XFCE"*)
-            echo "XFCE detected. If the applications menu does not update immediately, either:"
-            echo " - Log out and back in, or"
-            echo " - Manually run 'xfce4-panel -r' from a user terminal (not via sudo)."
+            echo ""
+            echo "XFCE Tips:"
+            echo " - If the menu doesn't update immediately, log out and back in"
+            echo " - Or run 'xfce4-panel -r' from a user terminal"
             ;;
         *"KDE"*|*"Plasma"*)
-            echo "If the menu item doesn't appear immediately, try logging out and back in."
+            echo ""
+            echo "KDE/Plasma Tips:"
+            echo " - Menu items should appear immediately"
+            echo " - If not, try logging out and back in"
             ;;
         *"GNOME"*)
-            echo "The menu should update automatically. If not, try pressing Alt+F2 and typing 'r' to restart GNOME Shell."
-            ;;
-        *)
-            echo "If the menu item doesn't appear immediately, try logging out and back in."
+            echo ""
+            echo "GNOME Tips:"
+            echo " - Press Super key and search for 'Doppelganger'"
+            echo " - If menu doesn't update, press Alt+F2 and type 'r' to restart GNOME Shell"
             ;;
     esac
 fi
 
-echo "Installation process completed."
+echo ""
+echo "=============================================="
+echo "Installation process completed successfully!"
+echo "=============================================="
+echo ""
+echo "To launch Doppelganger Assistant:"
+echo "  - Look for 'Doppelganger Assistant' in your applications menu"
+echo "  - Or run 'doppelganger_assistant' from the terminal"
+echo "  - Or use the desktop shortcut (if created)"
+echo ""
