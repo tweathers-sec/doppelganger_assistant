@@ -171,6 +171,31 @@ detect_desktop_environment() {
     fi
 }
 
+# Function to detect the Window Manager
+detect_window_manager() {
+    # Wayland or X11 session type
+    local session_type="${XDG_SESSION_TYPE:-unknown}"
+
+    # Common WMs (process-based detection)
+    for wm in xfwm4 mutter kwin_wayland kwin_x11 openbox i3 sway xmonad awesome spectrwm bspwm enlightenment; do
+        if pgrep -x "$wm" >/dev/null 2>&1; then
+            echo "$wm ($session_type)"
+            return
+        fi
+    done
+
+    # As a fallback, try wmctrl if available (X11)
+    if command -v wmctrl >/dev/null 2>&1; then
+        local name=$(wmctrl -m 2>/dev/null | awk -F: '/Name/ {print $2}' | xargs)
+        if [ -n "$name" ]; then
+            echo "$name ($session_type)"
+            return
+        fi
+    fi
+
+    echo "unknown ($session_type)"
+}
+
 # Function to refresh desktop environment and make new .desktop files visible
 refresh_desktop_integration() {
     local desktop_env=$1
@@ -271,6 +296,9 @@ OS=$(detect_os)
 # Detect the Desktop Environment
 DESKTOP_ENV=$(detect_desktop_environment)
 
+# Detect Window Manager
+WINDOW_MANAGER=$(detect_window_manager)
+
 # Check if running as root
 if [ "$(id -u)" -eq 0 ]; then
     as_root=true
@@ -284,7 +312,47 @@ display_doppelganger_ascii
 # Display detected environment
 echo "Detected OS: $OS"
 echo "Detected Desktop Environment: $DESKTOP_ENV"
+echo "Detected Window Manager: $WINDOW_MANAGER"
 echo ""
+
+# ============================
+# Pre-flight questions (gather all input up-front)
+# ============================
+
+# Ask about (re)installing Doppelganger Assistant
+if command_exists doppelganger_assistant; then
+    if prompt_reinstall "Doppelganger Assistant"; then
+        echo "Proceeding with Doppelganger Assistant reinstallation."
+        skip_doppelganger_install=false
+    else
+        echo "Skipping Doppelganger Assistant installation."
+        skip_doppelganger_install=true
+    fi
+else
+    echo "Doppelganger Assistant not found. Proceeding with installation."
+    skip_doppelganger_install=false
+fi
+
+# Ask about (re)installing Proxmark3 and capture device selection now
+if command_exists pm3; then
+    if prompt_reinstall "Proxmark3"; then
+        echo "Proceeding with Proxmark3 reinstallation."
+        skip_proxmark_install=false
+    else
+        echo "Skipping Proxmark3 installation."
+        skip_proxmark_install=true
+    fi
+else
+    echo "Proxmark3 not found. Proceeding with installation."
+    skip_proxmark_install=false
+fi
+
+if [ "$skip_proxmark_install" = false ]; then
+    # Capture device choice up-front so we don't ask later
+    select_proxmark_device
+fi
+
+PREFLIGHT_DONE=1
 
 # Function to install packages based on the detected OS
 install_packages() {
@@ -312,32 +380,28 @@ case "$OS" in
         ;;
 esac
 
-# Check if doppelganger_assistant is installed
-if command_exists doppelganger_assistant; then
-    if prompt_reinstall "Doppelganger Assistant"; then
-        echo "Proceeding with Doppelganger Assistant reinstallation."
+# If preflight already answered, do not prompt again
+if [ "$PREFLIGHT_DONE" != "1" ]; then
+    # Fallback to legacy prompts (should not happen)
+    if command_exists doppelganger_assistant; then
+        if prompt_reinstall "Doppelganger Assistant"; then
+            skip_doppelganger_install=false
+        else
+            skip_doppelganger_install=true
+        fi
+    else
         skip_doppelganger_install=false
-    else
-        echo "Skipping Doppelganger Assistant installation."
-        skip_doppelganger_install=true
     fi
-else
-    echo "Doppelganger Assistant not found. Proceeding with installation."
-    skip_doppelganger_install=false
-fi
 
-# Check if Proxmark3 is installed
-if command_exists pm3; then
-    if prompt_reinstall "Proxmark3"; then
-        echo "Proceeding with Proxmark3 reinstallation."
-        skip_proxmark_install=false
+    if command_exists pm3; then
+        if prompt_reinstall "Proxmark3"; then
+            skip_proxmark_install=false
+        else
+            skip_proxmark_install=true
+        fi
     else
-        echo "Skipping Proxmark3 installation."
-        skip_proxmark_install=true
+        skip_proxmark_install=false
     fi
-else
-    echo "Proxmark3 not found. Proceeding with installation."
-    skip_proxmark_install=false
 fi
 
 # Install necessary packages for Doppelganger Assistant
@@ -377,8 +441,10 @@ if [ "$skip_proxmark_install" = false ]; then
 
     cd proxmark3
 
-    # Prompt user to select their Proxmark3 device type
-    select_proxmark_device
+    # Device type was selected during preflight; if not, ask now (fallback)
+    if [ -z "$PROXMARK_DEVICE" ]; then
+        select_proxmark_device
+    fi
     
     # Configure Makefile based on selected device type
     configure_proxmark_device "$PROXMARK_DEVICE"

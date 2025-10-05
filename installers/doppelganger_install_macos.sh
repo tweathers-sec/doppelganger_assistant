@@ -103,13 +103,27 @@ select_proxmark_device_macos() {
     esac
 }
 
+# ============================
+# Pre-flight questions (gather all input up-front)
+# ============================
+
+print_color "1;33" "Pre-flight questions..."
+# Proxmark3 decision and device type first
+if ! command -v pm3 &> /dev/null; then
+    read -p "Proxmark3 (Iceman) not found. Install it now? (y/n) " -n 1 -r; echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        select_proxmark_device_macos
+        INSTALL_PM3=1
+    else
+        INSTALL_PM3=0
+    fi
+else
+    INSTALL_PM3=0
+fi
+
 # Check if 'pm3' is installed
 print_color "1;33" "Checking if Proxmark3 is installed..."
-if ! command -v pm3 &> /dev/null; then
-    print_color "1;31" "Proxmark3 is not installed."
-    read -p "Do you want to install the Iceman fork Proxmark3? (y/n) " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
+if [[ "$INSTALL_PM3" == "1" ]]; then
         print_color "1;33" "Checking if Homebrew is installed..."
         if ! command -v brew &> /dev/null; then
             print_color "1;31" "Homebrew is not installed."
@@ -122,14 +136,11 @@ if ! command -v pm3 &> /dev/null; then
             else
                 print_color "1;31" "Homebrew installation skipped. Proxmark3 cannot be installed."
                 print_color "1;31" "Exiting Proxmark3 installation."
-                exit 0
+                INSTALL_PM3=0
             fi
         else
             print_color "0;32" "Homebrew is already installed."
         fi
-
-        # Select Proxmark3 device type
-        select_proxmark_device_macos
 
         print_color "1;33" "Installing Proxmark3..."
         xcode-select --install 2>/dev/null || true
@@ -137,7 +148,6 @@ if ! command -v pm3 &> /dev/null; then
         brew tap RfidResearchGroup/proxmark3
         brew install $BREW_FLAGS rfidresearchgroup/proxmark3/proxmark3
         print_color "0;32" "Proxmark3 installed successfully."
-    fi
 fi
 
 print_color "1;32" "Doppelganger Assistant has been installed successfully at /Applications/doppelganger_assistant.app!"

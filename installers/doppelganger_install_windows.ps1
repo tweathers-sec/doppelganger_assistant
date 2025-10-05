@@ -23,7 +23,7 @@ $launchScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger
 $pm3TerminalScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/scripts/wsl_pm3_terminal.ps1"
 $installScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/scripts/wsl_doppelganger_install.sh"
 $imageUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/img/doppelganger_assistant.ico"
-$icemanLogoUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/img/iceman_logo.ico"
+$icemanLogoUrl = "https://avatars.githubusercontent.com/u/8577004?v=4"
 $wslEnableScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/scripts/wsl_enable.ps1"
 $usbReconnectScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/scripts/usb_reconnect.ps1"
 $proxmarkFlashScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/scripts/proxmark_flash.ps1"
@@ -33,7 +33,7 @@ $launchScriptPath = "$basePath\wsl_windows_launch.ps1"
 $pm3TerminalScriptPath = "$basePath\wsl_pm3_terminal.ps1"
 $installScriptPath = "$basePath\wsl_doppelganger_install.sh"
 $imagePath = "$basePath\doppelganger_assistant.ico"
-$icemanLogoPath = "$basePath\iceman_logo.ico"
+$icemanLogoPath = "$basePath\iceman_logo.png"
 $wslEnableScriptPath = "$basePath\wsl_enable.ps1"
 $usbReconnectScriptPath = "$basePath\usb_reconnect.ps1"
 $proxmarkFlashScriptPath = "$basePath\proxmark_flash.ps1"
@@ -200,6 +200,23 @@ if (Test-Path -Path $basePath) {
 # Create base directory
 mkdir $basePath | Out-Null
 
+# ============================
+# Pre-flight questions (gather all input up-front)
+# ============================
+
+$installDistro = Read-Host "Which WSL distro would you like to install? (U)butu [default] / (K)ali"
+if ($installDistro -eq "K" -or $installDistro -eq "k") {
+    $selectedDistro = "Kali"
+} else {
+    $selectedDistro = "Ubuntu"
+}
+
+$createPm3Shortcut = Read-Host "Create the 'Proxmark3 Terminal' desktop shortcut? (Y/n)"
+if ($createPm3Shortcut -eq "n" -or $createPm3Shortcut -eq "N") { $createPm3Shortcut = $false } else { $createPm3Shortcut = $true }
+
+$flashPromptPreference = Read-Host "Offer Proxmark3 flashing step at the end? (y/N)"
+if ($flashPromptPreference -eq "y" -or $flashPromptPreference -eq "Y") { $offerFlash = $true } else { $offerFlash = $false }
+
 # Download the setup, launch, install scripts, and images from GitHub
 Log "Downloading setup script..."
 Invoke-WebRequest -Uri $setupScriptUrl -OutFile $setupScriptPath -Headers $headers
@@ -216,7 +233,7 @@ Invoke-WebRequest -Uri $installScriptUrl -OutFile $installScriptPath -Headers $h
 Log "Downloading Doppelganger icon..."
 Invoke-WebRequest -Uri $imageUrl -OutFile $imagePath -Headers $headers
 
-Log "Downloading Iceman Proxmark3 icon (.ico)..."
+Log "Downloading Iceman Proxmark3 logo..."
 Invoke-WebRequest -Uri $icemanLogoUrl -OutFile $icemanLogoPath -Headers $headers
 
 Log "Downloading WSL enable script..."
@@ -263,25 +280,30 @@ New-Shortcut -TargetPath "powershell.exe" `
 Log "Doppelganger Assistant shortcut created."
 
 Log "Creating Proxmark3 Terminal desktop shortcut..."
-New-Shortcut -TargetPath "powershell.exe" `
-    -ShortcutPath $pm3ShortcutPath `
-    -Arguments "-NoProfile -ExecutionPolicy Bypass -File `"$pm3TerminalScriptPath`"" `
-    -Description "Launch Proxmark3 Terminal (pm3) as Administrator" `
-    -WorkingDirectory $basePath `
-    -IconLocation $icemanLogoPath
-
-Log "Proxmark3 Terminal shortcut created."
+if ($createPm3Shortcut) {
+    New-Shortcut -TargetPath "powershell.exe" `
+        -ShortcutPath $pm3ShortcutPath `
+        -Arguments "-NoProfile -ExecutionPolicy Bypass -File `"$pm3TerminalScriptPath`"" `
+        -Description "Launch Proxmark3 Terminal (pm3) as Administrator" `
+        -WorkingDirectory $basePath `
+        -IconLocation $icemanLogoPath
+    Log "Proxmark3 Terminal shortcut created."
+} else {
+    Log "User opted not to create the Proxmark3 Terminal shortcut."
+}
 
 Log "Setup complete. Shortcuts created on the desktop."
 
 # Prompt user to flash Proxmark3
-$flashChoice = Read-Host "Do you want to flash your Proxmark3 device now (not recommended for virtual environments)? (y/n)"
-if ($flashChoice -eq "y" -or $flashChoice -eq "Y") {
-    Log "User chose to flash Proxmark3. Running Proxmark3 flash script..."
-    powershell -ExecutionPolicy Bypass -File $proxmarkFlashScriptPath
-}
-else {
-    Log "User chose not to flash Proxmark3."
+if ($offerFlash) {
+    $flashChoice = Read-Host "Do you want to flash your Proxmark3 device now (not recommended for virtual environments)? (y/n)"
+    if ($flashChoice -eq "y" -or $flashChoice -eq "Y") {
+        Log "User chose to flash Proxmark3. Running Proxmark3 flash script..."
+        powershell -ExecutionPolicy Bypass -File $proxmarkFlashScriptPath
+    }
+    else {
+        Log "User chose not to flash Proxmark3."
+    }
 }
 
 # Delete this script (only if running from a file)
