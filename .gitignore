@@ -23,6 +23,7 @@ go.sum
 Icon.png
 .DS_Store
 build/
+doppelganger_assistant
 
 dist/
 fyne-cross/

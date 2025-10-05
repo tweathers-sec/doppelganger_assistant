@@ -6,6 +6,7 @@ import (
 	"image/color"
 	"os"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -282,6 +283,13 @@ func (t *arrowDarkTheme) Size(name fyne.ThemeSizeName) float32 {
 
 func runGUI() {
 	os.Setenv("FYNE_DISABLE_CALL_CHECKING", "1")
+
+	// Set proper scaling for Linux to match macOS appearance
+	if runtime.GOOS == "linux" {
+		if os.Getenv("FYNE_SCALE") == "" {
+			os.Setenv("FYNE_SCALE", "1.0")
+		}
+	}
 
 	a := app.New()
 	w := a.NewWindow("Doppelgänger Assistant")
