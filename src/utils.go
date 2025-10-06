@@ -28,37 +28,56 @@ func findPm3Path() (string, error) {
 	if runtime.GOOS == "windows" {
 		// On Windows, use 'where' command
 		cmd = exec.Command("cmd", "/c", "where", "pm3")
-	} else {
-		// On macOS and Linux, use 'type -a' command through shell
-		cmd = exec.Command("bash", "-c", "type -a pm3")
-	}
-
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		return "", err
-	}
-
-	// Parse the output to get the first valid path
-	outputStr := string(output)
-	lines := strings.Split(outputStr, "\n")
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if line == "" {
-			continue
-		}
-		// On Unix, 'type' output is like "pm3 is /usr/local/bin/pm3"
-		if strings.Contains(line, " is ") {
-			parts := strings.Split(line, " is ")
-			if len(parts) >= 2 {
-				return strings.TrimSpace(parts[1]), nil
+		output, err := cmd.CombinedOutput()
+		if err == nil {
+			outputStr := string(output)
+			lines := strings.Split(outputStr, "\n")
+			for _, line := range lines {
+				line = strings.TrimSpace(line)
+				if line != "" && strings.Contains(line, ":\\") {
+					return line, nil
+				}
 			}
-		} else if strings.HasPrefix(line, "/") || strings.Contains(line, ":\\") {
-			// Direct path on Windows or Unix
-			return line, nil
+		}
+		return "", fmt.Errorf("pm3 binary not found")
+	}
+
+	// On macOS and Linux, use 'command -v' which works in sh/bash/zsh
+	// Use /bin/sh to ensure we have a shell, and 'command -v' is POSIX standard
+	cmd = exec.Command("/bin/sh", "-c", "command -v pm3")
+	output, err := cmd.CombinedOutput()
+	if err == nil {
+		path := strings.TrimSpace(string(output))
+		if path != "" && strings.HasPrefix(path, "/") {
+			return path, nil
 		}
 	}
 
-	return "", err
+	// If shell lookup fails, try common installation paths directly
+	var commonPaths []string
+	if runtime.GOOS == "darwin" {
+		commonPaths = []string{
+			"/opt/homebrew/bin/pm3",               // Homebrew on Apple Silicon
+			"/usr/local/bin/pm3",                  // Homebrew on Intel Mac
+			"/opt/local/bin/pm3",                  // MacPorts
+			"/usr/local/Cellar/proxmark3/bin/pm3", // Older Homebrew layout
+		}
+	} else {
+		// Linux
+		commonPaths = []string{
+			"/usr/local/bin/pm3",
+			"/usr/bin/pm3",
+			"/opt/proxmark3/pm3",
+		}
+	}
+
+	for _, path := range commonPaths {
+		if _, err := os.Stat(path); err == nil {
+			return path, nil
+		}
+	}
+
+	return "", fmt.Errorf("pm3 binary not found in PATH or common installation locations")
 }
 
 // findPm3Device detects the pm3 device path using 'pm3 --list'
