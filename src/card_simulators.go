@@ -11,13 +11,23 @@ import (
 
 func simulateProxmark3Command(command string) (string, error) {
 	if ok, msg := checkProxmark3(); !ok {
-		return "", fmt.Errorf(msg)
+		return "", fmt.Errorf("%s", msg)
+	}
+
+	pm3Binary, err := getPm3Path()
+	if err != nil {
+		return "", fmt.Errorf("failed to find pm3 binary: %w", err)
+	}
+
+	device, err := getPm3Device()
+	if err != nil {
+		return "", fmt.Errorf("failed to detect pm3 device: %w", err)
 	}
 
 	WriteStatusInfo("Simulation started - press PM3 button to stop")
 	WriteStatusInfo("With battery: you can remove device and simulation continues")
 
-	cmd := exec.Command("pm3", "-c", command)
+	cmd := exec.Command(pm3Binary, "-c", command, "-p", device)
 
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr

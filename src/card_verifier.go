@@ -12,32 +12,44 @@ func verifyCardData(cardType string, facilityCode, cardNumber, bitLength int, he
 		return
 	}
 
+	pm3Binary, err := getPm3Path()
+	if err != nil {
+		WriteStatusError("Failed to find pm3 binary: %v", err)
+		return
+	}
+
+	device, err := getPm3Device()
+	if err != nil {
+		WriteStatusError("Failed to detect pm3 device: %v", err)
+		return
+	}
+
 	fmt.Println("\n|----------- VERIFICATION -----------|")
 	WriteStatusProgress("Verifying card data - place card flat on reader...")
 	var cmd *exec.Cmd
 	switch cardType {
 	case "iclass":
-		cmd = exec.Command("pm3", "-c", "hf iclass rdbl --blk 7 --ki 0")
+		cmd = exec.Command(pm3Binary, "-c", "hf iclass rdbl --blk 7 --ki 0", "-p", device)
 	case "prox":
-		cmd = exec.Command("pm3", "-c", "lf hid reader")
+		cmd = exec.Command(pm3Binary, "-c", "lf hid reader", "-p", device)
 	case "awid":
-		cmd = exec.Command("pm3", "-c", "lf awid reader")
+		cmd = exec.Command(pm3Binary, "-c", "lf awid reader", "-p", device)
 	case "indala":
-		cmd = exec.Command("pm3", "-c", "lf indala reader")
+		cmd = exec.Command(pm3Binary, "-c", "lf indala reader", "-p", device)
 	case "avigilon":
-		cmd = exec.Command("pm3", "-c", "lf hid reader")
+		cmd = exec.Command(pm3Binary, "-c", "lf hid reader", "-p", device)
 	case "em":
-		cmd = exec.Command("pm3", "-c", "lf em 410x reader")
+		cmd = exec.Command(pm3Binary, "-c", "lf em 410x reader", "-p", device)
 	case "piv", "mifare":
-		cmd = exec.Command("pm3", "-c", "hf mf info")
+		cmd = exec.Command(pm3Binary, "-c", "hf mf info", "-p", device)
 	default:
 		WriteStatusError("Unsupported card type for verification")
 		return
 	}
 
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		WriteStatusError("Failed to read card data: %v", err)
+	output, cmdErr := cmd.CombinedOutput()
+	if cmdErr != nil {
+		WriteStatusError("Failed to read card data: %v", cmdErr)
 		return
 	}
 

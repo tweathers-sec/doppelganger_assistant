@@ -9,10 +9,20 @@ import (
 
 func writeProxmark3Command(command string) (string, error) {
 	if ok, msg := checkProxmark3(); !ok {
-		return "", fmt.Errorf(msg)
+		return "", fmt.Errorf("%s", msg)
 	}
 
-	cmd := exec.Command("pm3", "-c", command)
+	pm3Binary, err := getPm3Path()
+	if err != nil {
+		return "", fmt.Errorf("failed to find pm3 binary: %w", err)
+	}
+
+	device, err := getPm3Device()
+	if err != nil {
+		return "", fmt.Errorf("failed to detect pm3 device: %w", err)
+	}
+
+	cmd := exec.Command(pm3Binary, "-c", command, "-p", device)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return string(output), fmt.Errorf("error writing to card: %w. Output: %s", err, output)
@@ -23,7 +33,25 @@ func writeProxmark3Command(command string) (string, error) {
 // waitForProxmark3 checks if Proxmark3 is available with retries.
 func waitForProxmark3(maxRetries int) bool {
 	for i := 0; i < maxRetries; i++ {
-		cmd := exec.Command("pm3", "-c", "hw status")
+		pm3Binary, err := getPm3Path()
+		if err != nil {
+			if i < maxRetries-1 {
+				fmt.Printf("Waiting for Proxmark3 to be ready... (attempt %d/%d)\n", i+1, maxRetries)
+				time.Sleep(2 * time.Second)
+			}
+			continue
+		}
+
+		device, err := getPm3Device()
+		if err != nil {
+			if i < maxRetries-1 {
+				fmt.Printf("Waiting for Proxmark3 to be ready... (attempt %d/%d)\n", i+1, maxRetries)
+				time.Sleep(2 * time.Second)
+			}
+			continue
+		}
+
+		cmd := exec.Command(pm3Binary, "-c", "hw status", "-p", device)
 		output, err := cmd.CombinedOutput()
 		if err == nil && !strings.Contains(string(output), "cannot communicate") {
 			return true
