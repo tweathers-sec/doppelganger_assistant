@@ -9,13 +9,9 @@ $wslInstallationPath = "$basePath\wsl"
 $username = "doppelganger"
 $installAllSoftware = $true
 
-# Possible WSL distribution names (will be set based on user choice)
 $kaliWslName = "Kali-doppelganger_assistant"
 $ubuntuWslName = "Ubuntu-doppelganger_assistant"
-$wslName = $null  # Will be set after user selects distribution
-
-# Use WSL's built-in Ubuntu installation instead of manual rootfs download
-# This works for both AMD64 and ARM64 architectures
+$wslName = $null
 $installScriptPath = "$basePath\wsl_doppelganger_install.sh"
 
 # Log file path
@@ -162,7 +158,6 @@ function Refresh-UsbIpdCommand {
     return $false
 }
 
-# Ensure aria2 is installed
 Install-Aria2
 
 Log "Checking if NuGet provider is installed and PSGallery is trusted..."
@@ -171,7 +166,6 @@ Log "Checking if NuGet provider is installed and PSGallery is trusted..."
 Log "Installing NuGet provider..."
 Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.208 -Force -Scope CurrentUser
 
-# Ensure the NuGet provider is loaded
 Import-PackageProvider -Name NuGet -Force | Out-Null
 
 # Check and set PSGallery to trusted silently
@@ -205,7 +199,7 @@ if (-not (Is-WingetInstalled)) {
 
 # Check winget version and update if necessary
 if (Is-WingetInstalled) {
-    $minWingetVersion = "1.4.0"  # Set this to the minimum required version
+    $minWingetVersion = "1.4.0"
     $currentWingetVersion = (winget --version).Trim()
     Log "Current Winget version: $currentWingetVersion"
 
@@ -269,7 +263,6 @@ else {
     Log "usbipd is already installed."
 }
 
-# Note: Skipping virtualization checks to allow installation in nested VM environments
 Log "Proceeding with WSL installation..."
 
 # Check if any Doppelganger WSL distribution already exists
@@ -520,7 +513,6 @@ else {
     Log "Linux distribution directly imported as $wslName"
 }
 
-# Ensure WSL is initialized
 Log "Initializing WSL and $wslName..."
 wsl -d $wslName -e echo "WSL initialized"
 
@@ -560,7 +552,6 @@ Log "Updating system and creating user..."
 wsl -d $wslName -u root bash -ic "apt update && apt upgrade -y && bash $wslUserSetupScriptPath"
 Remove-Item $userSetupScriptPath
 
-# Ensure WSL Distro is restarted when first used with user account
 wsl --terminate $wslName
 
 if ($installAllSoftware -eq $true) {
@@ -608,7 +599,6 @@ chmod 0440 /etc/sudoers.d/\$username
 
     Log "Running custom installation script..."
     # Use --update flag to run in non-interactive mode (works for both first install and updates)
-    # This skips all "do you want to reinstall?" prompts
     wsl -d $wslName -u $username bash -ic "bash $wslInstallScriptPath --update"
 }
 

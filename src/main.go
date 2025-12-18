@@ -7,11 +7,12 @@ import (
 )
 
 const (
-	Red     = "\033[31m"
-	Green   = "\033[32m"
-	Yellow  = "\033[33m"
-	Reset   = "\033[0m"
-	Version = "1.1.1"
+	Red      = "\033[31m"
+	Green    = "\033[32m"
+	Yellow   = "\033[33m"
+	Reset    = "\033[0m"
+	Version  = "1.1.2"
+	BuildDate = "2025-12-18"
 )
 
 type Card struct {
@@ -122,6 +123,11 @@ func main() {
 			}
 			if *hexData == "" {
 				fmt.Println(Red, "Hex data is required for EM card type.", Reset)
+				return
+			}
+			// Validate EM4100 hex data format
+			if valid, errMsg := validateEM4100Hex(*hexData); !valid {
+				fmt.Println(Red, errMsg, Reset)
 				return
 			}
 		} else {

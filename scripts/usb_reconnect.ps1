@@ -47,13 +47,12 @@ Log "Listing all USB devices..."
 $usbDevices = & usbipd list 2>&1 | Tee-Object -Variable usbDevicesOutput
 Log $usbDevicesOutput
 
-# Find the Proxmark3 device by VID 9ac4 and extract the bus ID (e.g., 1-4)
+# Find the Proxmark3 device by VID 9ac4 and extract the bus ID
 $proxmark3Device = $usbDevices | Select-String -Pattern "9ac4"
 if ($proxmark3Device) {
-    $busId = ($proxmark3Device -split "\s+")[0] # Assuming busid is the first column in the list output
+    $busId = ($proxmark3Device -split "\s+")[0]
     Log "Found device with busid $busId"
 
-    # Detach and then attach the USB device
     DetachUSBDevice -busId $busId
     Start-Sleep -Seconds 2
     AttachUSBDeviceToWSL -busId $busId

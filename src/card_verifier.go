@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os/exec"
+	"regexp"
 	"strings"
 )
 
@@ -26,10 +27,17 @@ func verifyCardData(cardType string, facilityCode, cardNumber, bitLength int, he
 
 	fmt.Println("\n|----------- VERIFICATION -----------|")
 	WriteStatusProgress("Verifying card data - place card flat on reader...")
+
+	if IsOperationCancelled() {
+		WriteStatusInfo("Operation cancelled by user")
+		return
+	}
+
 	var cmd *exec.Cmd
 	switch cardType {
 	case "iclass":
-		cmd = exec.Command(pm3Binary, "-c", "hf iclass rdbl --blk 7 --ki 0", "-p", device)
+		// Use dump to get full card data, then decrypt and decode block 7 for verification
+		cmd = exec.Command(pm3Binary, "-c", "hf iclass dump --ki 0", "-p", device)
 	case "prox":
 		cmd = exec.Command(pm3Binary, "-c", "lf hid reader", "-p", device)
 	case "awid":
@@ -57,26 +65,108 @@ func verifyCardData(cardType string, facilityCode, cardNumber, bitLength int, he
 	fmt.Println(outputStr)
 
 	if cardType == "iclass" {
-		lines := strings.Split(outputStr, "\n")
-		var block7Data string
-		for _, line := range lines {
-			if strings.Contains(line, "block") && strings.Contains(line, "7/0x07") {
-				parts := strings.Split(line, ":")
-				if len(parts) > 1 {
-					block7Data = strings.TrimSpace(parts[1])
-					break
+		// Parse the dump output to get FC/CN/bit length
+		cardData, _ := parseICLASSReaderOutput(outputStr)
+
+		// Check if FC/CN is available, decrypt if needed
+		if _, hasFC := cardData["facilityCode"]; !hasFC {
+			// Check if block 7 is encrypted (shows as "Enc Cred" in dump)
+			if strings.Contains(outputStr, "Enc Cred") && !strings.Contains(outputStr, "Block 7 decoder") {
+				// Card is encrypted, need to decrypt first
+				WriteStatusInfo("Card appears encrypted. Attempting to decrypt...")
+
+				// Extract dump filename from output
+				dumpFileRegex := regexp.MustCompile(`Saved.*?to binary file ` + "`" + `([^` + "`" + `]+)` + "`")
+				if matches := dumpFileRegex.FindStringSubmatch(outputStr); len(matches) > 1 {
+					if IsOperationCancelled() {
+						WriteStatusInfo("Operation cancelled by user")
+						return
+					}
+					dumpFile := matches[1]
+					fmt.Println()
+					fmt.Printf("hf iclass decrypt -f %s\n", dumpFile)
+
+					// Run decrypt command
+					decryptCmd := exec.Command(pm3Binary, "-c", fmt.Sprintf("hf iclass decrypt -f %s", dumpFile), "-p", device)
+					decryptOutput, decryptErr := decryptCmd.CombinedOutput()
+					if decryptErr == nil {
+						decryptStr := string(decryptOutput)
+						fmt.Println(decryptStr)
+
+						cardData, _ = parseICLASSReaderOutput(decryptStr)
+
+						// Fallback: decode block 7 hex if FC/CN not found
+						if _, hasFC := cardData["facilityCode"]; !hasFC {
+							block7Hex := extractBlock7Hex(decryptStr)
+							if block7Hex != "" {
+								WriteStatusInfo("Attempting alternative decode of block 7 hex...")
+								fmt.Println()
+								fmt.Printf("wiegand decode --raw %s --force\n", block7Hex)
+
+								decodeCmd := exec.Command(pm3Binary, "-c", fmt.Sprintf("wiegand decode --raw %s --force", block7Hex), "-p", device)
+								decodeOutput, _ := decodeCmd.CombinedOutput()
+								fmt.Println(string(decodeOutput))
+
+								decodedData, _ := parseICLASSReaderOutput(string(decodeOutput))
+								if decodedData != nil {
+									// Merge decoded data into cardData
+									if fc, ok := decodedData["facilityCode"].(int); ok && fc > 0 {
+										cardData["facilityCode"] = fc
+									}
+									if cn, ok := decodedData["cardNumber"].(int); ok && cn > 0 {
+										cardData["cardNumber"] = cn
+									}
+									if format, ok := decodedData["format"].(string); ok {
+										cardData["format"] = format
+									}
+									if bl, ok := decodedData["bitLength"].(int); ok {
+										cardData["bitLength"] = bl
+									}
+								}
+							}
+						}
+					}
 				}
 			}
 		}
 
-		if block7Data != "" {
-			WriteStatusSuccess("Verification successful - Block 7: %s", block7Data)
-			WriteStatusSuccess("Card contains: %d-bit, FC: %d, CN: %d", bitLength, facilityCode, cardNumber)
-			return
-		} else {
-			WriteStatusError("Verification failed - unable to read block 7 data")
-			return
+		// Verify FC/CN/bit length match
+		if cardData != nil {
+			readFC, hasFC := cardData["facilityCode"].(int)
+			readCN, hasCN := cardData["cardNumber"].(int)
+			readBL, hasBL := cardData["bitLength"].(int)
+
+			if hasFC && hasCN && hasBL {
+				if readFC == facilityCode && readCN == cardNumber && readBL == bitLength {
+					WriteStatusSuccess("Verification successful - FC, CN, and Bit Length match")
+					WriteStatusSuccess("Card contains: %d-bit, FC: %d, CN: %d", readBL, readFC, readCN)
+					return
+				} else {
+					WriteStatusError("Verification failed - data mismatch")
+					WriteStatusInfo("Expected: %d-bit, FC: %d, CN: %d", bitLength, facilityCode, cardNumber)
+					WriteStatusInfo("Read: %d-bit, FC: %d, CN: %d", readBL, readFC, readCN)
+					return
+				}
+			} else if hasFC && hasCN {
+				// Verify FC/CN if bit length is not available
+				if readFC == facilityCode && readCN == cardNumber {
+					WriteStatusSuccess("Verification successful - FC and CN match")
+					WriteStatusInfo("Card contains: FC: %d, CN: %d", readFC, readCN)
+					if hasBL {
+						WriteStatusInfo("Bit Length: %d (expected %d)", readBL, bitLength)
+					}
+					return
+				} else {
+					WriteStatusError("Verification failed - FC/CN mismatch")
+					WriteStatusInfo("Expected: FC: %d, CN: %d", facilityCode, cardNumber)
+					WriteStatusInfo("Read: FC: %d, CN: %d", readFC, readCN)
+					return
+				}
+			}
 		}
+
+		WriteStatusError("Verification failed - unable to decode card data")
+		return
 	} else {
 		lines := strings.Split(outputStr, "\n")
 		for _, line := range lines {
@@ -92,21 +182,8 @@ func verifyCardData(cardType string, facilityCode, cardNumber, bitLength int, he
 				}
 			} else if cardType == "em" {
 				if strings.Contains(line, fmt.Sprintf("EM 410x ID %s", hexData)) {
-					WriteStatusSuccess("Verification successful - EM card ID matches")
-					output, err := writeProxmark3Command(fmt.Sprintf("wiegand decode -r %s", hexData))
-					if err != nil {
-						WriteStatusError("Failed to decode Wiegand data: %v", err)
-						return
-					}
-					fmt.Println(output)
-					for _, line := range strings.Split(output, "\n") {
-						if strings.Contains(line, "[+] [WIE32   ] Wiegand 32-bit") {
-							var emFC, emCN int
-							fmt.Sscanf(line, "[+] [WIE32   ] Wiegand 32-bit                   FC: %d  CN: %d", &emFC, &emCN)
-							WriteStatusSuccess("Decoded: FC: %d, CN: %d", emFC, emCN)
-							return
-						}
-					}
+					WriteStatusSuccess("Verification successful - EM4100 / Net2 ID matches")
+					return
 				}
 			} else if cardType == "piv" || cardType == "mifare" {
 				if strings.Contains(line, "[+]  UID:") {
@@ -129,6 +206,8 @@ func verifyCardData(cardType string, facilityCode, cardNumber, bitLength int, he
 
 	if cardType == "piv" || cardType == "mifare" {
 		WriteStatusError("Verification failed - UID does not match or card read failed")
+	} else if cardType == "em" {
+		WriteStatusError("Verification failed - EM4100 / Net2 ID does not match or card read failed")
 	} else {
 		WriteStatusError("Verification failed - FC/CN do not match or card read failed")
 	}

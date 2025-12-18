@@ -29,11 +29,6 @@ print_color "1;32" "  Doppelgänger Assistant Installer for macOS"
 print_color "1;32" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
-# ============================
-# ASK ALL QUESTIONS FIRST
-# ============================
-
-# Detect architecture (needed for download URL)
 if [[ $(uname -m) == "x86_64" ]]; then
     ARCH="amd64"
     ARCH_NAME="Intel (x86_64)"
@@ -91,7 +86,6 @@ if ! command -v pm3 &> /dev/null; then
         esac
         echo ""
         
-        # Check if Homebrew is needed and available
         if ! command -v brew &> /dev/null; then
             print_color "1;33" "Homebrew is required to install Proxmark3."
             read -p "Would you like to install Homebrew? (y/n) " -n 1 -r
@@ -110,9 +104,6 @@ else
     echo ""
 fi
 
-# ============================
-# NOW DO THE INSTALLATION
-# ============================
 
 print_color "1;32" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 print_color "1;32" "  Starting Installation"
@@ -180,7 +171,6 @@ if [[ "$INSTALL_PM3" == "1" ]]; then
     print_color "1;32" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
     
-    # Install Xcode Command Line Tools (must come first)
     print_color "1;34" "[•] Installing Xcode Command Line Tools..."
     xcode-select --install 2>/dev/null || print_color "1;32" "    ✓ Already installed"
     echo ""
@@ -190,7 +180,6 @@ if [[ "$INSTALL_PM3" == "1" ]]; then
         print_color "1;34" "[•] Installing Homebrew..."
         /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
         
-        # Add Homebrew to PATH for this script
         if [[ $(uname -m) == "arm64" ]]; then
             eval "$(/opt/homebrew/bin/brew shellenv)"
             echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> "$PROFILE_FILE"

@@ -115,22 +115,16 @@ function Ensure-Pm3Icon {
         $dir = Split-Path -Path $IconPath -Parent
         if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
 
-        # Download the official PM3 icon from repo (with cache busting)
-        # Add timestamp to prevent GitHub CDN caching and force fresh download
         $timestamp = [int][double]::Parse((Get-Date -UFormat %s))
         $pm3IconUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/img/doppelganger_pm3.ico?t=$timestamp"
         
-        # Remove old icon if it exists to force Windows to reload it
         if (Test-Path $IconPath) {
             Remove-Item $IconPath -Force
-            Log "Removed old PM3 icon to ensure fresh download"
         }
         
         Invoke-WebRequest -Uri $pm3IconUrl -OutFile $IconPath -ErrorAction Stop
         Log "Downloaded latest PM3 icon to $IconPath"
         
-        # Force Windows to clear icon cache for this file
-        # This helps Windows Terminal pick up the new icon
         Start-Sleep -Milliseconds 500
     }
     catch {
@@ -144,7 +138,6 @@ function EnsureWindowsTerminalProfile {
     $settingsPath = "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json"
     $iconPath = "C:\doppelganger_assistant\doppelganger_pm3.ico"
 
-    # Ensure the .ico exists (generate if needed)
     Ensure-Pm3Icon -IconPath $iconPath
     
     # Check if Windows Terminal settings exist
@@ -152,27 +145,22 @@ function EnsureWindowsTerminalProfile {
         try {
             $settings = Get-Content $settingsPath -Raw | ConvertFrom-Json
             
-            # Check if Proxmark3 profile already exists and remove it to force refresh
             $pm3ProfileExists = $false
             $updatedProfiles = @()
             foreach ($profile in $settings.profiles.list) {
                 if ($profile.name -eq "Proxmark3 Terminal") {
                     $pm3ProfileExists = $true
-                    Log "Found existing Proxmark3 profile. Removing to update icon..."
-                    # Skip adding this profile to force recreation with new icon
                 }
                 else {
                     $updatedProfiles += $profile
                 }
             }
             
-            # Update the profile list (removing old PM3 profile if it existed)
             if ($pm3ProfileExists) {
                 $settings.profiles.list = $updatedProfiles
             }
             
-            # Always create/recreate the profile to ensure fresh icon
-            Log "Creating Windows Terminal Proxmark3 profile with updated icon..."
+            Log "Creating Windows Terminal Proxmark3 profile..."
             
             $newProfile = @{
                 name              = "Proxmark3 Terminal"
@@ -183,12 +171,10 @@ function EnsureWindowsTerminalProfile {
                 hidden            = $false
             }
             
-            # Add the new profile to the list
             $settings.profiles.list += $newProfile
             
-            # Save updated settings
             $settings | ConvertTo-Json -Depth 10 | Set-Content $settingsPath -Encoding UTF8
-            Log "Proxmark3 profile created/updated successfully with fresh icon."
+            Log "Proxmark3 profile created successfully."
         }
         catch {
             Log "Warning: Could not modify Windows Terminal settings: $_"
@@ -209,13 +195,10 @@ function LaunchProxmark3Terminal {
         exit 1
     }
     
-    # Ensure Windows Terminal profile exists with icon
     EnsureWindowsTerminalProfile
     
     Log "Launching Proxmark3 terminal in $distroName..."
     
-    # Launch WSL terminal with pm3 command
-    # Using -p "Proxmark3 Terminal" to use our custom profile with icon
     wt.exe -w 0 new-tab -p "Proxmark3 Terminal" --title "Proxmark3 Terminal"
     
     Log "Proxmark3 terminal launched."
@@ -254,10 +237,7 @@ if ($proxmark3Device) {
         $attached = AttachUSBDeviceToWSL -busId $busId
         
         if ($attached) {
-            # Wait a moment for device to be ready
             Start-Sleep -Seconds 2
-            
-            # Launch Proxmark3 Terminal
             LaunchProxmark3Terminal
         }
         else {
@@ -275,13 +255,12 @@ else {
         Log "User chose to attach the device. Please connect the Proxmark3 device."
         Read-Host "Press Enter when you have connected the Proxmark3 device"
         
-        # Retry device detection
         $usbDevices = & usbipd list
         $proxmark3Device = $usbDevices | Select-String -Pattern "9ac4"
         
         if ($proxmark3Device) {
-            Log "Proxmark3 device found after user intervention. Restarting the script."
-            & $MyInvocation.MyCommand.Path  # Restart the script
+            Log "Proxmark3 device found. Restarting the script."
+            & $MyInvocation.MyCommand.Path
             exit
         }
         else {
@@ -296,7 +275,6 @@ else {
     }
 }
 
-# Keep window open briefly to show completion
 Start-Sleep -Seconds 2
 exit
 

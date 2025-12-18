@@ -87,6 +87,10 @@ func writeCardData(cardType string, cardData uint64, bitLength int, facilityCode
 		WriteStatusProgress("Writing Prox card (5 attempts)...")
 
 		for i := 0; i < 5; i++ {
+			if IsOperationCancelled() {
+				WriteStatusInfo("Operation cancelled by user")
+				return
+			}
 			fmt.Printf("\n|----------- WRITE #%d -----------|\n", i+1)
 			var output string
 			var err error
@@ -116,6 +120,10 @@ func writeCardData(cardType string, cardData uint64, bitLength int, facilityCode
 			} else {
 				fmt.Println(output)
 			}
+			if IsOperationCancelled() {
+				WriteStatusInfo("Operation cancelled by user")
+				return
+			}
 			time.Sleep(1 * time.Second)
 			if i < 4 {
 				WriteStatusProgress("Move card slowly... Write attempt #%d complete", i+1)
@@ -130,12 +138,20 @@ func writeCardData(cardType string, cardData uint64, bitLength int, facilityCode
 	case "awid":
 		WriteStatusProgress("Writing AWID card (5 attempts)...")
 		for i := 0; i < 5; i++ {
+			if IsOperationCancelled() {
+				WriteStatusInfo("Operation cancelled by user")
+				return
+			}
 			fmt.Printf("\n|----------- WRITE #%d -----------|\n", i+1)
 			output, err := writeProxmark3Command(fmt.Sprintf("lf awid clone --fmt 26 --fc %d --cn %d", facilityCode, cardNumber))
 			if err != nil {
 				WriteStatusError("Write attempt #%d failed: %v", i+1, err)
 			} else {
 				fmt.Println(output)
+			}
+			if IsOperationCancelled() {
+				WriteStatusInfo("Operation cancelled by user")
+				return
 			}
 			time.Sleep(1 * time.Second)
 			if i < 4 {
@@ -151,12 +167,20 @@ func writeCardData(cardType string, cardData uint64, bitLength int, facilityCode
 	case "indala":
 		WriteStatusProgress("Writing Indala card (5 attempts)...")
 		for i := 0; i < 5; i++ {
+			if IsOperationCancelled() {
+				WriteStatusInfo("Operation cancelled by user")
+				return
+			}
 			fmt.Printf("\n|----------- WRITE #%d -----------|\n", i+1)
 			output, err := writeProxmark3Command(fmt.Sprintf("lf indala clone --fc %d --cn %d", facilityCode, cardNumber))
 			if err != nil {
 				WriteStatusError("Write attempt #%d failed: %v", i+1, err)
 			} else {
 				fmt.Println(output)
+			}
+			if IsOperationCancelled() {
+				WriteStatusInfo("Operation cancelled by user")
+				return
 			}
 			time.Sleep(1 * time.Second)
 			if i < 4 {
@@ -172,12 +196,20 @@ func writeCardData(cardType string, cardData uint64, bitLength int, facilityCode
 	case "avigilon":
 		WriteStatusProgress("Writing Avigilon card (5 attempts)...")
 		for i := 0; i < 5; i++ {
+			if IsOperationCancelled() {
+				WriteStatusInfo("Operation cancelled by user")
+				return
+			}
 			fmt.Printf("\n|----------- WRITE #%d -----------|\n", i+1)
 			output, err := writeProxmark3Command(fmt.Sprintf("lf hid clone -w Avig56 --fc %d --cn %d", facilityCode, cardNumber))
 			if err != nil {
 				WriteStatusError("Write attempt #%d failed: %v", i+1, err)
 			} else {
 				fmt.Println(output)
+			}
+			if IsOperationCancelled() {
+				WriteStatusInfo("Operation cancelled by user")
+				return
 			}
 			time.Sleep(1 * time.Second)
 			if i < 4 {
@@ -191,14 +223,22 @@ func writeCardData(cardType string, cardData uint64, bitLength int, facilityCode
 			}
 		}
 	case "em":
-		WriteStatusProgress("Writing EM card (5 attempts)...")
+		WriteStatusProgress("Writing EM4100 / Net2 card (5 attempts)...")
 		for i := 0; i < 5; i++ {
+			if IsOperationCancelled() {
+				WriteStatusInfo("Operation cancelled by user")
+				return
+			}
 			fmt.Printf("\n|----------- WRITE #%d -----------|\n", i+1)
 			output, err := writeProxmark3Command(fmt.Sprintf("lf em 410x clone --id %s", hexData))
 			if err != nil {
 				WriteStatusError("Write attempt #%d failed: %v", i+1, err)
 			} else {
 				fmt.Println(output)
+			}
+			if IsOperationCancelled() {
+				WriteStatusInfo("Operation cancelled by user")
+				return
 			}
 			time.Sleep(1 * time.Second)
 			if i < 4 {

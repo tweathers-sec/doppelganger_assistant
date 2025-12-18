@@ -65,7 +65,6 @@ Write-Host "*           RUNNING WITH ADMINISTRATOR PRIVILEGES           *" -Fore
 Write-Host "*                                                           *" -ForegroundColor Green
 Write-Host "*************************************************************`n" -ForegroundColor Green
 
-# Log file path (outside install directory to persist through updates)
 $logFile = "C:\doppelganger_install_windows.log"
 
 # Function to log output to both file and screen
@@ -84,10 +83,7 @@ Log "Checking for nested virtualization support..."
 $nestedVirtSupported = $false
 
 try {
-    # Check if Hyper-V is available and nested virtualization is enabled
     $hypervFeature = Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V-All -ErrorAction SilentlyContinue
-    
-    # Check for signs of running in a VM
     $computerSystem = Get-WmiObject -Class Win32_ComputerSystem
     $isVM = $computerSystem.Model -match "Virtual" -or $computerSystem.Manufacturer -match "VMware|Microsoft Corporation|Xen|QEMU|VirtualBox|Parallels"
     
@@ -138,9 +134,8 @@ function New-Shortcut {
     $Shortcut.IconLocation = $IconLocation
     $Shortcut.Save()
 
-    # Set the shortcut to run as administrator
     $bytes = [System.IO.File]::ReadAllBytes($ShortcutPath)
-    $bytes[0x15] = $bytes[0x15] -bor 0x20 #set byte 21 (0x15) bit 6 (0x20) ON
+    $bytes[0x15] = $bytes[0x15] -bor 0x20
     [System.IO.File]::WriteAllBytes($ShortcutPath, $bytes)
 }
 
@@ -149,7 +144,6 @@ if (Test-Path "$env:SystemRoot\System32\RebootPending.txt") {
     Remove-Item "$env:SystemRoot\System32\RebootPending.txt" -Force
 }
 
-# Define headers to prevent caching (needed for uninstaller download)
 $headers = @{
     'Cache-Control' = 'no-cache'
     'Pragma'        = 'no-cache'
@@ -168,7 +162,6 @@ if (Test-Path -Path $basePath) {
     if ($updateChoice -eq "y" -or $updateChoice -eq "Y" -or $updateChoice -eq "") {
         Log "User chose to update. Running uninstaller..."
         
-        # Download and run uninstaller
         try {
             Log "Downloading uninstaller script..."
             $uninstallScript = Invoke-RestMethod -Uri $uninstallScriptUrl -Headers $headers
@@ -179,7 +172,6 @@ if (Test-Path -Path $basePath) {
         }
         catch {
             Log "Failed to download/run uninstaller. Performing manual cleanup..."
-            # Fallback to manual cleanup
             wsl --shutdown
             Remove-Item -Path $basePath -Recurse -Force -ErrorAction SilentlyContinue
             if (Test-Path -Path $shortcutPath) {
@@ -200,9 +192,6 @@ if (Test-Path -Path $basePath) {
 # Create base directory
 mkdir $basePath | Out-Null
 
-# ============================
-# Pre-flight questions (gather all input up-front)
-# ============================
 
 Write-Host "`nWhich WSL distro would you like to install?" -ForegroundColor Yellow
 Write-Host "1) Kali Linux 2025.3 [default]" -ForegroundColor Green
@@ -262,7 +251,6 @@ if (Test-Path "$env:SystemRoot\System32\RebootPending.txt") {
     $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
     exit
 }
-# Run the setup script with distro choice (this will also run the install script internally)
 Log "Running WSL setup and installation..."
 powershell -ExecutionPolicy Bypass -File $setupScriptPath -DistroChoice $selectedDistro
 
@@ -300,15 +288,11 @@ else {
     Log "User chose not to flash Proxmark3 firmware."
 }
 
-# Delete this script (only if running from a file)
 $scriptPath = $MyInvocation.MyCommand.Path
 if ($scriptPath) {
     Log "Deleting installation script..."
     Remove-Item -Path $scriptPath -Force -ErrorAction SilentlyContinue
     Log "Installation script deleted."
-}
-else {
-    Log "Script was run directly (not from file). Nothing to delete."
 }
 
 Log "Installation complete!"

@@ -168,8 +168,6 @@ fi
 if [ -z "$skip_doppelganger_install" ]; then
     sudo apt install -y libgl1 xterm make git
 
-    # Download the latest Doppelganger Assistant release
-    # Add timestamp to prevent GitHub CDN caching
     TIMESTAMP=$(date +%s)
     if [ "$(uname -m)" = "x86_64" ]; then
         wget --no-cache --no-cookies "https://github.com/tweathers-sec/doppelganger_assistant/releases/latest/download/doppelganger_assistant_linux_amd64.tar.xz?t=${TIMESTAMP}" -O doppelganger_assistant_linux_amd64.tar.xz
@@ -177,12 +175,10 @@ if [ -z "$skip_doppelganger_install" ]; then
         wget --no-cache --no-cookies "https://github.com/tweathers-sec/doppelganger_assistant/releases/latest/download/doppelganger_assistant_linux_arm64.tar.xz?t=${TIMESTAMP}" -O doppelganger_assistant_linux_arm64.tar.xz
     fi
 
-    # Extract and install Doppelganger Assistant
     tar xvf doppelganger_assistant_*.tar.xz
     cd doppelganger_assistant
     sudo make install
 
-    # Cleanup the directory, if desired
     rm -rf usr/
     rm doppelganger_assistant*
     rm Makefile
@@ -195,11 +191,8 @@ if [ -z "$skip_proxmark_install" ]; then
     libreadline-dev gcc-arm-none-eabi libnewlib-dev qtbase5-dev \
     libbz2-dev liblz4-dev libbluetooth-dev libpython3-dev libssl-dev libgd-dev
     
-    # Create src directory if it doesn't exist
     mkdir -p ~/src
     cd ~/src
-    
-    # Clone or update the Proxmark3 repository
     if [ ! -d "proxmark3" ]; then
         echo "Cloning Proxmark3 repository..."
         git clone https://github.com/RfidResearchGroup/proxmark3.git
@@ -213,13 +206,8 @@ if [ -z "$skip_proxmark_install" ]; then
 
     cd proxmark3
 
-    # Prompt user to select their Proxmark3 device type
     select_proxmark_device
-    
-    # Configure Makefile based on selected device type
     configure_proxmark_device "$PROXMARK_DEVICE"
-
-    # Compile and install Proxmark3 software
     echo "Building Proxmark3... (this may take several minutes)"
     make clean && make -j$(nproc)
     echo "Installing Proxmark3..."

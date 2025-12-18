@@ -157,6 +157,12 @@ func handleIndala(facilityCode, cardNumber, bitLength int, simulate, write, veri
 }
 
 func handleEM(hexData string, simulate, write, verify bool) {
+	// Validate EM4100 hex data format
+	if valid, errMsg := validateEM4100Hex(hexData); !valid {
+		WriteStatusError(errMsg)
+		return
+	}
+	
 	if simulate {
 		simulateCardData("em", 0, 0, 0, 0, hexData, "")
 		return

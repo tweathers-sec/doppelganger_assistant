@@ -6,7 +6,6 @@
 # Or if already installed:
 #   powershell -ExecutionPolicy Bypass -File C:\doppelganger_assistant\uninstall.ps1
 
-# Check if running from install directory - if so, copy to temp and re-execute
 $scriptPath = $MyInvocation.MyCommand.Path
 $basePath = "C:\doppelganger_assistant"
 
@@ -15,10 +14,7 @@ if ($scriptPath -and $scriptPath.StartsWith($basePath)) {
     $tempScript = "$env:TEMP\doppelganger_uninstall_temp.ps1"
     Copy-Item -Path $scriptPath -Destination $tempScript -Force
     
-    # Re-execute from temp location
     Start-Process powershell -ArgumentList "-ExecutionPolicy Bypass -File `"$tempScript`"" -Wait -NoNewWindow
-    
-    # Exit this instance
     exit
 }
 
@@ -81,8 +77,7 @@ if (-not $removed) {
     $wslDistributions | ForEach-Object { Log "  - $_" }
 }
 
-# Ensure no processes are using the directory
-Log "Ensuring no processes are using the directory..."
+Log "Stopping related processes..."
 Stop-Process -Name "wsl" -Force -ErrorAction SilentlyContinue
 Stop-Process -Name "usbipd" -Force -ErrorAction SilentlyContinue
 Log "Processes stopped."
@@ -133,7 +128,6 @@ else {
 
 Log "Uninstallation complete."
 
-# Clean up temp script if this was relocated
 if ($scriptPath -and $scriptPath.Contains("\Temp\")) {
     Log "Cleaning up temporary script..."
     Start-Sleep -Seconds 2

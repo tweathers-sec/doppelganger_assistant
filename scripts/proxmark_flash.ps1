@@ -109,10 +109,10 @@ Log "Listing all USB devices..."
 $usbDevices = & usbipd list 2>&1
 Log $usbDevices
 
-# Find the Proxmark3 device by VID 9ac4 and extract the bus ID (e.g., 1-4)
+# Find the Proxmark3 device by VID 9ac4 and extract the bus ID
 $proxmark3Device = $usbDevices | Select-String -Pattern "9ac4"
 if ($proxmark3Device) {
-    $busId = ($proxmark3Device -split "\s+")[0] # Assuming busid is the first column in the list output
+    $busId = ($proxmark3Device -split "\s+")[0]
     Log "Found device with busid $busId"
 
     # Detach the device if it is already attached
@@ -128,18 +128,15 @@ if ($proxmark3Device) {
         # Attach the Proxmark3 device to WSL
         AttachUSBDeviceToWSL -busId $busId
 
-        # Run pm3-flash-all in a new terminal
         $distroName = Get-DoppelgangerDistro
         Log "Running pm3-flash-all in a new terminal on $distroName..."
         $command = "wsl -d $distroName -e bash -c 'pm3-flash-all'"
 
         Start-Process powershell -ArgumentList "-NoExit", "-Command", $command
 
-        # Wait for 15 seconds
         Log "Waiting for 5 seconds..."
         Start-Sleep -Seconds 5
 
-        # Reattach the device
         Log "Reattaching the Proxmark3 device..."
         DetachUSBDevice -busId $busId
         AttachUSBDeviceToWSL -busId $busId

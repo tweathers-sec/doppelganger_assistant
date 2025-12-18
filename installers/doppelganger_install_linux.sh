@@ -8,7 +8,7 @@ command_exists() {
 
 # Function to display ASCII art
 display_doppelganger_ascii() {
-    echo -e "\e[31m"  # Set text color to red
+    echo -e "\e[31m"
     cat << "EOF"
                                                                       
     ____                         _                                 
@@ -19,7 +19,7 @@ display_doppelganger_ascii() {
                |_|   |_|           |___/             |___/            
                                                                       
 EOF
-    echo -e "\e[0m"  # Reset text color
+    echo -e "\e[0m"
 }
 
 # Function to prompt for reinstallation
@@ -94,20 +94,16 @@ configure_proxmark_device() {
 uninstall_doppelganger() {
     echo "Uninstalling Doppelganger Assistant..."
     
-    # Remove the desktop shortcuts
     rm -f "$HOME/Desktop/Doppelganger Assistant.desktop"
     rm -f "$HOME/Desktop/doppelganger_assistant.desktop"
     rm -f "$HOME/.local/share/applications/doppelganger_assistant.desktop"
     
-    # Remove the icon
     sudo rm -f "/usr/share/pixmaps/doppelganger_assistant.png"
     
-    # Uninstall Doppelganger Assistant
     if command_exists doppelganger_assistant; then
         sudo make uninstall
     fi
     
-    # Remove Proxmark3
     if [ -d "proxmark3" ]; then
         cd proxmark3
         sudo make uninstall
@@ -143,13 +139,10 @@ detect_os() {
 
 # Function to detect the Desktop Environment
 detect_desktop_environment() {
-    # First, check XDG_CURRENT_DESKTOP (most reliable for modern DEs)
     if [ -n "$XDG_CURRENT_DESKTOP" ]; then
         echo "$XDG_CURRENT_DESKTOP"
         return
     fi
-    
-    # Fall back to checking running processes and environment variables
     if [ -n "$GNOME_DESKTOP_SESSION_ID" ] || command -v gnome-shell &> /dev/null; then
         echo "GNOME"
     elif [ -n "$KDE_FULL_SESSION" ] || command -v plasmashell &> /dev/null; then
@@ -173,10 +166,7 @@ detect_desktop_environment() {
 
 # Function to detect the Window Manager
 detect_window_manager() {
-    # Wayland or X11 session type
     local session_type="${XDG_SESSION_TYPE:-unknown}"
-
-    # Common WMs (process-based detection)
     for wm in xfwm4 mutter kwin_wayland kwin_x11 openbox i3 sway xmonad awesome spectrwm bspwm enlightenment; do
         if pgrep -x "$wm" >/dev/null 2>&1; then
             echo "$wm ($session_type)"
@@ -184,7 +174,6 @@ detect_window_manager() {
         fi
     done
 
-    # As a fallback, try wmctrl if available (X11)
     if command -v wmctrl >/dev/null 2>&1; then
         local name=$(wmctrl -m 2>/dev/null | awk -F: '/Name/ {print $2}' | xargs)
         if [ -n "$name" ]; then
@@ -202,30 +191,20 @@ refresh_desktop_integration() {
     
     echo "Refreshing desktop integration for $desktop_env..."
     
-    # Update desktop database (works for most DEs)
     if command -v update-desktop-database &> /dev/null; then
         update-desktop-database "$HOME/.local/share/applications" 2>/dev/null || true
     fi
     
-    # Force update XDG desktop menu cache (standard method)
     if command -v xdg-desktop-menu &> /dev/null; then
         xdg-desktop-menu forceupdate 2>/dev/null || true
     fi
     
-    # If available, refresh garcon (XFCE XDG menu implementation)
     if command -v update-desktop-database &> /dev/null && command -v grep &> /dev/null; then
-        # Touch the local applications directory so menu watchers see the change
         (touch "$HOME/.local/share/applications" >/dev/null 2>&1) || true
     fi
-    
-    # Desktop environment specific refresh commands
     case "$desktop_env" in
         *"XFCE"*)
             echo "Applying XFCE-specific desktop refresh..."
-            # Kali/XFCE uses garcon (XDG menus). Menu updates after cache refresh.
-            # Do NOT attempt to restart xfce4-panel here — in non-interactive contexts
-            # (installer, sudo) there is no user session D-Bus and it triggers an error dialog.
-            # Refresh desktop icons (desktop entry on ~/Desktop) safely instead.
             if command -v xfdesktop &> /dev/null; then
                 (xfdesktop --reload >/dev/null 2>&1 &) || true
             fi
@@ -233,16 +212,13 @@ refresh_desktop_integration() {
             
         *"GNOME"*|*"Ubuntu"*)
             echo "Applying GNOME-specific desktop refresh..."
-            # GNOME Shell updates menu automatically, but we can trigger it
             if command -v gnome-shell &> /dev/null; then
-                # Send a signal to gnome-shell to refresh (non-intrusive)
                 (killall -HUP gnome-shell >/dev/null 2>&1 &) || true
             fi
             ;;
             
         *"KDE"*|*"Plasma"*)
             echo "Applying KDE Plasma-specific desktop refresh..."
-            # KDE's kbuildsycoca rebuilds the system configuration cache
             if command -v kbuildsycoca5 &> /dev/null; then
                 (kbuildsycoca5 >/dev/null 2>&1 &) || true
             elif command -v kbuildsycoca6 &> /dev/null; then
@@ -252,7 +228,6 @@ refresh_desktop_integration() {
             
         *"Cinnamon"*)
             echo "Applying Cinnamon-specific desktop refresh..."
-            # Cinnamon can reload its configuration
             if command -v cinnamon &> /dev/null && command -v dbus-send &> /dev/null; then
                 (dbus-send --type=method_call --dest=org.Cinnamon /org/Cinnamon org.Cinnamon.ReloadXlet string:'menu@cinnamon.org' string:'APPLET' >/dev/null 2>&1 &) || true
             fi
@@ -260,7 +235,6 @@ refresh_desktop_integration() {
             
         *"MATE"*)
             echo "Applying MATE-specific desktop refresh..."
-            # MATE panel refresh
             if command -v mate-panel &> /dev/null; then
                 (nohup mate-panel --replace >/dev/null 2>&1 &) || true
             fi
@@ -268,7 +242,6 @@ refresh_desktop_integration() {
             
         *"Budgie"*)
             echo "Applying Budgie-specific desktop refresh..."
-            # Budgie panel refresh
             if command -v budgie-panel &> /dev/null; then
                 (nohup budgie-panel --replace >/dev/null 2>&1 &) || true
             fi
@@ -276,7 +249,6 @@ refresh_desktop_integration() {
             
         *"LXDE"*|*"LXQt"*)
             echo "Applying LXDE/LXQt-specific desktop refresh..."
-            # LXPanel or LXQt panel refresh
             if command -v lxpanelctl &> /dev/null; then
                 (lxpanelctl restart >/dev/null 2>&1 &) || true
             fi
@@ -315,11 +287,6 @@ echo "Detected Desktop Environment: $DESKTOP_ENV"
 echo "Detected Window Manager: $WINDOW_MANAGER"
 echo ""
 
-# ============================
-# Pre-flight questions (gather all input up-front)
-# ============================
-
-# Ask about (re)installing Doppelganger Assistant
 if command_exists doppelganger_assistant; then
     if prompt_reinstall "Doppelganger Assistant"; then
         echo "Proceeding with Doppelganger Assistant reinstallation."
@@ -333,7 +300,6 @@ else
     skip_doppelganger_install=false
 fi
 
-# Ask about (re)installing Proxmark3 and capture device selection now
 if command_exists pm3; then
     if prompt_reinstall "Proxmark3"; then
         echo "Proceeding with Proxmark3 reinstallation."
@@ -348,7 +314,6 @@ else
 fi
 
 if [ "$skip_proxmark_install" = false ]; then
-    # Capture device choice up-front so we don't ask later
     select_proxmark_device
 fi
 
@@ -380,9 +345,7 @@ case "$OS" in
         ;;
 esac
 
-# If preflight already answered, do not prompt again
 if [ "$PREFLIGHT_DONE" != "1" ]; then
-    # Fallback to legacy prompts (should not happen)
     if command_exists doppelganger_assistant; then
         if prompt_reinstall "Doppelganger Assistant"; then
             skip_doppelganger_install=false
@@ -406,7 +369,6 @@ fi
 
 # Install necessary packages for Doppelganger Assistant
 if [ "$skip_doppelganger_install" = false ]; then
-    # Determine architecture
     ARCH=$(uname -m)
     case "$ARCH" in
         x86_64)
@@ -421,7 +383,6 @@ if [ "$skip_doppelganger_install" = false ]; then
             ;;
     esac
     
-    # Check if this is a Debian-based system
     case "$OS" in
         "Ubuntu"|"Debian"|"Kali GNU/Linux"|"Parrot GNU/Linux"|"Parrot Security")
             echo "Detected Debian-based system. Installing from .deb package..."
@@ -487,44 +448,32 @@ if [ "$skip_proxmark_install" = false ]; then
 
     cd proxmark3
 
-    # Device type was selected during preflight; if not, ask now (fallback)
     if [ -z "$PROXMARK_DEVICE" ]; then
         select_proxmark_device
     fi
     
-    # Configure Makefile based on selected device type
     configure_proxmark_device "$PROXMARK_DEVICE"
-
-    # Compile and install Proxmark3 software
     make clean && make -j$(nproc)
     sudo make install
 fi
 
-# Create desktop shortcut for Doppelganger Assistant
 if [ "$skip_doppelganger_install" = false ]; then
-    # For Debian-based systems, the .deb package already includes desktop files
-    # We just need to ensure they're properly registered and create desktop shortcuts
     case "$OS" in
         "Ubuntu"|"Debian"|"Kali GNU/Linux"|"Parrot GNU/Linux"|"Parrot Security")
             echo "Configuring desktop integration for Debian-based system..."
             
-            # Update desktop database
             if command -v update-desktop-database &> /dev/null; then
                 update-desktop-database "$HOME/.local/share/applications" 2>/dev/null || true
                 sudo update-desktop-database /usr/share/applications 2>/dev/null || true
             fi
             
-            # Update MIME database
             if command -v update-mime-database &> /dev/null; then
                 sudo update-mime-database /usr/share/mime 2>/dev/null || true
             fi
             
-            # Refresh icon cache
             if command -v gtk-update-icon-cache &> /dev/null; then
                 sudo gtk-update-icon-cache -f -t /usr/share/icons/hicolor 2>/dev/null || true
             fi
-            
-            # Create desktop shortcut from system application file
             mkdir -p "$HOME/Desktop"
             desktop_shortcut="$HOME/Desktop/doppelganger_assistant.desktop"
             
@@ -532,7 +481,6 @@ if [ "$skip_doppelganger_install" = false ]; then
                 cp /usr/share/applications/doppelganger_assistant.desktop "$desktop_shortcut"
                 chmod +x "$desktop_shortcut"
                 
-                # Mark as trusted for GNOME
                 if command -v gio &> /dev/null; then
                     gio set "$desktop_shortcut" metadata::trusted true 2>/dev/null || true
                 fi
@@ -542,34 +490,26 @@ if [ "$skip_doppelganger_install" = false ]; then
                 echo "Warning: System desktop file not found. The application should still be in your menu."
             fi
             
-            # Trigger desktop environment refresh
             refresh_desktop_integration "$DESKTOP_ENV"
             
             echo ""
             echo "Desktop integration configured."
             echo "The application should now appear in your applications menu."
-            echo "Note: You may need to right-click the desktop icon and select 'Allow Launching' or 'Trust' on first use."
             ;;
             
         *)
-            # For non-Debian systems, create desktop files manually
             echo "Creating desktop files for non-Debian system..."
             
             desktop_file="$HOME/.local/share/applications/doppelganger_assistant.desktop"
             icon_path="/usr/share/pixmaps/doppelganger_assistant.png"
 
-            # Download the icon if not present
             if [ ! -f "$icon_path" ]; then
                 echo "Downloading Doppelganger Assistant icon..."
                 sudo wget -O "$icon_path" "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/img/doppelganger_assistant.png"
             fi
 
-            # Create necessary directories
             mkdir -p "$HOME/.local/share/applications"
             mkdir -p "$HOME/Desktop"
-
-            # Create .desktop file for applications menu
-            echo "Creating application menu entry..."
             cat > "$desktop_file" << EOL
 [Desktop Entry]
 Version=1.0
@@ -582,10 +522,8 @@ Terminal=false
 Categories=Utility;System;
 EOL
 
-            # Make the .desktop file executable
             chmod +x "$desktop_file"
 
-            # Also create desktop shortcut
             desktop_shortcut="$HOME/Desktop/doppelganger_assistant.desktop"
             cat > "$desktop_shortcut" << EOL
 [Desktop Entry]
@@ -599,24 +537,19 @@ Terminal=false
 Categories=Utility;System;
 EOL
 
-            # Make desktop shortcut executable
             chmod +x "$desktop_shortcut"
 
-            # Mark desktop file as trusted (for GNOME-based desktops)
             if command -v gio &> /dev/null; then
                 gio set "$desktop_shortcut" metadata::trusted true 2>/dev/null || true
             fi
 
-            # Refresh desktop integration based on detected DE
             refresh_desktop_integration "$DESKTOP_ENV"
 
             echo ""
             echo "Desktop shortcut created successfully."
-            echo "Note: You may need to right-click the desktop icon and select 'Allow Launching' or 'Trust' on first use."
             ;;
     esac
     
-    # Provide DE-specific instructions
     case "$DESKTOP_ENV" in
         *"XFCE"*)
             echo ""

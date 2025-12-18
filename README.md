@@ -10,6 +10,32 @@ A professional GUI application for calculating card data and automating Proxmark
 * **Card Operations**: Automatically generates and executes Proxmark3 commands for writing, verifying, and simulating cards
 * **Direct Execution**: Execute write, verify, and simulate operations directly from the GUI with your Proxmark3
 * **Cross-Platform**: Available for macOS, Linux, and Windows (via WSL)
+* **Card Discovery**: Automatically detect card types and read card data
+* **Hotel Access Control**: Complete MIFARE card recovery and analysis tools
+* **Terminal Integration**: Launch Proxmark3 in a separate terminal window
+
+## Changelog
+
+### Version 1.1.2 (December 18, 2025)
+
+**New Features:**
+* Added LAUNCH PM3 button to open Proxmark3 in a separate terminal window
+* Added Card Discovery section with automatic card type detection
+* Added READ CARD DATA functionality for all supported card types
+* Added Hotel / Residence Access Control section with MIFARE tools
+* Added dual chip card detection for cards with both LF and HF capabilities
+* Added automatic card info retrieval when MIFARE cards are detected
+
+**Improvements:**
+* Improved card detection to show specific MIFARE types and magic capabilities
+* Enhanced card verification with clearer success messages
+* Better error handling and user feedback throughout the application
+* Improved iCLASS card reading with automatic decryption support
+
+### Version 1.1.1
+
+* Initial release with core card writing, verification, and simulation features
+* Support for PROX, iCLASS, AWID, Indala, Avigilon, EM4100, PIV, and MIFARE cards
 
 ## Doppelgänger Devices
 
