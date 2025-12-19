@@ -647,6 +647,12 @@ Set-Content -Path $userSetupScriptPath -Value $createUserScript -NoNewline -Enco
 $wslUserSetupScriptPath = $userSetupScriptPath -replace "\\", "/"
 $wslUserSetupScriptPath = $wslUserSetupScriptPath -replace "C:", "/mnt/c"
 
+Log "Configuring package repositories..."
+if ($distroChoice -eq "1") {
+    Log "Setting Kali Linux to use official repositories..."
+    wsl -d $wslName -u root bash -ic "echo 'deb http://http.kali.org/kali kali-rolling main contrib non-free non-free-firmware' > /etc/apt/sources.list"
+}
+
 Log "Updating system and creating user..."
 wsl -d $wslName -u root bash -ic "apt update && apt upgrade -y && bash $wslUserSetupScriptPath"
 Remove-Item $userSetupScriptPath
