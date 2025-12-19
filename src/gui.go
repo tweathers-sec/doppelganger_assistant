@@ -18,6 +18,7 @@ import (
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
@@ -509,7 +510,7 @@ func runGUI() {
 			action.SetSelectedIndex(1) // Default to "Write & Verify"
 		}
 		fyne.Do(func() {
-		action.Refresh()
+			action.Refresh()
 		})
 
 		dataBlocks.Refresh()
@@ -2143,6 +2144,23 @@ func runGUI() {
 	cardType.SetSelectedIndex(0)
 	action.SetSelectedIndex(1)
 	updateDataBlocks(cardTypes[0])
+
+	// Check for updates in background
+	go func() {
+		time.Sleep(2 * time.Second) // Wait for window to fully load
+		updateAvailable, latestVersion, downloadURL, err := checkForUpdates()
+		if err == nil && updateAvailable {
+			message := fmt.Sprintf("A new version of Doppelgänger Assistant is available!\n\n"+
+				"Current version: %s\n"+
+				"Latest version: %s\n\n"+
+				"Visit the releases page to download the update.", Version, latestVersion)
+
+			dialog.ShowInformation("Update Available", message, w)
+
+			WriteStatusInfo("Update available: v%s (current: v%s)", latestVersion, Version)
+			WriteStatusInfo("Download: %s", downloadURL)
+		}
+	}()
 
 	w.ShowAndRun()
 }

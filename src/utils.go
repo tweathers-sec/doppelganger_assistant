@@ -2,9 +2,12 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
 	"os/exec"
+	"regexp"
 	"runtime"
 	"strings"
 	"time"
@@ -317,4 +320,61 @@ end tell`, pm3Binary)
 	}
 
 	return cmd.Start()
+}
+
+// GitHubRelease represents the GitHub API response for a release
+type GitHubRelease struct {
+	TagName string `json:"tag_name"`
+	Name    string `json:"name"`
+	HTMLURL string `json:"html_url"`
+}
+
+// checkForUpdates queries GitHub API for the latest release and compares with current version
+func checkForUpdates() (updateAvailable bool, latestVersion string, downloadURL string, err error) {
+	const githubAPIURL = "https://api.github.com/repos/tweathers-sec/doppelganger_assistant/releases/latest"
+	
+	client := &http.Client{
+		Timeout: 5 * time.Second,
+	}
+	
+	req, err := http.NewRequest("GET", githubAPIURL, nil)
+	if err != nil {
+		return false, "", "", err
+	}
+	
+	req.Header.Set("Accept", "application/vnd.github.v3+json")
+	
+	resp, err := client.Do(req)
+	if err != nil {
+		return false, "", "", err
+	}
+	defer resp.Body.Close()
+	
+	if resp.StatusCode != http.StatusOK {
+		return false, "", "", fmt.Errorf("GitHub API returned status %d", resp.StatusCode)
+	}
+	
+	var release GitHubRelease
+	if err := json.NewDecoder(resp.Body).Decode(&release); err != nil {
+		return false, "", "", err
+	}
+	
+	// Try to extract version from name field (e.g., "Doppelgänger Assistant v1.1.2")
+	// since tag_name might be "latest"
+	latestVersion = strings.TrimPrefix(release.TagName, "v")
+	if latestVersion == "latest" || latestVersion == "" {
+		// Parse version from name field using regex
+		versionRegex := regexp.MustCompile(`v?(\d+\.\d+\.\d+)`)
+		if matches := versionRegex.FindStringSubmatch(release.Name); len(matches) > 1 {
+			latestVersion = matches[1]
+		}
+	}
+	
+	currentVersion := Version
+	
+	if latestVersion != currentVersion && latestVersion != "" && latestVersion != "latest" {
+		return true, latestVersion, release.HTMLURL, nil
+	}
+	
+	return false, latestVersion, release.HTMLURL, nil
 }
