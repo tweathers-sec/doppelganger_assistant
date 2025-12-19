@@ -14,6 +14,40 @@ A professional GUI application for calculating card data and automating Proxmark
 * **Hotel Access Control**: Complete MIFARE card recovery and analysis tools
 * **Terminal Integration**: Launch Proxmark3 in a separate terminal window
 
+## What Doppelgänger Assistant Can Do
+
+The Doppelgänger Assistant provides a complete card analysis and cloning workflow, from initial detection through successful write operations. The application automatically identifies card technologies, extracts credential data, recovers encryption keys, and writes cloned cards with verification.
+
+### Intelligent Card Detection
+
+The Card Discovery feature automatically scans for both Low Frequency and High Frequency chips, identifying dual-chip cards and determining specific card technologies including HID Prox, iCLASS, PicoPass, MIFARE, and more. Results include decoded Wiegand data with facility codes and card numbers when available.
+
+![Card Discovery](https://github.com/tweathers-sec/doppelganger_assistant/blob/main/img/assistant_detect_card_type.png)
+
+### Hotel Key Card Analysis
+
+The Hotel Access Control section provides specialized tools for MIFARE-based hotel key systems. Card Info retrieval automatically identifies Saflok hotel key cards and displays detailed card information including UID, card type, magic capabilities, and PRNG detection. The raw Proxmark3 output includes comprehensive Saflok metadata when available.
+
+![Saflok Hotel Key Detection](https://github.com/tweathers-sec/doppelganger_assistant/blob/main/img/assistant_detect_hotel_key.png)
+
+### Automated Key Recovery
+
+The MIFARE attack tools include multiple recovery methods: Autopwn (automatic multi-method), Darkside, Nested, Hardnested, Static Nested, Bruteforce, and NACK vulnerability testing. Autopwn automatically selects the best attack method based on card characteristics. Results display comprehensive recovery summaries showing sectors recovered, total keys found, recovery methods used, and automatic dump file generation for immediate card cloning.
+
+![MIFARE Autopwn](https://github.com/tweathers-sec/doppelganger_assistant/blob/main/img/assistant_mifare_autopwn.png)
+
+### Corporate Access Card Operations
+
+The Corporate Access Control section supports reading and writing iCLASS, PicoPass, AWID, HID Prox, Indala, Avigilon, and other corporate card technologies. Card data is automatically parsed from Proxmark3 output to extract facility codes, card numbers, bit lengths, format types (H10301, C1k35s, etc.), CSN values, and raw hex data. The integrated workflow allows immediate writing to blank cards with optional verification.
+
+![iCLASS Card Reading](https://github.com/tweathers-sec/doppelganger_assistant/blob/main/img/assistant_read_corporate_card.png)
+
+### Complete Cloning Workflow
+
+Doppelgänger Assistant integrates seamlessly with Doppelgänger RFID hardware and Proxmark3 devices. Credentials captured with Doppelgänger readers can be directly imported into the GUI for analysis and writing. The application supports reading cards from multiple manufacturers, parsing the data from the web interface, and executing write operations with real-time status updates and verification.
+
+![Integrated Write Workflow](https://github.com/tweathers-sec/doppelganger_assistant/blob/main/img/assistant_gui_write.png)
+
 ## Changelog
 
 ### Version 1.1.2 (December 18, 2025)
