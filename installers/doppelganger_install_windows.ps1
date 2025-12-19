@@ -196,14 +196,14 @@ mkdir $basePath | Out-Null
 
 
 Write-Host "`nWhich WSL distro would you like to install?" -ForegroundColor Yellow
-Write-Host "1) Kali Linux (latest) [default]" -ForegroundColor Green
-Write-Host "2) Ubuntu (Noble LTS)" -ForegroundColor Cyan
+Write-Host "1) Ubuntu 24.04 LTS (Noble) [default - recommended]" -ForegroundColor Green
+Write-Host "2) Kali Linux (latest)" -ForegroundColor Cyan
 $installDistro = Read-Host "`nEnter your choice (1-2) [default: 1]"
 if ($installDistro -eq "2") {
-    $selectedDistro = "Ubuntu"
+    $selectedDistro = "Kali"
 }
 else {
-    $selectedDistro = "Kali"
+    $selectedDistro = "Ubuntu"
 }
 
 # Download the setup, launch, install scripts, and images from GitHub

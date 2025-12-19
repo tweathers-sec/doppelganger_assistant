@@ -114,7 +114,7 @@ Open **PowerShell as Administrator** and run:
 irm https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/installers/doppelganger_install_windows.ps1 | iex
 ```
 
-**Note:** The installer will prompt you to select between **Kali Linux 2025.3** (recommended) or **Ubuntu 24.04 LTS (Noble)**. It will automatically detect existing installations and prompt you to update. If a reboot is required to enable WSL features, you'll be prompted. Simply run the same command again after rebooting.
+**Note:** The installer will prompt you to select between **Ubuntu 24.04 LTS (Noble)** (recommended) or **Kali Linux**. It will automatically detect existing installations and prompt you to update. If a reboot is required to enable WSL features, you'll be prompted. Simply run the same command again after rebooting.
 
 ⚠️ IMPORTANT: WSL2 does not support running inside nested virtual machines. The installer automatically detects and prevents installation in such environments. To proceed, install on physical hardware.
 
@@ -205,11 +205,11 @@ doppelganger_assistant
 
 1. **Enable WSL and install a Linux distribution**. Open PowerShell as Administrator:
    ```powershell
-   # For Kali Linux (recommended):
-   wsl --install -d kali-linux
-   
-   # OR for Ubuntu 24.04 LTS:
+   # For Ubuntu 24.04 LTS (recommended):
    wsl --install -d Ubuntu-24.04
+   
+   # OR for Kali Linux:
+   wsl --install -d kali-linux
    ```
 
 2. **Reboot Windows**. After reboot, WSL will finish setup. When prompted, create a username and password for your Linux environment.

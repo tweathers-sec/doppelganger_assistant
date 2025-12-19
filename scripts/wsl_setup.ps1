@@ -339,14 +339,14 @@ Log "Proceeding with fresh installation..."
 
 if ($DistroChoice -ne "") {
     Log "Using provided distro choice: $DistroChoice"
-    if ($DistroChoice -eq "Kali") {
+    if ($DistroChoice -eq "Ubuntu") {
         $distroChoice = "1"
     }
-    elseif ($DistroChoice -eq "Ubuntu") {
+    elseif ($DistroChoice -eq "Kali") {
         $distroChoice = "2"
     }
     else {
-        Log "Invalid distro choice provided. Defaulting to Kali."
+        Log "Invalid distro choice provided. Defaulting to Ubuntu."
         $distroChoice = "1"
     }
 }
@@ -355,9 +355,9 @@ else {
     Write-Host "  Select Linux Distribution for WSL2" -ForegroundColor Cyan
     Write-Host "========================================" -ForegroundColor Cyan
     Write-Host ""
-    Write-Host "1) Kali Linux (latest) - Recommended" -ForegroundColor Magenta
+    Write-Host "1) Ubuntu 24.04 LTS (Noble) - Recommended" -ForegroundColor Green
     Write-Host ""
-    Write-Host "2) Ubuntu 24.04 LTS (Noble) - Alternative" -ForegroundColor Green
+    Write-Host "2) Kali Linux (latest) - Alternative" -ForegroundColor Magenta
     Write-Host ""
 
     do {
@@ -370,7 +370,7 @@ if (-Not (Test-Path -Path "$basePath\staging")) { mkdir "$basePath\staging" }
 $processorArch = $env:PROCESSOR_ARCHITECTURE
 Log "Detected processor architecture: $processorArch"
 
-if ($distroChoice -eq "1") {
+if ($distroChoice -eq "2") {
     Log "Installing Kali Linux via direct rootfs import..."
     $wslName = $kaliWslName
     
@@ -648,7 +648,7 @@ $wslUserSetupScriptPath = $userSetupScriptPath -replace "\\", "/"
 $wslUserSetupScriptPath = $wslUserSetupScriptPath -replace "C:", "/mnt/c"
 
 Log "Configuring package repositories..."
-if ($distroChoice -eq "1") {
+if ($distroChoice -eq "2") {
     Log "Setting Kali Linux to use official repositories..."
     wsl -d $wslName -u root bash -ic "echo 'deb http://http.kali.org/kali kali-rolling main contrib non-free non-free-firmware' > /etc/apt/sources.list"
 }
