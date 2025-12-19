@@ -424,7 +424,7 @@ func runGUI() {
 
 	a.Settings().SetTheme(&arrowDarkTheme{})
 
-	w.Resize(fyne.NewSize(1200, 875))
+	w.Resize(fyne.NewSize(1200, 800))
 	w.CenterOnScreen()
 
 	logo := canvas.NewImageFromResource(resourceDoppelgangerdmPng)
