@@ -1782,16 +1782,12 @@ func runGUI() {
 			var prngInfo string
 			var specificMifareType string
 
-			// Look for specific MIFARE type from "Possible types:" line
-			// Pattern: "[+] Possible types: MIFARE Classic 1K"
-			mifareTypeRegex := regexp.MustCompile(`(?i)Possible types:\s*MIFARE\s+(Classic\s+)?(\d+K|Mini|Plus|Ultralight|DESFire|NTAG[^\n]*)`)
+			// Extract MIFARE type from "Possible types:" line (handles same-line or next-line format)
+			mifareTypeRegex := regexp.MustCompile(`(?s)Possible types:.*?MIFARE\s+([^\n\r]+?)(?:\s*\n|\s*$)`)
 			mifareTypeMatch := mifareTypeRegex.FindStringSubmatch(hfOutputStr)
-			if len(mifareTypeMatch) > 0 {
-				if strings.Contains(mifareTypeMatch[0], "Classic") {
-					specificMifareType = "MIFARE Classic " + strings.TrimSpace(mifareTypeMatch[2])
-				} else {
-					specificMifareType = "MIFARE " + strings.TrimSpace(mifareTypeMatch[2])
-				}
+			if len(mifareTypeMatch) > 1 {
+				typeStr := strings.TrimSpace(mifareTypeMatch[1])
+				specificMifareType = "MIFARE " + typeStr
 			}
 
 			// Also check for "MIFARE Classic 1K" or "MIFARE Classic 4K" directly in the output
@@ -1841,18 +1837,30 @@ func runGUI() {
 					} else {
 						hfCardType = "MIFARE Classic"
 					}
-				} else if strings.Contains(hfOutputStr, "MIFARE Plus") && strings.Contains(hfOutputStr, "detected") {
+				} else if (strings.Contains(hfOutputStr, "MIFARE Plus") && strings.Contains(hfOutputStr, "detected")) ||
+					(strings.Contains(hfOutputStr, "MIFARE Plus") && strings.Contains(hfOutputStr, "Possible types")) {
 					hfFound = true
-					hfCardType = "MIFARE Plus"
-				} else if strings.Contains(hfOutputStr, "MIFARE DESFire") && strings.Contains(hfOutputStr, "detected") {
+					hfCardType = specificMifareType
+					if specificMifareType == "" {
+						hfCardType = "MIFARE Plus"
+					}
+				} else if (strings.Contains(hfOutputStr, "MIFARE DESFire") || strings.Contains(hfOutputStr, "DESFire")) &&
+					(strings.Contains(hfOutputStr, "detected") || strings.Contains(hfOutputStr, "Possible types")) {
 					hfFound = true
-					hfCardType = "MIFARE DESFire"
-				} else if strings.Contains(hfOutputStr, "MIFARE Ultralight") && strings.Contains(hfOutputStr, "detected") {
+					hfCardType = specificMifareType
+					if specificMifareType == "" {
+						hfCardType = "MIFARE DESFire"
+					}
+				} else if (strings.Contains(hfOutputStr, "MIFARE Ultralight") && strings.Contains(hfOutputStr, "detected")) ||
+					(strings.Contains(hfOutputStr, "MIFARE Ultralight") && strings.Contains(hfOutputStr, "Possible types")) {
 					hfFound = true
 					hfCardType = "MIFARE Ultralight / NTAG"
 				} else if strings.Contains(hfOutputStr, "NTAG 424") || strings.Contains(hfOutputStr, "NTAG424") {
 					hfFound = true
-					hfCardType = "NTAG 424 DNA"
+					hfCardType = specificMifareType
+					if specificMifareType == "" {
+						hfCardType = "NTAG 424 DNA"
+					}
 				} else if strings.Contains(hfOutputStr, "Valid") && strings.Contains(hfOutputStr, "iCLASS tag / PicoPass tag") && strings.Contains(hfOutputStr, "found") {
 					// Must have "Valid ... iCLASS tag / PicoPass tag ... found"
 					hfFound = true
