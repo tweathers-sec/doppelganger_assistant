@@ -14,6 +14,34 @@ A professional GUI application for calculating card data and automating Proxmark
 * **Hotel Access Control**: Complete MIFARE card recovery and analysis tools
 * **Terminal Integration**: Launch Proxmark3 in a separate terminal window
 
+## Quick Install (Recommended)
+
+The automated installers will install Doppelganger Assistant, required dependencies, and the latest [Iceman fork of Proxmark3](https://github.com/RfidResearchGroup/proxmark3). During installation, you'll be prompted to select your Proxmark3 device type for optimal configuration.
+
+### macOS
+
+```sh
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/installers/doppelganger_install_macos.sh)"
+```
+
+### Linux
+
+```bash
+curl -sSL https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/installers/doppelganger_install_linux.sh | sudo bash
+```
+
+### Windows (WSL)
+
+Open **PowerShell as Administrator** and run:
+
+```powershell
+irm https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/installers/doppelganger_install_windows.ps1 | iex
+```
+
+**Note:** The installer will prompt you to select between **Ubuntu 24.04 LTS (Noble)** (recommended) or **Kali Linux**. It will automatically detect existing installations and prompt you to update. If a reboot is required to enable WSL features, you'll be prompted. Simply run the same command again after rebooting.
+
+⚠️ IMPORTANT: WSL2 does not support running inside nested virtual machines. The installer automatically detects and prevents installation in such environments. To proceed, install on physical hardware.
+
 ## What Doppelgänger Assistant Can Do
 
 The Doppelgänger Assistant provides a complete card analysis and cloning workflow, from initial detection through successful write operations. The application automatically identifies card technologies, extracts credential data, recovers encryption keys, and writes cloned cards with verification.
@@ -84,9 +112,9 @@ Doppelgänger Assistant works with the [Iceman fork of Proxmark3](https://github
 
 The automated installers will prompt you to select your device type during installation for optimal configuration.
 
-## Officially Supported Card Types
+## Corporate PACS Card Types
 
-Below are the officially supported card types based on Doppelgänger firmware:
+Below are the officially supported corporate PACS card types based on Doppelgänger firmware. Hotel/Mifare key card support was added in version 1.1.2 with key recovery and cloning capabilities. Note, hotel key card / detailed Mifare anaylsis s not in alignment with captured data using Doppelgänger products. This is just an added feature to support physical penetration testing efforts and is considered a work in progress.
 
 | Card Types                  | Core | Stealth | FC Range    | CN Range        |
 | --------------------------- | ---- | ------- | ----------- | --------------- |
@@ -122,41 +150,9 @@ Supported technologies include:
 * PIV (UID Only - As that is what is provided via the readers wiegand output)
 * MIFARE (UID Only - As that is what is provided via the readers wiegand output)
 
-## Installation
+## Detailed Installation Instructions
 
-### Quick Install (Recommended)
-
-The automated installers will install Doppelganger Assistant, required dependencies, and the latest [Iceman fork of Proxmark3](https://github.com/RfidResearchGroup/proxmark3). During installation, you'll be prompted to select your Proxmark3 device type for optimal configuration.
-
-#### macOS
-
-```sh
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/installers/doppelganger_install_macos.sh)"
-```
-
-#### Linux
-
-```bash
-curl -sSL https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/installers/doppelganger_install_linux.sh | sudo bash
-```
-
-#### Windows (WSL)
-
-Open **PowerShell as Administrator** and run:
-
-```powershell
-irm https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/installers/doppelganger_install_windows.ps1 | iex
-```
-
-**Note:** The installer will prompt you to select between **Ubuntu 24.04 LTS (Noble)** (recommended) or **Kali Linux**. It will automatically detect existing installations and prompt you to update. If a reboot is required to enable WSL features, you'll be prompted. Simply run the same command again after rebooting.
-
-⚠️ IMPORTANT: WSL2 does not support running inside nested virtual machines. The installer automatically detects and prevents installation in such environments. To proceed, install on physical hardware.
-
----
-
-### Detailed Installation Instructions
-
-#### Manual MacOS Installation
+### Manual MacOS Installation
 
 1. Download the appropriate DMG file for your architecture from the [release page](https://github.com/tweathers-sec/doppelganger_assistant/releases):
    - Apple Silicon (M1/M2/M3): `doppelganger_assistant_darwin_arm64.dmg`
@@ -179,7 +175,7 @@ irm https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/
    source ~/.zshrc
    ```
 
-#### Manual Linux Installation
+### Manual Linux Installation
 
 **Option 1: Using .deb package (Debian/Ubuntu/Kali - Recommended)**
 
@@ -235,7 +231,7 @@ To launch the Doppelganger Assistant GUI:
 doppelganger_assistant
 ```
 
-#### Manual Windows (WSL) Installation
+### Manual Windows (WSL) Installation
 
 1. **Enable WSL and install a Linux distribution**. Open PowerShell as Administrator:
    ```powershell
