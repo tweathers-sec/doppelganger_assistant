@@ -715,7 +715,7 @@ func runGUI() {
 	// Initialize cancellation channel
 	operationCancelChan = make(chan struct{})
 
-	submit := newOutlinedButton("EXECUTE", func() {
+	submit := newOutlinedButton("WRITE", func() {
 		// Reset cancellation channel when starting new operation
 		operationCancelMutex.Lock()
 		close(operationCancelChan)
