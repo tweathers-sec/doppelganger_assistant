@@ -509,7 +509,7 @@ func runGUI() {
 			action.SetSelectedIndex(1) // Default to "Write & Verify"
 		}
 		fyne.Do(func() {
-			action.Refresh()
+		action.Refresh()
 		})
 
 		dataBlocks.Refresh()

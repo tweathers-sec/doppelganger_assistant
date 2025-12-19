@@ -194,7 +194,7 @@ mkdir $basePath | Out-Null
 
 
 Write-Host "`nWhich WSL distro would you like to install?" -ForegroundColor Yellow
-Write-Host "1) Kali Linux 2025.3 [default]" -ForegroundColor Green
+Write-Host "1) Kali Linux (latest) [default]" -ForegroundColor Green
 Write-Host "2) Ubuntu 24.04 LTS (Noble)" -ForegroundColor Cyan
 $installDistro = Read-Host "`nEnter your choice (1-2) [default: 1]"
 if ($installDistro -eq "2") {

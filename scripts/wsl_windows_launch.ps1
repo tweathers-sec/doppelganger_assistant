@@ -220,13 +220,13 @@ function AttachUSBDeviceToWSL {
         if ($retryCount -gt 0) {
             Log "Retry attempt $retryCount of $maxRetries..."
         }
-        
-        Log "Attaching device with busid $busId to WSL (WSL2 required)..."
+    
+    Log "Attaching device with busid $busId to WSL (WSL2 required)..."
         & usbipd attach --wsl --busid $busId 2>&1 | Tee-Object -Variable attachOutputResult | Out-Null
         
-        if ($LASTEXITCODE -ne 0) {
-            Log "Error attaching device to WSL. Exit code: $LASTEXITCODE"
-            Log "Attach output: $attachOutputResult"
+    if ($LASTEXITCODE -ne 0) {
+        Log "Error attaching device to WSL. Exit code: $LASTEXITCODE"
+        Log "Attach output: $attachOutputResult"
             
             if ($retryCount -eq 0) {
                 Log "Attachment failed. Attempting to reinstall usbipd and retry..."
@@ -244,7 +244,7 @@ function AttachUSBDeviceToWSL {
             }
             else {
                 Log "Attachment failed after usbipd reinstall. Giving up."
-                Log "NOTE: USB passthrough requires WSL2 with nested virtualization enabled."
+        Log "NOTE: USB passthrough requires WSL2 with nested virtualization enabled."
                 return $false
             }
         }
@@ -345,8 +345,8 @@ if ($proxmark3Device) {
         }
     }
     
-    LaunchDoppelgangerAssistant
-}
+        LaunchDoppelgangerAssistant
+    }
 else {
     Log "Proxmark3 device not found."
     $userChoice = Read-Host "Proxmark3 device not detected. Do you want to (A)ttach the device and retry, or (C)ontinue without the device? [A/C]"

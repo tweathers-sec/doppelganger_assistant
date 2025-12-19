@@ -1,9 +1,7 @@
-# Accept distro choice as parameter (optional)
 param(
     [string]$DistroChoice = ""
 )
 
-# Define the installation path and other static values
 $basePath = "C:\doppelganger_assistant"
 $wslInstallationPath = "$basePath\wsl"
 $username = "doppelganger"
@@ -13,8 +11,6 @@ $kaliWslName = "Kali-doppelganger_assistant"
 $ubuntuWslName = "Ubuntu-doppelganger_assistant"
 $wslName = $null
 $installScriptPath = "$basePath\wsl_doppelganger_install.sh"
-
-# Log file path
 $logFile = "C:\doppelganger_assistant\wsl_setup.log"
 
 # Function to log output to both file and screen
@@ -47,20 +43,14 @@ function Install-Aria2 {
         $aria2ZipPath = "$aria2Path\aria2.zip"
         $aria2ExtractPath = "$aria2Path\extract"
 
-        # Create directories if they do not exist
         if (-Not (Test-Path -Path $aria2Path)) { mkdir $aria2Path }
 
-        # Download aria2 zip file
         Invoke-WebRequest -Uri $aria2Url -OutFile $aria2ZipPath
-
-        # Extract aria2 zip file
         Expand-Archive -Path $aria2ZipPath -DestinationPath $aria2ExtractPath
 
-        # Move aria2c.exe to the aria2 directory
         $aria2ExePath = "$aria2ExtractPath\aria2-1.36.0-win-64bit-build1\aria2c.exe"
         Move-Item -Path $aria2ExePath -Destination "$aria2Path\aria2c.exe" -Force
 
-        # Clean up
         Remove-Item $aria2ZipPath
         Remove-Item -Recurse -Force $aria2ExtractPath
 
@@ -99,20 +89,16 @@ function Install-Winget {
             $xamlPath = "$env:TEMP\Microsoft.UI.Xaml.2.8.6.zip"
             $xamlExtractPath = "$env:TEMP\Microsoft.UI.Xaml"
 
-            # Download XAML package
             Log "Downloading XAML package..."
             (New-Object System.Net.WebClient).DownloadFile($xamlUrl, $xamlPath)
 
-            # Extract XAML package
             Log "Extracting XAML package..."
             Expand-Archive -Path $xamlPath -DestinationPath $xamlExtractPath -Force
 
-            # Install XAML package
             Log "Installing XAML package..."
             Add-AppxPackage -Path "$xamlExtractPath\tools\AppX\x64\Release\Microsoft.UI.Xaml.2.8.appx"
         }
 
-        # Download and install Winget
         Log "Downloading Winget..."
         (New-Object System.Net.WebClient).DownloadFile($wingetUrl, $wingetPath)
         
@@ -162,13 +148,11 @@ Install-Aria2
 
 Log "Checking if NuGet provider is installed and PSGallery is trusted..."
 
-# Install NuGet provider silently if not already installed
 Log "Installing NuGet provider..."
 Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.208 -Force -Scope CurrentUser
 
 Import-PackageProvider -Name NuGet -Force | Out-Null
 
-# Check and set PSGallery to trusted silently
 $psGallery = Get-PSRepository -Name "PSGallery" -ErrorAction SilentlyContinue
 if ($psGallery -and $psGallery.InstallationPolicy -ne "Trusted") {
     Log "Setting PSGallery to trusted..."
@@ -189,7 +173,6 @@ if (-not (Is-WingetInstalled)) {
     if (Install-Winget) {
         Log "Winget installed successfully. Refreshing PATH..."
         $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
-        # Force PowerShell to refresh its command cache
         $env:PSModulePath = [System.Environment]::GetEnvironmentVariable("PSModulePath", "Machine")
     }
     else {
@@ -225,7 +208,7 @@ if (Is-WingetInstalled) {
 else {
     Log "Winget is not available. Skipping version check and update."
 }
-# Install usbipd using winget or alternative methods
+
 if (-not (CommandExists "usbipd")) {
     Log "Installing usbipd..."
     try {
@@ -253,7 +236,6 @@ if (-not (CommandExists "usbipd")) {
         }
     }
     
-    # Check if usbipd is available after installation
     if (-not (Refresh-UsbIpdCommand)) {
         Log "NOTE: usbipd is not available in current session. It may require a restart or manual installation."
         Log "Continuing with WSL setup..."
@@ -265,7 +247,6 @@ else {
 
 Log "Proceeding with WSL installation..."
 
-# Check if any Doppelganger WSL distribution already exists
 $wslList = wsl.exe -l -q | ForEach-Object { $_.Trim() -replace "`0", "" }
 $existingKali = $false
 $existingUbuntu = $false
@@ -280,7 +261,6 @@ foreach ($distro in $wslList) {
 }
 
 if ($existingKali -or $existingUbuntu) {
-    # Determine which one exists
     if ($existingKali) {
         $wslName = $kaliWslName
     }
@@ -310,22 +290,18 @@ if ($existingKali -or $existingUbuntu) {
     } while ($response -ne "1" -and $response -ne "2" -and $response -ne "3")
     
     if ($response -eq "1") {
-        # Update only - skip to app installation
         Log "Updating Doppelganger Assistant and Proxmark3 in existing WSL container..."
         
-        # Download latest installation script
         Log "Downloading latest installation script..."
         $installScriptUrl = "https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/scripts/wsl_doppelganger_install.sh"
         $installScriptPath = "$basePath\wsl_doppelganger_install.sh"
         if (-Not (Test-Path -Path $basePath)) { mkdir $basePath }
         Invoke-WebRequest -Uri $installScriptUrl -OutFile $installScriptPath
         
-        # Get username from WSL
         $username = wsl -d $wslName bash -c "whoami"
         $username = $username.Trim()
         Log "Detected WSL user: $username"
         
-        # Run the installation script in update mode
         $wslInstallScriptPath = $installScriptPath -replace "\\", "/"
         $wslInstallScriptPath = $wslInstallScriptPath -replace "C:", "/mnt/c"
         
@@ -358,11 +334,9 @@ if ($existingKali -or $existingUbuntu) {
     }
 }
 
-# No existing Doppelganger installation found, prompt user to select and install
 Log "No existing Doppelganger Assistant installation found."
 Log "Proceeding with fresh installation..."
 
-# Check if distro choice was provided as parameter
 if ($DistroChoice -ne "") {
     Log "Using provided distro choice: $DistroChoice"
     if ($DistroChoice -eq "Kali") {
@@ -377,12 +351,11 @@ if ($DistroChoice -ne "") {
     }
 }
 else {
-    # Prompt user to select distribution
     Write-Host "`n========================================" -ForegroundColor Cyan
     Write-Host "  Select Linux Distribution for WSL2" -ForegroundColor Cyan
     Write-Host "========================================" -ForegroundColor Cyan
     Write-Host ""
-    Write-Host "1) Kali Linux 2025.3 - Recommended" -ForegroundColor Magenta
+    Write-Host "1) Kali Linux (latest) - Recommended" -ForegroundColor Magenta
     Write-Host ""
     Write-Host "2) Ubuntu 24.04 LTS (Noble) - Alternative" -ForegroundColor Green
     Write-Host ""
@@ -392,45 +365,184 @@ else {
     } while ($distroChoice -ne "1" -and $distroChoice -ne "2")
 }
 
-# Create staging directory
 if (-Not (Test-Path -Path "$basePath\staging")) { mkdir "$basePath\staging" }
 
-# Detect actual processor architecture using environment variable (most reliable)
 $processorArch = $env:PROCESSOR_ARCHITECTURE
 Log "Detected processor architecture: $processorArch"
 
 if ($distroChoice -eq "1") {
-    Log "Installing Kali Linux 2025.3 via direct rootfs import..."
-    $wslName = $kaliWslName  # Set WSL name for Kali
+    Log "Installing Kali Linux via direct rootfs import..."
+    $wslName = $kaliWslName
+    
+    $kaliCurrentUrl = "https://kali.download/wsl-images/current"
+    $kaliVersion = $null
+    $rootfsUrl = $null
+    
+    function Get-KaliWslRootfs {
+        param (
+            [string]$Arch
+        )
+        
+        try {
+            Log "Querying $kaliCurrentUrl for available WSL images..."
+            $html = Invoke-WebRequest -Uri "$kaliCurrentUrl/" -UseBasicParsing -ErrorAction Stop
+            $content = $html.Content
+            
+            $pattern = "kali-linux-(\d{4}\.\d+[a-z]?)-wsl-rootfs-$Arch\.wsl"
+            if ($content -match $pattern) {
+                $version = $matches[1]
+                $filename = $matches[0]
+                $url = "$kaliCurrentUrl/$filename"
+                
+                try {
+                    $headResponse = Invoke-WebRequest -Uri $url -Method Head -TimeoutSec 5 -ErrorAction Stop
+                    if ($headResponse.StatusCode -eq 200) {
+                        Log "Found Kali Linux $version for $Arch in /current/"
+                        return @{
+                            Version = $version
+                            Url     = $url
+                        }
+                    }
+                }
+                catch {
+                    Log "Found filename $filename but file verification failed: $_"
+                }
+            }
+            else {
+                Log "No matching WSL rootfs file found for $Arch in directory listing"
+            }
+        }
+        catch {
+            Log "Failed to query $kaliCurrentUrl : $_"
+        }
+        
+        return $null
+    }
+    
     if ($processorArch -eq "ARM64") {
-        # ARM64 for Apple Silicon or Snapdragon processors
-        Log "Using ARM64 rootfs (Kali Linux 2025.3)"
-        $rootfsUrl = "https://kali.download/wsl-images/current/kali-linux-2025.3-wsl-rootfs-arm64.wsl"
+        $result = Get-KaliWslRootfs -Arch "arm64"
+        if ($result) {
+            $rootfsUrl = $result.Url
+            $kaliVersion = $result.Version
+        }
+        else {
+            Log "ERROR: Could not find ARM64 WSL rootfs in $kaliCurrentUrl"
+            Log "Please check https://kali.download/wsl-images/current/ manually"
+            throw "Failed to locate Kali Linux ARM64 WSL rootfs"
+        }
+        
         $rootfsFile = "$basePath\staging\kali.rootfs.wsl"
-        $distroName = "Kali Linux 2025.3"
+        $distroName = "Kali Linux $kaliVersion"
     }
     else {
-        # AMD64/x86_64 for Intel/AMD processors (most common)
-        Log "Using AMD64 rootfs (Kali Linux 2025.3)"
-        $rootfsUrl = "https://kali.download/wsl-images/current/kali-linux-2025.3-wsl-rootfs-amd64.wsl"
+        $result = Get-KaliWslRootfs -Arch "amd64"
+        if ($result) {
+            $rootfsUrl = $result.Url
+            $kaliVersion = $result.Version
+        }
+        else {
+            Log "ERROR: Could not find AMD64 WSL rootfs in $kaliCurrentUrl"
+            Log "Please check https://kali.download/wsl-images/current/ manually"
+            throw "Failed to locate Kali Linux AMD64 WSL rootfs"
+        }
+        
         $rootfsFile = "$basePath\staging\kali.rootfs.wsl"
-        $distroName = "Kali Linux 2025.3"
+        $distroName = "Kali Linux $kaliVersion"
     }
 }
 else {
     Log "Installing Ubuntu 24.04 (Noble) via direct rootfs import..."
-    $wslName = $ubuntuWslName  # Set WSL name for Ubuntu
+    $wslName = $ubuntuWslName
+    
+    $ubuntuBaseUrl = "https://cloud-images.ubuntu.com/wsl/releases/noble/current"
+    $ubuntuVersion = $null
+    $rootfsUrl = $null
+    
+    function Get-UbuntuWslRootfs {
+        param (
+            [string]$Arch
+        )
+        
+        try {
+            Log "Querying $ubuntuBaseUrl for available WSL images..."
+            $html = Invoke-WebRequest -Uri "$ubuntuBaseUrl/" -UseBasicParsing -ErrorAction Stop
+            $content = $html.Content
+            
+            $patterns = @(
+                "ubuntu-noble-wsl-$Arch-([\d\.]+lts)\.rootfs\.tar\.gz",
+                "ubuntu-noble-wsl-$Arch-wsl\.rootfs\.tar\.gz"
+            )
+            
+            $filename = $null
+            $url = $null
+            $version = $null
+            
+            foreach ($pattern in $patterns) {
+                if ($content -match $pattern) {
+                    $filename = $matches[0]
+                    $url = "$ubuntuBaseUrl/$filename"
+                    
+                    if ($matches.Count -gt 1 -and $matches[1]) {
+                        $version = $matches[1]
+                    }
+                    else {
+                        $version = "wsl"
+                    }
+                    
+                    try {
+                        $headResponse = Invoke-WebRequest -Uri $url -Method Head -TimeoutSec 5 -ErrorAction Stop
+                        if ($headResponse.StatusCode -eq 200) {
+                            Log "Found Ubuntu Noble WSL image for $Arch in /current/ (version: $version, file: $filename)"
+                            return @{
+                                Version = $version
+                                Url     = $url
+                            }
+                        }
+                    }
+                    catch {
+                        Log "Found filename $filename but file verification failed: $_"
+                    }
+                }
+            }
+            
+            if (-not $filename) {
+                Log "No matching WSL rootfs file found for $Arch in directory listing"
+            }
+        }
+        catch {
+            Log "Failed to query $ubuntuBaseUrl : $_"
+        }
+        
+        return $null
+    }
+    
     if ($processorArch -eq "ARM64") {
-        # ARM64 for Apple Silicon or Snapdragon processors
-        Log "Using ARM64 rootfs (Ubuntu 24.04 Noble)"
-        $rootfsUrl = "https://cloud-images.ubuntu.com/wsl/releases/noble/current/ubuntu-noble-wsl-arm64-24.04lts.rootfs.tar.gz"
+        $result = Get-UbuntuWslRootfs -Arch "arm64"
+        if ($result) {
+            $rootfsUrl = $result.Url
+            $ubuntuVersion = $result.Version
+        }
+        else {
+            Log "ERROR: Could not find ARM64 WSL rootfs in $ubuntuBaseUrl"
+            Log "Please check https://cloud-images.ubuntu.com/wsl/releases/noble/current/ manually"
+            throw "Failed to locate Ubuntu Noble ARM64 WSL rootfs"
+        }
+        
         $rootfsFile = "$basePath\staging\ubuntu.rootfs.tar.gz"
         $distroName = "Ubuntu 24.04 (Noble)"
     }
     else {
-        # AMD64/x86_64 for Intel/AMD processors (most common)
-        Log "Using AMD64 rootfs (Ubuntu 24.04 Noble)"
-        $rootfsUrl = "https://cloud-images.ubuntu.com/wsl/releases/noble/current/ubuntu-noble-wsl-amd64-24.04lts.rootfs.tar.gz"
+        $result = Get-UbuntuWslRootfs -Arch "amd64"
+        if ($result) {
+            $rootfsUrl = $result.Url
+            $ubuntuVersion = $result.Version
+        }
+        else {
+            Log "ERROR: Could not find AMD64 WSL rootfs in $ubuntuBaseUrl"
+            Log "Please check https://cloud-images.ubuntu.com/wsl/releases/noble/current/ manually"
+            throw "Failed to locate Ubuntu Noble AMD64 WSL rootfs"
+        }
+        
         $rootfsFile = "$basePath\staging\ubuntu.rootfs.tar.gz"
         $distroName = "Ubuntu 24.04 (Noble)"
     }
@@ -442,7 +554,6 @@ Log "Downloading $distroName rootfs from $rootfsUrl..."
 Log "This may take several minutes..."
 
 try {
-    # Use aria2 for faster download if available, otherwise use Invoke-WebRequest
     if (Test-Path "$basePath\aria2\aria2c.exe") {
         & "$basePath\aria2\aria2c.exe" -x 16 -s 16 -d "$basePath\staging" -o ([System.IO.Path]::GetFileName($rootfsFile)) $rootfsUrl
     }
@@ -456,10 +567,8 @@ try {
     
     Log "Download complete. Importing $distroName distribution..."
     
-    # Import the rootfs directly as our custom distribution name
     if (-Not (Test-Path -Path $wslInstallationPath)) { mkdir $wslInstallationPath }
     
-    # Import as WSL2 (required for USB passthrough)
     Log "Importing as WSL2 (required for USB device access)..."
     wsl.exe --import $wslName $wslInstallationPath $rootfsFile --version 2
     
@@ -469,10 +578,7 @@ try {
     
     Log "$distroName imported successfully as $wslName (WSL2)"
     
-    # Clean up downloaded rootfs
     Remove-Item $rootfsFile -Force
-    
-    # Mark that we directly imported (skip the export/import step later)
     $directImport = $true
 }
 catch {
@@ -480,15 +586,12 @@ catch {
     throw "$distroName installation failed"
 }
 
-# Verify direct import succeeded
 if (-not $directImport) {
-    # Only throw error if we didn't successfully do a direct import
     Log "ERROR: Could not find or install Linux distribution."
     $allDistrosDebug = wsl.exe -l -v
     Log "Available distributions (detailed):"
     Log "$allDistrosDebug"
     
-    # Check if WSL is working at all
     Log "Testing WSL functionality..."
     $wslTest = wsl.exe --status 2>&1
     Log "WSL Status: $wslTest"
@@ -516,10 +619,8 @@ else {
 Log "Initializing WSL and $wslName..."
 wsl -d $wslName -e echo "WSL initialized"
 
-# Wait for WSL to initialize
 Start-Sleep -Seconds 10
 
-# Create a user setup script with Unix line endings
 $userSetupScriptPath = [System.IO.Path]::Combine($env:TEMP, "wsl_user_setup.sh")
 $createUserScript = @"
 #!/bin/bash
@@ -543,11 +644,9 @@ echo 'default=$username' | tee -a /etc/wsl.conf
 $createUserScript = $createUserScript -replace "`r`n", "`n"
 Set-Content -Path $userSetupScriptPath -Value $createUserScript -NoNewline -Encoding Ascii
 
-# Correct path conversion for WSL
 $wslUserSetupScriptPath = $userSetupScriptPath -replace "\\", "/"
 $wslUserSetupScriptPath = $wslUserSetupScriptPath -replace "C:", "/mnt/c"
 
-# Update the system and create the user
 Log "Updating system and creating user..."
 wsl -d $wslName -u root bash -ic "apt update && apt upgrade -y && bash $wslUserSetupScriptPath"
 Remove-Item $userSetupScriptPath
@@ -556,7 +655,7 @@ wsl --terminate $wslName
 
 if ($installAllSoftware -eq $true) {
     Log "Installing additional software..."
-    # Add sudo without password
+    
     $sudoNoPasswdScript = @"
 #!/bin/bash
 username=$username
@@ -575,10 +674,8 @@ chmod 0440 /etc/sudoers.d/\$username
     wsl -d $wslName -u root bash -ic "bash $wslNoPasswdScriptPath"
     Remove-Item $sudoNoPasswdScriptPath
 
-    # Install base packages
     wsl -d $wslName -u root bash -ic "apt install -y build-essential curl file git usbutils"
 
-    # Install all software
     $installAllSoftwareScript = @"
 #!/bin/bash
 # Add additional software installation commands here
@@ -593,12 +690,10 @@ chmod 0440 /etc/sudoers.d/\$username
     wsl -d $wslName -u $username bash -ic "bash $wslAllSoftwareScriptPath"
     Remove-Item $installAllSoftwareScriptPath
 
-    # Mount and run the custom installation script
     $wslInstallScriptPath = $installScriptPath -replace "\\", "/"
     $wslInstallScriptPath = $wslInstallScriptPath -replace "C:", "/mnt/c"
 
     Log "Running custom installation script..."
-    # Use --update flag to run in non-interactive mode (works for both first install and updates)
     wsl -d $wslName -u $username bash -ic "bash $wslInstallScriptPath --update"
 }
 

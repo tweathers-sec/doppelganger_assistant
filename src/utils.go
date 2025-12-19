@@ -28,12 +28,12 @@ func findPm3Path() (string, error) {
 	if runtime.GOOS == "windows" {
 		// On Windows, use 'where' command
 		cmd = exec.Command("cmd", "/c", "where", "pm3")
-		output, err := cmd.CombinedOutput()
+	output, err := cmd.CombinedOutput()
 		if err == nil {
-			outputStr := string(output)
-			lines := strings.Split(outputStr, "\n")
-			for _, line := range lines {
-				line = strings.TrimSpace(line)
+	outputStr := string(output)
+	lines := strings.Split(outputStr, "\n")
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
 				if line != "" && strings.Contains(line, ":\\") {
 					return line, nil
 				}
@@ -50,7 +50,7 @@ func findPm3Path() (string, error) {
 		path := strings.TrimSpace(string(output))
 		if path != "" && strings.HasPrefix(path, "/") {
 			return path, nil
-		}
+			}
 	}
 
 	// If shell lookup fails, try common installation paths directly

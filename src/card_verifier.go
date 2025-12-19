@@ -121,8 +121,8 @@ func verifyCardData(cardType string, facilityCode, cardNumber, bitLength int, he
 									}
 									if bl, ok := decodedData["bitLength"].(int); ok {
 										cardData["bitLength"] = bl
-									}
-								}
+			}
+		}
 							}
 						}
 					}
@@ -155,12 +155,12 @@ func verifyCardData(cardType string, facilityCode, cardNumber, bitLength int, he
 					if hasBL {
 						WriteStatusInfo("Bit Length: %d (expected %d)", readBL, bitLength)
 					}
-					return
-				} else {
+			return
+		} else {
 					WriteStatusError("Verification failed - FC/CN mismatch")
 					WriteStatusInfo("Expected: FC: %d, CN: %d", facilityCode, cardNumber)
 					WriteStatusInfo("Read: FC: %d, CN: %d", readFC, readCN)
-					return
+			return
 				}
 			}
 		}
@@ -183,7 +183,7 @@ func verifyCardData(cardType string, facilityCode, cardNumber, bitLength int, he
 			} else if cardType == "em" {
 				if strings.Contains(line, fmt.Sprintf("EM 410x ID %s", hexData)) {
 					WriteStatusSuccess("Verification successful - EM4100 / Net2 ID matches")
-					return
+							return
 				}
 			} else if cardType == "piv" || cardType == "mifare" {
 				if strings.Contains(line, "[+]  UID:") {
