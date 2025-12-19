@@ -214,9 +214,9 @@ func recoverHotelKey(recoveryMethod string, onFilePathsFound func(string, string
 // parseRecoveryOutput parses the autopwn output to count recovered sectors
 func parseRecoveryOutput(output string) int {
 	// Look for the key table summary - count sectors with at least one key recovered
-	// Pattern: "|  000 | 003 | FFFFFFFFFFFF | D | FFFFFFFFFFFF | D |"
-	// or "|  001 | 007 | ------------ | 0 | ------------ | 0 |" (failed)
-	keyTableRegex := regexp.MustCompile(`\|\s+(\d{3})\s+\|\s+\d{3}\s+\|\s+([A-F0-9]{12}|-{12})\s+\|\s+([DSUNHRCA0])\s+\|\s+([A-F0-9]{12}|-{12})\s+\|\s+([DSUNHRCA0])\s+\|`)
+	// Pattern: "[+]  000 | 003 | FFFFFFFFFFFF | D | FFFFFFFFFFFF | D "
+	// or "[+]  001 | 007 | ------------ | 0 | ------------ | 0 " (failed)
+	keyTableRegex := regexp.MustCompile(`\[\+\]\s+(\d{3})\s+\|\s+\d{3}\s+\|\s+([A-F0-9]{12}|-{12})\s+\|\s+([DSUNHRCA0])\s+\|\s+([A-F0-9]{12}|-{12})\s+\|\s+([DSUNHRCA0])`)
 	matches := keyTableRegex.FindAllStringSubmatch(output, -1)
 
 	if len(matches) > 0 {
@@ -266,7 +266,7 @@ func parseAndDisplayKeySummary(output string) {
 	var keyBMethods = make(map[string]int)
 
 	// Parse each line in the key table
-	keyLineRegex := regexp.MustCompile(`\|\s+(\d{3})\s+\|\s+\d{3}\s+\|\s+([A-F0-9]{12}|-{12})\s+\|\s+([DSUNHRCA0])\s+\|\s+([A-F0-9]{12}|-{12})\s+\|\s+([DSUNHRCA0])\s+\|`)
+	keyLineRegex := regexp.MustCompile(`\[\+\]\s+(\d{3})\s+\|\s+\d{3}\s+\|\s+([A-F0-9]{12}|-{12})\s+\|\s+([DSUNHRCA0])\s+\|\s+([A-F0-9]{12}|-{12})\s+\|\s+([DSUNHRCA0])`)
 
 	for _, line := range lines {
 		if matches := keyLineRegex.FindStringSubmatch(line); len(matches) >= 6 {
