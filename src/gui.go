@@ -2150,15 +2150,45 @@ func runGUI() {
 		time.Sleep(2 * time.Second) // Wait for window to fully load
 		updateAvailable, latestVersion, downloadURL, err := checkForUpdates()
 		if err == nil && updateAvailable {
-			message := fmt.Sprintf("A new version of Doppelgänger Assistant is available!\n\n"+
-				"Current version: %s\n"+
-				"Latest version: %s\n\n"+
-				"Visit the releases page to download the update.", Version, latestVersion)
-
+			var message string
+			if runtime.GOOS == "linux" {
+				// Check if running in WSL
+				if _, err := os.Stat("/proc/version"); err == nil {
+					if data, err := os.ReadFile("/proc/version"); err == nil && 
+						(strings.Contains(strings.ToLower(string(data)), "microsoft") || 
+						 strings.Contains(strings.ToLower(string(data)), "wsl")) {
+						// WSL-specific message
+						message = fmt.Sprintf("A new version of Doppelgänger Assistant is available!\n\n"+
+							"Current version: %s\n"+
+							"Latest version: %s\n\n"+
+							"To update, run from Windows PowerShell:\n"+
+							"powershell -ExecutionPolicy Bypass -File C:\\doppelganger_assistant\\wsl_update.ps1", 
+							Version, latestVersion)
+					}
+				}
+			}
+			
+			// Default message for non-WSL systems
+			if message == "" {
+				message = fmt.Sprintf("A new version of Doppelgänger Assistant is available!\n\n"+
+					"Current version: %s\n"+
+					"Latest version: %s\n\n"+
+					"Visit the releases page to download the update.", Version, latestVersion)
+			}
+			
 			dialog.ShowInformation("Update Available", message, w)
-
+			
 			WriteStatusInfo("Update available: v%s (current: v%s)", latestVersion, Version)
 			WriteStatusInfo("Download: %s", downloadURL)
+			if runtime.GOOS == "linux" {
+				if _, err := os.Stat("/proc/version"); err == nil {
+					if data, err := os.ReadFile("/proc/version"); err == nil && 
+						(strings.Contains(strings.ToLower(string(data)), "microsoft") || 
+						 strings.Contains(strings.ToLower(string(data)), "wsl")) {
+						WriteStatusInfo("WSL Update: powershell -ExecutionPolicy Bypass -File C:\\doppelganger_assistant\\wsl_update.ps1")
+					}
+				}
+			}
 		}
 	}()
 
