@@ -272,6 +272,44 @@ To launch Doppelganger Assistant:
 doppelganger_assistant
 ```
 
+## Updating
+
+### Updating Windows (WSL) Installation
+
+#### Automated Update (Recommended)
+
+Run the update script from the installation directory:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File C:\doppelganger_assistant\wsl_update.ps1
+```
+
+Or download and run directly from GitHub:
+
+```powershell
+powershell -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/scripts/wsl_update.ps1 | iex"
+```
+
+The update script will:
+- Download the latest Doppelganger Assistant binary
+- Update all scripts and installers from the repository
+- Update and rebuild Proxmark3 from source
+- Preserve your WSL configuration and settings
+
+### Updating macOS or Linux Installation
+
+Re-run the installer script. It will detect the existing installation and prompt you to update:
+
+**macOS:**
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/installers/doppelganger_install_macos.sh)
+```
+
+**Linux:**
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/tweathers-sec/doppelganger_assistant/main/installers/doppelganger_install_linux.sh)
+```
+
 ## Uninstallation
 
 ### Uninstalling from Windows (WSL)
