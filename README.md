@@ -2,7 +2,7 @@
 
 A professional GUI application for calculating card data and automating Proxmark3 operations for every card type that Doppelgänger Core and Stealth support. This tool streamlines the card-writing process for physical penetration testing by providing an intuitive interface with dual output displays, visual separators, and one-click clipboard copying, eliminating the need to memorize complex Proxmark3 syntax or dig through notes.
 
-![Doppelgänger Assistant GUI](https://github.com/tweathers-sec/doppelganger_assistant/blob/main/img/assistant_gui.png)
+![Doppelgänger Assistant GUI](https://github.com/tweathers-sec/doppelganger_assistant/blob/main/img/assistant_gui_write.png)
 
 ## Features
 
